@@ -518,7 +518,7 @@ contains
     do m=1,ndim
       dhdz_vp_22(m) = (0.0d0,0.0d0)
       dhdz_vp_22(m) = dhdz_vp_22(m) - (gam/2.0d0)*(zc(m)-z(m)) 
-      dhdz_vp_22(m) = (b_1_vp*dble(ndim)**2./(2.*gam))
+      dhdz_vp_22(m) = dhdz_vp_22(m) + (b_1_vp*dble(ndim)**2./(2.*gam))
     end do
     
     deallocate(zc)

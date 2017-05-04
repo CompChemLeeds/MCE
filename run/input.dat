@@ -4,14 +4,14 @@
 
 # System (Currently can be SB [Spin Boson], HP [Harmonic Potential], FP [Free Particle], DL [Spin Boson with Drude-Lorentz]
 #    MP [Morse Potential], IV [Inverted Gaussian], CP [Coulomb Potential], or HH [Henon-Heiles]. SB, DL works only with MCE, all others with CCS. 
-System: SB
+System: VP
 
 #Name of running folder [Default : <method>-<system>-<random number> ie CCS-HP-31254 (input "default", case insensitive)
 #                       Otherwise:  <method>-<system>-<runfolder string> ie CCS-HP-withgrids]
-Runfolder case1a_zbqlnor_sigma=1_over_dexp_bw_-1
+Runfolder default
 
 #Debug flag [ 0: no debug outputs, 1: debug outputs. Does not really work for dynamic basis set sizes]
-debug 0
+debug 1
 
 #Basis Set Generation flag [YES/NO for generating the basis set]
 gen YES
@@ -26,22 +26,22 @@ restart 0
 cmprss YES
 
 #Propagation method [can be CCS, MCEv1, MCEv2, AIMC-MCE1 (first pass), AIMC-MCE2 (Second pass) or MCE12 (uses both MCE methods). No support for vMCG, F-CCS or 2L-CCS yet.]
-method MCEv1
+method MCEv2
 
 #Number of repeats. Do not need to set manually - this is set by the run command.
 Repeats 192
 
 #Conjugate repeats flag. Allows even number repeats to start at the complex conjugate of the previous runs initial position [YES/NO]
-Conjugate_Repeats YES
+Conjugate_Repeats NO
 
 # Number of basis functions 
-in_nbf 50
+in_nbf 20
 
 # Number of dimensions
-ndim 15
+ndim 1
 
 #determine which PES you are on initially
-in_PES 1
+in_PES 2
 
 #determine n.o of configurations for MCE
 npes 2
@@ -50,7 +50,7 @@ npes 2
 basis SWARM
 
 # Compression parameter (can be tweaked to allow better norm value, or altered automatically)   Used for swarms/swarm-trains/grid-swarms
-ALCMP 140.6
+ALCMP 1.465d2
 
 # Flag for adaptive basis set size (yes/no) [Selecting No will give a constant basis set size. This is default behaviour] Used for Grids/grid-swarms
 nbfadapt no

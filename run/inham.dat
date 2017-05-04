@@ -1,0 +1,71 @@
+# Hamiltonian Parameters File (Parameters are in atomic units)
+
+# Spin Boson Parameters       #    Case 1    #    Case 2    #    Case 3    #    Case 4    #    Case 5    #    Case 6    #    Case 7    #
+
+SBDelta 1.0d0                #    1.00d0    #    1.00d0    #    1.00d0    #    1.00d0    #    1.00d0    #    1.00d0    #    1.00d0    #
+SBEps 0.0d0                  #    0.00d0    #    1.00d0    #    1.00d0    #    0.00d0    #    0.00d0    #    0.00d0    #    0.00d0    #
+SBw 2.5d0                    #    2.50d0    #    7.50d0    #    7.50d0    #    2.50d0    #    10.0d0    #    20.0d0    #    40.0d0    #
+SBwmax 12.5d0                #    12.5d0    #    37.5d0    #    37.5d0    #    12.5d0    #    50.0d0    #    100.0d0   #    200.0d0   #
+SBkondo 0.09d0                #    0.09d0    #    0.10d0    #    0.10d0    #    0.09d0    #    1.50d0    #    1.50d0    #    1.50d0    #
+SBBeta 0.2d0                 #    5.00d0    #    5.00d0    #    5.00d0    #    0.20d0    #   1000.0d0   #   1000.0d0   #   1000.0d0   #
+SBupnorm 0.9999d0              #    0.999d0   #    0.999d0   #    0.999d0   #    0.999d0   #    0.999d0   #    0.999d0   #    0.999d0   #
+SBdownnorm 0.9998d0            #    0.998d0   #    0.998d0   #    0.998d0   #    0.998d0   #    0.998d0   #    0.998d0   #    0.998d0   #
+########## EXTRA INFO 1######## t=10,nbf=50  # t=15,nbf=200 # t=25,nbf=200 # t=4,nbf=50   # t=5,nbf=50   # t=5,nbf=50   # t=5,nbf=50   #
+###########EXTRA INFO 2######## M=50,100rpts # M=50,100rpts # M=30 or 60   # M=15,10000rps# M=500,40rpts # M=1000,40rpts# M=2000,40rpts#
+
+# Drude Lorentz Parameters
+
+DLDelta 1.0d0                #    1.00d0    #    1.00d0    #    1.00d0    #    1.00d0    #    1.00d0    #    1.00d0    #    1.00d0    #
+DLEps 1.5d0                  #    0.00d0    #    1.00d0    #    1.00d0    #    0.00d0    #    0.00d0    #    0.00d0    #    0.00d0    #
+DLw 0.5d0                    #    2.50d0    #    7.50d0    #    7.50d0    #    2.50d0    #    10.0d0    #    20.0d0    #    40.0d0    #
+DLwmax 25.0d0                #    12.5d0    #    37.5d0    #    37.5d0    #    12.5d0    #    50.0d0    #    100.0d0   #    200.0d0   #
+DLlambda 1.0d0                #    0.09d0    #    0.10d0    #    0.10d0    #    0.09d0    #    1.50d0    #    1.50d0    #    1.50d0    #
+DLBeta 0.5d0                 #    5.00d0    #    5.00d0    #    5.00d0    #    0.20d0    #   1000.0d0   #   1000.0d0   #   1000.0d0   #
+DLupnorm 0.9999d0              #    0.999d0   #    0.999d0   #    0.999d0   #    0.999d0   #    0.999d0   #    0.999d0   #    0.999d0   #
+DLdownnorm 0.9998d0            #    0.998d0   #    0.998d0   #    0.998d0   #    0.998d0   #    0.998d0   #    0.998d0   #    0.998d0   #
+
+# Harmonic Potential Parameters
+HPw 1.0d0
+HPupnorm 0.999d0
+HPdownnorm 0.998d0
+
+# Free Particle Parameters
+FPmass 1.0d0
+FPupnorm 0.999d0
+FPdownnorm 0.998d0
+
+# Morse Potential Parameters
+MPw 1.0d0
+MPmass 1.0d0
+MPDissEn 10.25d0
+MPWellParam 0.2209d0
+MPupnorm 0.999d0
+MPdownnorm 0.998d0
+
+# Inverted Gaussian Parameters
+IVm 1.0d0
+IVw 0.05d0
+IVlambda 0.5d0
+IVIntensity 0.1d0
+IVupnorm 0.999999d0
+IVdownnorm 0.999998d0
+
+# Coulomb Potential Parameters
+CPm 1.0d0
+CPfrequency 0.05d0
+CPRc 0.0d0
+CPIntensity 0.1d0
+CPupnorm 0.999d0
+CPdownnorm 0.998d0
+
+# Henon-Heiles Parameters
+HHCoupling 0.111803d0
+HHupnorm 0.999d0
+HHdownnorm 0.998d0
+
+#Energy limit parameters
+ECheck No
+Ntries 10
+Ebfmax 5000000.0d0
+Ebfmin -5000000.0d0
+

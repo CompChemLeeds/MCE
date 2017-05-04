@@ -1,0 +1,15 @@
+#Propagation Parameters
+
+#Minimum stepsize - used in adaptive stepsize
+dtmin 0.5d1
+#Maximum stepsize - used in adaptive stepsize
+dtmax 500.0d0
+#Starting stepsize of adaptive / Constant stepsize for Static stepsize
+dtinit 0.5d-2
+#End Time of propagation
+time_end 0.4d+1
+#Start time of propagation
+time_start 0.0d+00
+#Propagation size - either "static" or "adaptive"
+step static
+

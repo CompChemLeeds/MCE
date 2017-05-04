@@ -201,7 +201,7 @@ contains
       case ("VP")
         extra=disp_vp(bs)
       case ("HP")
-        extra=(0.0d0,0.0d0)
+        extra=disp_hp(bs)
       case ("FP")
         extra=(0.0d0,0.0d0)
       case ("MP")

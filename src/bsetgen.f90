@@ -84,7 +84,7 @@ contains
     call allocbf(bf)
     
     
-    if (sys.eq."HP") then
+    if (sys.eq."VP") then
 !    if (.false.) then
     
     h=0.5*size(bs)
@@ -94,7 +94,7 @@ contains
       do
         do m=1,ndim
 !          bf%z(m)=gauss_random(alcmprss,muq(m),mup(m))
-          bf%z(m)=cmplx((ZBQLNOR(muq(m)+5.0d0,sigq*sqrt(alcmprss))) &
+          bf%z(m)=cmplx((ZBQLNOR(muq(m),sigq*sqrt(alcmprss))) &
          ,((1.0d0/hbar)*(ZBQLNOR(mup(m),sigp*sqrt(alcmprss)))),kind=8)
         end do
         call enchk(bf,t,n,redo,k)
@@ -108,7 +108,7 @@ contains
       do
         do m=1,ndim
 !          bf%z(m)=gauss_random(alcmprss,muq(m),mup(m))
-          bf%z(m)=cmplx((ZBQLNOR(muq(m)-5.0d0,sigq*sqrt(alcmprss))) &
+          bf%z(m)=cmplx((ZBQLNOR(muq(m)*(-1.),sigq*sqrt(alcmprss))) &
          ,((1.0d0/hbar)*(ZBQLNOR(mup(m),sigp*sqrt(alcmprss)))),kind=8)
         end do
         call enchk(bf,t,n,redo,k)
@@ -463,8 +463,8 @@ contains
     end do
 
     do m=1,ndim
-      qstrt(m) = muq(m)-((dble(qsize(m))-1.0d0)*sigq*gridsp/2.0d0)
-      pstrt(m) = mup(m)-((dble(psize(m))-1.0d0)*sigp*gridsp/2.0d0)
+      qstrt(m) = 0.0d0-((dble(qsize(m))-1.0d0)*sigq*gridsp/2.0d0)
+      pstrt(m) = 0.0d0-((dble(psize(m))-1.0d0)*sigp*gridsp/2.0d0)
     end do
 
     do k=1,in_nbf
@@ -583,7 +583,7 @@ contains
     type(basisfn),dimension(:),intent(inout)::bs
     real(kind=8), dimension(:), intent(in) :: mup, muq
     complex(kind=8),dimension(:,:),allocatable::ovrlp_mat
-    complex(kind=8),dimension(:), allocatable::zinit, zpq
+    complex(kind=8),dimension(:), allocatable::zinit, zinit2, zpq
     complex(kind=8),dimension(:), allocatable:: C_k, D
     integer, intent(inout) :: restart
     integer::k, j, ierr
@@ -637,11 +637,36 @@ contains
 
       zinit(1:ndim) = cmplx(muq(1:ndim),mup(1:ndim),kind=8)
 
-      do k=1,size(bs)
-        zpq(1:ndim) = bs(k)%z(1:ndim)
-        C_k(k) = ovrlpij(zpq, zinit) * dconjg(bs(k)%d_pes(in_pes)) * &
-                    cdexp (-1.0d0*i*bs(k)%s_pes(in_pes))
-      end do
+      if (sys.eq."VP") then
+      
+        allocate(zinit2(ndim), stat = ierr)
+        if (ierr/=0) then
+          write(0,"(a)") "Error in allocation of zinit2 in genD_big"
+          errorflag=1
+          return
+        end if
+        
+        zinit2(1:ndim) = cmplx(-1.0d0*muq(1:ndim),mup(1:ndim),kind=8)      
+        do k=1,size(bs)
+          zpq(1:ndim) = bs(k)%z(1:ndim)
+          C_k(k) = (ovrlpij(zpq, zinit) + ovrlpij(zpq, zinit2))/sqrt(2.0d0)
+        end do
+        
+        if (ierr==0) deallocate(zinit2, stat = ierr)
+        if (ierr/=0) then
+          write(0,"(a)") "Error in zinit2 deallocation in genD_big"
+          errorflag=1
+          return
+       end if
+      
+      else
+      
+        do k=1,size(bs)
+          zpq(1:ndim) = bs(k)%z(1:ndim)
+          C_k(k) = ovrlpij(zpq, zinit)
+        end do
+        
+      end if  
    
       deallocate(zpq, stat = ierr)
       if (ierr==0) deallocate(zinit, stat = ierr)

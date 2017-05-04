@@ -647,7 +647,7 @@ contains
       write(fileun,*), ""
       write(fileun,*), ""
     else
-      write(fileun,"(a)") "Time Norm Re(ACF(t)) Im(ACF(t) |ACF(t)| Re(Extra) Im(Extra) |Extra| Sum(HEhr) Pops 1...n"
+      write(fileun,"(a)") "Time Norm Re(ACF(t)) Im(ACF(t) |ACF(t)| Re(Extra) Im(Extra) |Extra| Sum(HEhr) Pops(1...n)"
       write(fileun,*), ""
       write(fileun,*), ""
     end if
@@ -982,7 +982,7 @@ contains
       write(150,*), ""
       write(150,*), ""
     else
-      write(150,"(a)") "Time Norm Re(ACF(t)) Im(ACF(t) |ACF(t)| Re(Extra) Im(Extra) |Extra| Sum(HEhr) Pops 1...n"
+      write(150,"(a)") "Time Norm Re(ACF(t)) Im(ACF(t) |ACF(t)| Re(Extra) Im(Extra) |Extra| Sum(HEhr) Pops(1...n)"
       write(150,*), ""
       write(150,*), ""
       write(myfmt,'(a,i0,a)') '(', 9+npes, '(1x,e16.8e3))'
@@ -1410,9 +1410,10 @@ contains
     complex(kind=8), dimension(:,:), intent(in) :: ovrlp
     real(kind=8), intent(in) :: time, dt
     integer, intent (in) :: x
+    complex(kind=8) :: asum
     real(kind=8), dimension (:), allocatable :: p, q
     real(kind=8) :: lwrovrlp, ovrlpsum, c
-    integer::ierr, k, j, m, fields, fileun
+    integer::ierr, k, j, m, r, fields, fileun
     character(LEN=21) :: filenm, myfmt
     integer, intent(in) :: reps
     character(LEN=10):: timestr
@@ -1459,7 +1460,11 @@ contains
     
     do k=1,size(bs)
       do j=1,size(bs)
-        ovrlpsum=ovrlpsum+abs(ovrlp(j,k))
+        asum = (0.0d0,0.0d0)
+        do r=1,npes
+          asum = asum + (dconjg(bs(j)%a_pes(r))*bs(k)%a_pes(r))
+        end do
+        ovrlpsum=ovrlpsum+abs(ovrlp(j,k)*asum)
         c=c+1.0d0
       end do
     end do
@@ -1469,7 +1474,11 @@ contains
     
     do k=1,size(bs)
       do j=1,k-1
-        lwrovrlp=lwrovrlp+abs(ovrlp(j,k))
+        asum = (0.0d0,0.0d0)
+        do r=1,npes
+          asum = asum + (dconjg(bs(j)%a_pes(r))*bs(k)%a_pes(r))
+        end do
+        lwrovrlp=lwrovrlp+abs(ovrlp(j,k)*asum)
         c=c+1.0d0
       end do
     end do 

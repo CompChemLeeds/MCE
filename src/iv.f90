@@ -176,7 +176,7 @@ contains
     
     do m=1,ndim
       Htemp(m) = (0.0d0,0.0d0)
-      Htemp(m) = Htemp(m) - sqrt(eta/lambda_iv)*cdexp(-1.0d0*eta*rho(m)**2.0d0)
+      Htemp(m) = Htemp(m) - ((sqrt(eta/lambda_iv)))*cdexp(-1.0d0*eta*rho(m)**2.0d0)
     end do
     
     H(1,1) =  H(1,1) + product(Htemp(1:ndim))  

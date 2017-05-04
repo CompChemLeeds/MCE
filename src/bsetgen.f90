@@ -75,21 +75,58 @@ contains
     real(kind=8), dimension(:), intent(in) :: mup, muq
     real(kind=8), intent(in) :: alcmprss, t
     type (basisfn) :: bf
-    integer::m, k, n, ierr, redo
+    integer::m, k, n, h, ierr, redo
 
     if (errorflag .ne. 0) return
     ierr = 0
     n=0
 
     call allocbf(bf)
-
+    
+    
+    if (sys.eq."HP") then
+!    if (.false.) then
+    
+    h=0.5*size(bs)
+    
+    do k=1,h
+      bf=bs(k)
+      do
+        do m=1,ndim
+!          bf%z(m)=gauss_random(alcmprss,muq(m),mup(m))
+          bf%z(m)=cmplx((ZBQLNOR(muq(m)+5.0d0,sigq*sqrt(alcmprss))) &
+         ,((1.0d0/hbar)*(ZBQLNOR(mup(m),sigp*sqrt(alcmprss)))),kind=8)
+        end do
+        call enchk(bf,t,n,redo,k)
+        if (redo==1) cycle
+        if (redo==0) exit
+      end do
+      bs(k)=bf    
+    end do  
+    do k=h+1, size(bs)
+      bf=bs(k)
+      do
+        do m=1,ndim
+!          bf%z(m)=gauss_random(alcmprss,muq(m),mup(m))
+          bf%z(m)=cmplx((ZBQLNOR(muq(m)-5.0d0,sigq*sqrt(alcmprss))) &
+         ,((1.0d0/hbar)*(ZBQLNOR(mup(m),sigp*sqrt(alcmprss)))),kind=8)
+        end do
+        call enchk(bf,t,n,redo,k)
+        if (redo==1) cycle
+        if (redo==0) exit
+      end do
+      bs(k)=bf    
+    end do  
+    
+    else
+    
     do k=1,size(bs)
       bf=bs(k)
       do
         do m=1,ndim
-          bf%z(m)=gauss_random(alcmprss,muq(m),mup(m))
-!          bf%z(m)=cmplx((ZBQLNOR(muq(m),sigq*sqrt(alcmprss))) &
-!         ,((1.0d0/hbar)*(ZBQLNOR(mup(m),sigp*sqrt(alcmprss)))),kind=8)
+!          bf%z(m)=gauss_random(alcmprss,muq(m),mup(m))
+          bf%z(m)=cmplx((ZBQLNOR(muq(m),sigq*sqrt(alcmprss))) &
+         ,((1.0d0/hbar)*(ZBQLNOR(mup(m),sigp*sqrt(alcmprss)))),kind=8)
         end do
         call enchk(bf,t,n,redo,k)
         if (redo==1) cycle
@@ -97,6 +134,8 @@ contains
       end do
       bs(k)=bf
     end do
+    
+    end if
 
     call deallocbf(bf)
 

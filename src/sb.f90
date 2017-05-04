@@ -326,12 +326,12 @@ contains
 
     do while (recalc == 1)
       do m=1,ndim
-!        mup(m)=ZBQLNOR(mu,sig_sb(m)*sigp)
-!        muq(m)=ZBQLNOR(mu,sig_sb(m)*sigq)
-!        zin(m)=cmplx(muq(m),mup(m),kind=8)
-        zin(m)=gauss_random_sb(sig_sb(m),0.0d0,0.0d0)
-        muq(m)=dble(zin(m))
-        mup(m)=dimag(zin(m))
+        mup(m)=ZBQLNOR(mu,sig_sb(m)*sigp)
+        muq(m)=ZBQLNOR(mu,sig_sb(m)*sigq)
+        zin(m)=cmplx(muq(m),mup(m),kind=8)
+!        zin(m)=gauss_random_sb(sig_sb(m),0.0d0,0.0d0)
+!        muq(m)=dble(zin(m))
+!        mup(m)=dimag(zin(m))
       end do
       if (ECheck.eq."YES") then
         call Hij_sb(H,zin,zin)
@@ -547,8 +547,8 @@ contains
     if (errorflag .ne. 0) return
 
     do m=1,ndim
-!      dhdz_sb_12 = (Cm_sb(m)/sqrt(2.0d0*wm_sb(m)))
-      dhdz_sb_12 = (0.0d0,0.0d0)
+!      dhdz_sb_12(m) = (Cm_sb(m)/sqrt(2.0d0*wm_sb(m)))
+      dhdz_sb_12(m) = (0.0d0,0.0d0)
     end do
 
     return

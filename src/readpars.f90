@@ -888,6 +888,27 @@ contains
     !!!!!!!! Check the System!!!!!!  
     
     select case (sys)
+      case ("VP")
+        if (npes.lt.2) then
+          write(0,"(a)") "Spin Boson model must have at least 2 pes'"
+          errorflag = 1
+          return
+        end if
+        if ((method.ne."MCEv1").and.(method.ne."MCEv2").and.(method.ne."AIMC1").and.(method.ne."AIMC2")) then
+          write(0,"(a)") "Spin Boson model can only be simulated by MCEv1 or MCEv2, or through AIMC-MCE"
+          errorflag = 1
+          return
+        end if
+        if (basis.eq."GRID") then
+          write(0,"(a)") "This method must not use a static grid."
+          errorflag = 1
+          return
+        end if 
+        if (ndim.ne.1) then
+          write(0,"(a)") "This is currently only set up to deal with a single degree of freedom. Please set ndim to 1"
+          errorflag = 1
+          return
+        end if                  
       case ("SB")
         if (npes.lt.2) then
           write(0,"(a)") "Spin Boson model must have at least 2 pes'"

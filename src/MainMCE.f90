@@ -374,7 +374,7 @@ Program MainMCE
           ! properly. If not, restart is set to 1 so basis is recalculated
           call initnormchk(bset,recalcs,restart,alcmprss,gridsp,initnorm,initnorm2)
 
-          if ((basis.eq."TRAIN").and.(restart.eq.1)) then
+          if (((basis.eq."TRAIN").and.(restart.eq.1))) then
             if ((((conjflg==1).and.(conjrep.eq.2)).or.(conjflg/=1)).and.(recalcs.lt.Ntries)) then
               !$omp critical 
               call genzinit(mup, muq)
@@ -549,7 +549,7 @@ Program MainMCE
           if ((nbfadapt.eq."NO").and.(debug==1)) then
             call outtrajheads(reps, nbf)
             call outtraj(bset,x,reps,time,ovrlp,dt)
-            call histogram(bset, 50, time, -2.46d0, 1.44d0, nbf)
+!            call histogram(bset, 50, time, -2.46d0, 1.44d0, nbf)
             call outvarsheads (reps, nbf)
             call outvars(bset,x,reps,time)
           end if
@@ -688,7 +688,7 @@ Program MainMCE
             extra(y) = extra(y) + extmp
             if ((nbfadapt.eq."NO").and.(mod(x,1)==0).and.(debug==1)) then
               call outtraj(bset,x,reps,time,ovrlp,dt)
-              call histogram(bset, 50, time, -2.46d0, 1.44d0, nbf)
+!              call histogram(bset, 50, time, -2.46d0, 1.44d0, nbf)
               call outvars(bset,x,reps,time)
             end if
 !            call outdimacf(time,ndimacf,reps)

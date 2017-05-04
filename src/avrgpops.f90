@@ -242,7 +242,7 @@ Program avrgnorm
         write (m,"(13(1x,es16.8e3))") timeav,nrmav,rlacfav,imacfav,abacfav,rlexav,&
                         imexav,abexav,ehrav,pop1av,pop2av,popsumav,popdiffav
       else
-        write(myfmt,"(a,i0,a)") '"(', cols, '(1x,es16.8e3))"'
+        write(myfmt,'( "(",i0,"(1x,es16.8e3))" )') cols
         write(m,myfmt) timeav,nrmav,rlacfav,imacfav,abacfav,rlexav,&
                         imexav,abexav,ehrav,popsav
       end if

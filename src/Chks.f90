@@ -58,9 +58,9 @@ contains
       if (abs(popsum-absnorm).gt.1.0d-10) then
         write(0,"(a)") "Error! Difference between norm and population sum is too high"
         write(0,"(a)") ""
-        write(0,"(a)") "ABS(Norm)  ", absnorm
-        write(0,"(a)") "Popsum     ", popsum
-        write(0,"(a)") "Difference ", abs(popsum-absnorm)
+        write(0,"(a,es16.8e3)") "ABS(Norm)  ", absnorm
+        write(0,"(a,es16.8e3)") "Popsum     ", popsum
+        write(0,"(a,es16.8e3)") "Difference ", abs(popsum-absnorm)
         write(0,"(a)") ""
         restart = 1
       end if

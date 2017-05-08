@@ -39,7 +39,7 @@ VPdownnorm 0.0d0
 # Harmonic Potential Parameters
 HPw 1.0d0
 HPupnorm 0.999d0
-HPdownnorm 0.0d0
+HPdownnorm 0.998d0
 
 # Free Particle Parameters
 FPmass 1.0d0

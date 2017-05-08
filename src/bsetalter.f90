@@ -594,20 +594,28 @@ contains
           clone(nbf+j) = x
           clonenum(k) = clonenum(k) + 1
           clonenum(nbf+j) = clonenum(k)
-          bsnew(k)%D_big = bs(k)%D_big * abs(bs(k)%a_pes(1))
-          bsnew(k)%d_pes(1) = bs(k)%d_pes(1)/abs(bs(k)%a_pes(1))
-          do r=2,npes
-            bsnew(k)%d_pes(r) = (0.0d0,0.0d0)
-            bsnew(k)%s_pes(r) = bs(k)%s_pes(r)
+          bsnew(k)%D_big = bs(k)%D_big * abs(bs(k)%a_pes(in_pes))
+          bsnew(k)%d_pes(in_pes) = bs(k)%d_pes(in_pes)/abs(bs(k)%a_pes(in_pes))
+          do r=1,npes
+            if (r.ne.in_pes) then
+              bsnew(k)%d_pes(r) = (0.0d0,0.0d0)
+              bsnew(k)%s_pes(r) = bs(k)%s_pes(r)
+            end if
           end do
           bsnew(nbf+j)%D_big = bs(k)%D_big * &
-                                sqrt(1.-(dconjg(bs(k)%a_pes(1))*bs(k)%a_pes(1)))
-          bsnew(nbf+j)%d_pes(1) = (0.0d0,0.0d0)
-          bsnew(nbf+j)%s_pes(1) = bs(k)%s_pes(1)
-          do r=2,npes
-            bsnew(nbf+j)%d_pes(r) = bs(k)%d_pes(r)/&
-                                sqrt(1.-(dconjg(bs(k)%a_pes(1))*bs(k)%a_pes(1)))
-            bsnew(nbf+j)%s_pes(r) = bs(k)%s_pes(r)
+                                sqrt(1.-(dconjg(bs(k)%a_pes(in_pes))*bs(k)%a_pes(in_pes)))
+          bsnew(nbf+j)%d_pes(in_pes) = (0.0d0,0.0d0)
+          bsnew(nbf+j)%s_pes(in_pes) = bs(k)%s_pes(in_pes)   
+          do r=1,npes
+            if (r.ne.in_pes) then
+              if (x.eq.0) then
+                bsnew(nbf+j)%d_pes(r) = (1.0d0,0.0d0)
+              else
+                bsnew(nbf+j)%d_pes(r) = bs(k)%d_pes(r)/&
+                                  sqrt(1.-(dconjg(bs(k)%a_pes(1))*bs(k)%a_pes(1)))
+              end if
+              bsnew(nbf+j)%s_pes(r) = bs(k)%s_pes(r)
+            end if
           end do
           do m=1,ndim
             bsnew(nbf+j)%z(m) = bs(k)%z(m)

@@ -417,6 +417,27 @@ Program MainMCE
           stop
         end if
         
+        if ((method=="MCEv2").and.(cloneflg=="BLIND")) then
+          write(rep,"(i3.3)") reps
+          open(unit=47756,file="Clonetrack-"//trim(rep)//".out",status="new",iostat=ierr)
+          close(47756)
+          allocate (clone(nbf), stat=ierr)
+          if (ierr==0) allocate(clonenum(nbf), stat=ierr)
+          if (ierr/=0) then
+            write(0,"(a)") "Error in allocating clone arrays"
+            errorflag = 1
+          end if
+          if (genloc=="N") then
+            call readclone(clonenum, reps, clone)
+          else
+            do j=1,nbf
+              clone(j) = 0
+              clonenum(j) = 0
+            end do
+          end if
+          call cloning (bset, nbf, x, time, clone, clonenum, reps)
+        end if        
+              
         if (method.eq."AIMC1") then
 
           timeold = time
@@ -615,7 +636,7 @@ Program MainMCE
 
           if (basis.ne."GRID") call trajchk(bset) !ensures that the position component of the coherent states are not too widely spaced   
 
-          if (((basis=="GRID").or.(basis=="GRSWM")).and.(mod((x-1),rprj)==0)) then
+          if (((basis=="GRID").or.(basis=="GRSWM")).and.(mod((x-1),rprj)==0).and.((sys=="IV").or.(sys=="CP"))) then
             call reloc_basis(bset, initgrid, nbf, x, time, gridsp, mup, muq)
           end if      
 
@@ -737,7 +758,7 @@ Program MainMCE
           write(0,"(a)") "Consider revising timestep parameters"
         end if
 
-        if ((sys=="SB").and.((method=="MCEv2").or.(method=="AIMC1")).and.(cloneflg=="YES")) then
+        if (((method=="MCEv2").or.(method=="AIMC1")).and.((cloneflg=="YES").or.(cloneflg=="BLIND"))) then
           deallocate (clone, stat=ierr)
           if (ierr==0) deallocate(clonenum, stat=ierr)
           if (ierr/=0) then

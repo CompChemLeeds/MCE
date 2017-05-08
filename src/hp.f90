@@ -93,7 +93,7 @@ contains
 
     if (errorflag .ne. 0) return
 
-    muq(1:ndim) = 5.0d0*sigp
+    muq(1:ndim) = 10.0d0*sigp
     mup(1:ndim) = 0.0d0*sigq
 
     return

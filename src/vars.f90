@@ -110,7 +110,9 @@ MODULE globvars
   real(kind=8) :: pirl             ! pi
 
   character(LEN=5) :: ECheck       ! Flag to determine if the energy of basis functions should be checked
-  character(LEN=5) :: basis        ! Flag for grids
+  character(LEN=5) :: basis        ! Initial basis set structure option
+  character(LEN=5) :: wfn_init     ! Initial structure for z_0 (WHOLE/SPLIT)
+  character(LEN=4) :: symm         ! Basis set symmetry parameter (YES/NO/ANTI)
   character(LEN=5) :: nbfadapt     ! Flag for adaptive basis set size
   character(LEN=5) :: cloneflg     ! Flag for cloning
   character(LEN=5) :: matfun       ! Which matrix calcualtion function (zgesv/zheev) used for linear algebra

@@ -49,6 +49,12 @@ npes 1
 # determines shape of the initial basis [SWARM/SWTRN/TRAIN/GRID/GRSWM]
 basis SWARM
 
+# determines the structure of the Z_0 initial central coherent state [WHOLE/SPLIT]
+wfn_init SPLIT
+
+# allows for symmetric/antisymmetric basis sets to be created. Used with wfn_init=SPLIT [YES/NO/ANTI]
+symm YES
+
 # Compression parameter (can be tweaked to allow better norm value, or altered automatically)   Used for swarms/swarm-trains/grid-swarms
 ALCMP 1.465d2
 

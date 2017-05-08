@@ -4,7 +4,7 @@
 
 # System (Currently can be SB [Spin Boson], HP [Harmonic Potential], FP [Free Particle], DL [Spin Boson with Drude-Lorentz]
 #    MP [Morse Potential], IV [Inverted Gaussian], CP [Coulomb Potential], or HH [Henon-Heiles]. SB, DL works only with MCE, all others with CCS. 
-System: VP
+System: HP
 
 #Name of running folder [Default : <method>-<system>-<random number> ie CCS-HP-31254 (input "default", case insensitive)
 #                       Otherwise:  <method>-<system>-<runfolder string> ie CCS-HP-withgrids]
@@ -26,7 +26,7 @@ restart 0
 cmprss YES
 
 #Propagation method [can be CCS, MCEv1, MCEv2, AIMC-MCE1 (first pass), AIMC-MCE2 (Second pass) or MCE12 (uses both MCE methods). No support for vMCG, F-CCS or 2L-CCS yet.]
-method MCEv2
+method CCS
 
 #Number of repeats. Do not need to set manually - this is set by the run command.
 Repeats 192
@@ -41,10 +41,10 @@ in_nbf 20
 ndim 1
 
 #determine which PES you are on initially
-in_PES 2
+in_PES 1
 
 #determine n.o of configurations for MCE
-npes 2
+npes 1
 
 # determines shape of the initial basis [SWARM/SWTRN/TRAIN/GRID/GRSWM]
 basis SWARM

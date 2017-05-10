@@ -89,12 +89,16 @@ contains
       h=0.5*size(bs)
     
       do k=1,h
-        bf=bs(k)
+        bf=bs(k)      
         do
           do m=1,ndim
-  !          bf%z(m)=gauss_random(alcmprss,muq(m),mup(m))
-            bf%z(m)=cmplx((ZBQLNOR(muq(m),sigq*sqrt(alcmprss))) &
-           ,((1.0d0/hbar)*(ZBQLNOR(mup(m),sigp*sqrt(alcmprss)))),kind=8)
+            if (size(bs)==2) then
+              bf%z(m)=cmplx(muq(m),((1.0d0/hbar)*mup(m)),kind=8)
+            else
+  !            bf%z(m)=gauss_random(alcmprss,muq(m),mup(m))
+              bf%z(m)=cmplx((ZBQLNOR(muq(m),sigq*sqrt(alcmprss))) &
+              ,((1.0d0/hbar)*(ZBQLNOR(mup(m),sigp*sqrt(alcmprss)))),kind=8)
+            end if
           end do
           call enchk(bf,t,n,redo,k)
           if (redo==1) cycle

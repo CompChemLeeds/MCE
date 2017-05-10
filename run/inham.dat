@@ -34,7 +34,7 @@ VP_A_NAC 0.36d0
 VP_y_10 0.173d0
 VP_b_1 0.018d0
 VPupnorm 0.999d0
-VPdownnorm 0.0d0
+VPdownnorm 0.998d0
 
 # Harmonic Potential Parameters
 HPw 1.0d0

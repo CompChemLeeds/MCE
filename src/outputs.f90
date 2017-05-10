@@ -1514,10 +1514,11 @@ contains
         return
       end if
 
-      write(fileun,"(a)") "k  m  q  p"
+      write(fileun,"(a)") "  k  m  q  p  Re(Dk)  Im(Dk)  Abs(Dk)"
       do k = 1,size(bs)
         do m = 1,ndim
-          write (fileun,"(2(i4,2x),2(e16.8e3,2x))") k,m,dble(bs(k)%z(m)),dimag(bs(k)%z(m))
+          write (fileun,"(2(i4,2x),5(e16.8e3,2x))") k,m,dble(bs(k)%z(m)),dimag(bs(k)%z(m)),&
+                            dble(bs(k)%D_big),dimag(bs(k)%D_big),abs(bs(k)%D_big)
         end do
       end do
 

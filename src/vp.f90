@@ -273,17 +273,19 @@ contains
       rho(m)=((z1c(m)+z2(m))/2*gam)
     end do
     
-!    rho2 = sum(rho(1:ndim)**2.0d0)
-!    rhosum = sum(rho(1:ndim))
-    
+    rho2 = sum(rho(1:ndim)**2.0d0)
+    rhosum = sum(rho(1:ndim))
+
     do m=1,ndim
       Htemp = Htemp - ((hbar**2)*gam/(4.0d0))*(z1c(m)**2.0d0+z2(m)**2.0d0-2.0d0*z1c(m)*z2(m)-1.0d0)&
-                            + (y_00_vp - A_0_vp) + (b_0_vp/(2.*gam)+b_0_vp*rho(m))
+                            + (y_00_vp - A_0_vp) + (b_0_vp/(2.*gam)+b_0_vp*rho(m)**2.)
     end do
-    
+       
     fact = (A_0_vp*width_vp/sqrt(width_vp**2.+(0.5/gam)))**dble(ndim)
     
-    Htemp = Htemp+product(A_0_vp*width_vp/sqrt(width_vp**2.+(0.5/gam))**dble(ndim)*cdexp(-gam*rho(1:ndim)**2./(2.*gam*width_vp+1.)))
+!    Htemp = sqrt(2.0d0*b_0_vp)*sum(z1c(1:ndim)*z2(1:ndim))+(0.5*ndim)
+    
+    Htemp = Htemp+product(fact*cdexp(-gam*rho(1:ndim)**2./(2.*gam*width_vp+1.)))
     
     HS0_vp = Htemp   
     
@@ -299,12 +301,12 @@ contains
 
     implicit none
     complex(kind=8), dimension (:), intent(in)::z1,z2
-    complex(kind=8)::HS1_vp, rhosum
+    complex(kind=8)::HS1_vp
     complex (kind=8), dimension (:), allocatable :: rho, z1c
     integer :: m
 
     if (errorflag .ne. 0) return
-    
+
     allocate (rho(size(z1)))
     allocate (z1c(size(z1)))
 
@@ -314,16 +316,15 @@ contains
       z1c(m)=dconjg(z1(m))
       rho(m)=((z1c(m)+z2(m))/2*gam)
     end do
-    
-    rhosum = sum(rho(1:ndim))
-    
+       
     do m=1,ndim
-      HS1_vp = HS1_vp - (gam/4.0d0)*(z1c(m)**2.0d0+z2(m)**2.0d0-2.0d0*z1c(m)*z2(m)-1.0d0)
+      HS1_vp = HS1_vp - ((hbar**2)*gam/(4.0d0))*(z1c(m)**2.0d0+z2(m)**2.0d0-2.0d0*z1c(m)*z2(m)-1.0d0)&
+                            + (y_10_vp) + (b_1_vp/(2.*gam)+b_1_vp*rho(m)**2.)
     end do
-
-    HS1_vp = HS1_vp + product(y_10_vp + (b_1_vp/(2.*gam)+b_1_vp*rho(1:ndim)))
-    
+   
     deallocate(rho,z1c)
+   
+!    HS1_vp = sqrt(2.0d0*b_1_vp)*(sum(dconjg(z1(1:ndim))*z2(1:ndim))+(0.5*ndim))+(y_00_vp*ndim)
 
     return
 
@@ -335,7 +336,7 @@ contains
 
     implicit none
     complex(kind=8), dimension (:), intent(in)::z1,z2
-    complex(kind=8)::HNAC_vp, rho2, rhosum, Htemp
+    complex(kind=8)::HNAC_vp, Htemp
     complex (kind=8), dimension (:), allocatable :: rho
     integer :: m
 
@@ -349,13 +350,6 @@ contains
     do m=1,ndim
       rho(m)=((dconjg(z1(m))+z2(m))/2*gam)
     end do
-    
-    rho2 = sum(rho(1:ndim)**2.0d0)
-    rhosum = sum(rho(1:ndim))
-    
-!    do m=1,ndim
-!      Htemp = Htemp - (gam/4.0d0)*(dconjg(z1(m))**2.0d0+z2(m)**2.0d0-2.0d0*dconjg(z1(m))*z2(m)-1.0d0)
-!    end do
     
     Htemp = Htemp + product(sqrt((A_NAC_vp*gam/(gam+1.)))*cdexp(-dble(ndim)*gam*rho(1:ndim)**2./(gam+1.)))
     
@@ -419,7 +413,8 @@ contains
     do m=1,ndim
       dhdz_vp_11(m) = (0.0d0,0.0d0)
       dhdz_vp_11(m) = dhdz_vp_11(m) - (gam/2.0d0)*(zc(m)-z(m)) 
-      dhdz_vp_11(m) = dhdz_vp_11(m) + (b_0_vp/(2.*gam))-(fact*rho(m)*cdexp(-1.*gam*rho(m)**2./(2.*gam*width_vp**2.+1.)))
+      dhdz_vp_11(m) = dhdz_vp_11(m) + (b_0_vp*rho(m)/gam)-(fact*rho(m)*cdexp(-1.*gam*rho(m)**2./(2.*gam*width_vp**2.+1.)))
+!      dhdz_vp_11(m) = dhdz_vp_11(m) + sqrt(2.0d0*b_0_vp)*z(m)-(fact*rho(m)*cdexp(-1.*gam*rho(m)**2./(2.*gam*width_vp**2.+1.)))
     end do
 
     deallocate(zc)
@@ -451,7 +446,6 @@ contains
 
     do m=1,ndim
       dhdz_vp_12(m) = (0.0d0,0.0d0)
-!      dhdz_vp_12(m) = dhdz_vp_12(m) - (gam/2.0d0)*(zc(m)-z(m)) 
       dhdz_vp_12(m) = dhdz_vp_12(m)-(sqrt(A_NAC_vp**2.*gam/(gam+1.)))*rho(m)/(gam+1.)*cdexp(-1.*gam*rho(m)**2./(gam+1.))
     end do
 
@@ -484,7 +478,6 @@ contains
 
     do m=1,ndim
       dhdz_vp_21(m) = (0.0d0,0.0d0)
-!      dhdz_vp_21(m) = dhdz_vp_21(m) - (gam/2.0d0)*(zc(m)-z(m)) 
       dhdz_vp_21(m) = dhdz_vp_21(m)-(sqrt(A_NAC_vp**2.*gam/(gam+1.)))*rho(m)/(gam+1.)*cdexp(-1.*gam*rho(m)**2./(gam+1.))
     end do
 
@@ -514,16 +507,16 @@ contains
     do m=1,ndim
       rho(m) = (zc(m)+z(m))/sqrt(2.0*gam)
     end do
-
+    
     do m=1,ndim
       dhdz_vp_22(m) = (0.0d0,0.0d0)
-      dhdz_vp_22(m) = dhdz_vp_22(m) - (gam/2.0d0)*(zc(m)-z(m)) 
-      dhdz_vp_22(m) = dhdz_vp_22(m) + (b_1_vp*dble(ndim)**2./(2.*gam))
+      dhdz_vp_22(m) = dhdz_vp_22(m) - (gam/2.0d0)*(zc(m)-z(m)) + (b_1_vp*rho(m)/gam)     
+!      dhdz_vp_22(m) = dhdz_vp_22(m) + sqrt(2.0d0*b_1_vp)*z(m)
     end do
-    
+
     deallocate(zc)
     deallocate(rho)
-
+    
     return
 
   end function dhdz_vp_22

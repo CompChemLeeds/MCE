@@ -295,13 +295,47 @@ Program avrgnorm
   end if
 
   write(175,"(a)") 'set terminal png'
-  write(175,"(a)") 'set output "popstot.png"'
+  write(175,"(a)") 'set output "popsdifftot.png"'
   write(175,"(a)") 'set title "Graph total population difference"'
   write(175,"(a)") 'set xlabel "Time"'
   write(175,"(a)") 'set ylabel "Population difference"'
   write(175,"(a)") 'plot "normpop_cumul_'//trim(repstr)//'.out" u 1:13 t "' & 
                          //trim(repstr)//' Reps" w l, "" u 1:2 t "Total Av Norm" w l'
   close (175)  
+  
+  ! Create gnuplot script for total averaged populations
+  open (unit=175,file="plottotpops.gpl",status="unknown",iostat=ierr)
+  if (ierr .ne. 0) then
+    write (0,"(2a,i0)") 'Error in opening plottotpops.gpl output file.', &
+                              ' Ierr was ', ierr
+    stop
+  end if
+
+  write(175,"(a)") 'set terminal png'
+  write(175,"(a)") 'set output "popstot.png"'
+  write(175,"(a)") 'set title "Graph total populations"'
+  write(175,"(a)") 'set xlabel "Time"'
+  write(175,"(a)") 'set ylabel "Populations"'
+  write(175,"(a)") 'plot "normpop_cumul_'//trim(repstr)//'.out" u 1:10 t "' & 
+                         //trim(repstr)//' Reps" w l, "" u 1:11 t "'//trim(repstr)//'" w l'
+  close (175) 
+  
+  ! Create gnuplot script for extra calculated quantity (ie dispersion or dipole acceleration)
+  open (unit=175,file="plotext.gpl",status="unknown",iostat=ierr)
+  if (ierr .ne. 0) then
+    write (0,"(2a,i0)") 'Error in opening plotext.gpl output file.', &
+                              ' Ierr was ', ierr
+    stop
+  end if
+
+  write(175,"(a)") 'set terminal png'
+  write(175,"(a)") 'set output "ext.png"'
+  write(175,"(a)") 'set title "Graph total extra quantity"'
+  write(175,"(a)") 'set xlabel "Time"'
+  write(175,"(a)") 'set ylabel "Extra Quantity"'
+  write(175,"(a)") 'plot "normpop_cumul_'//trim(repstr)//'.out" u 1:6 t "' & 
+                         //trim(repstr)//' Reps" w l'
+  close (175)
 
   ! Create the population difference residuals file
   if ((tot .gt. 1).and.(cols==13)) then

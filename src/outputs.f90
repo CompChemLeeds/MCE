@@ -702,14 +702,24 @@ contains
       write(fileun,"(a,a,a)") 'set output "Dipole-',trim(rep),'.png"'
       write(fileun,"(a)") 'set title "Graph of Dipole Acceleration"'
       write(fileun,"(a)") 'set ylabel "Dipole Acceleration"'
+      write(fileun,"(a)") 'set xlabel "Time (au)"'
+      write(fileun,"(a,a,a)") 'plot "', filenm, '" u 1:6 t "Real" w l
+    else if (sys=="VP") then
+      write(fileun,"(a,a,a)") 'set output "Disp-',trim(rep),'.png"'
+      write(fileun,"(a)") 'set title "Graph of Dispersion"'
+      write(fileun,"(a)") 'set ylabel "<\Delta x>"'
+      write(fileun,"(a)") 'set xlabel "Time (au)"'
+      write(fileun,"(a,a,a)") 'plot "', filenm, '" u 1:6 t "Real" w l
     else
       write(fileun,"(a,a,a)") 'set output "Extra-',trim(rep),'.png"'
       write(fileun,"(a)") 'set title "Graph of Extra Calculated Quantity"'
       write(fileun,"(a)") 'set ylabel "Extra"'
+      write(fileun,"(a)") 'set xlabel "Time (au)"'
+      write(fileun,"(a,a,a)") 'plot "', filenm, '" u 1:6 t "Real" w l, "" u 1:7 t "Imaginary" w l, "" u 1:8 t "Absolute" w l'
     end if
-    write(fileun,"(a)") 'set xlabel "Time (au)"'
-    write(fileun,"(a,a,a)") 'plot "', filenm, '" u 1:6 t "Real" w l, "" u 1:7 t "Imaginary" w l, "" u 1:8 t "Absolute" w l'
+    
     close(fileun)
+
 
     filenm2="plotdif-"//rep//".gnu"
 

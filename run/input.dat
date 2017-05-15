@@ -8,10 +8,10 @@ System: VP
 
 #Name of running folder [Default : <method>-<system>-<random number> ie CCS-HP-31254 (input "default", case insensitive)
 #                       Otherwise:  <method>-<system>-<runfolder string> ie CCS-HP-withgrids]
-Runfolder default
+Runfolder 2bf-sym-blind
 
 #Debug flag [ 0: no debug outputs, 1: debug outputs. Does not really work for dynamic basis set sizes]
-debug 1
+debug 0
 
 #Basis Set Generation flag [YES/NO for generating the basis set]
 gen YES
@@ -35,7 +35,7 @@ Repeats 192
 Conjugate_Repeats NO
 
 # Number of basis functions 
-in_nbf 20
+in_nbf 2
 
 # Number of dimensions
 ndim 1
@@ -86,7 +86,7 @@ qsizez 20
 psizez 1
 
 # Flag for cloning basis functions (yes/no/blind). Blind cloning clones the entire basis set once before propagation
-Cloning no
+Cloning blind
 
 # Maximum number of Cloning events allowed
 max_cloning 8

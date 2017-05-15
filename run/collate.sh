@@ -124,15 +124,15 @@ if [[ -f normpop_1.out ]]; then
 fi
 
 # Sub-folders removed  <---COMMENT OUT THIS BLOCK IF RETENTION OF RAW DATA REQUIRED
-#for i in "${folseq[@]}"; do
-#  SUBDIR="$EXDIR/$i-run"
-#  if [[ ! -d "$SUBDIR" ]]; then
-#    echo "Error. Expected folder $SUBDIR does not exist here"
-#    exit 1
-#  else
-#    rm -rf $SUBDIR
-#  fi
-#done
+for i in "${folseq[@]}"; do
+  SUBDIR="$EXDIR/$i-run"
+  if [[ ! -d "$SUBDIR" ]]; then
+    echo "Error. Expected folder $SUBDIR does not exist here"
+    exit 1
+  else
+    rm -rf $SUBDIR
+  fi
+done
 
 # Gnuplot run (if present) to plot any plotting files made by data processing progs
 GPL=1 
@@ -157,8 +157,8 @@ if [[ $HSTFLG -eq 1 ]]; then
   for j in $FILE.[oe]*; do cp $j $RESDIR/$j.out; done
 fi
 cd "$RUNF"
-#rm -rf $EXDIR    #<-----COMMENT OUT THIS LINE IF RETENTION OF RAW DATA REQUIRED
+rm -rf $EXDIR    #<-----COMMENT OUT THIS LINE IF RETENTION OF RAW DATA REQUIRED
 
 # Remove results file and job submission file from run folder
-#if [[ -f "$RESFILE" ]]; then rm $RESFILE; fi
+if [[ -f "$RESFILE" ]]; then rm $RESFILE; fi
 if [[ -f "$FILE" ]]; then rm $FILE; fi 

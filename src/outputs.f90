@@ -1510,7 +1510,7 @@ contains
 
     close(fileun)
 
-    if ((debug==1).and.(reps==1).and.(dmod(time,1.0d0).lt.dt)) then
+    if ((debug==1).and.(reps==1).and.(dmod(time,1.0d0).lt.dt).and.(.false.)) then
 
       write(timestr,"(i3.3,f0.4)") int(time), time-int(time)
     

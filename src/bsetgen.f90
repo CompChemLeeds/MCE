@@ -95,9 +95,12 @@ contains
             if (size(bs)==2) then
               bf%z(m)=cmplx(muq(m),((1.0d0/hbar)*mup(m)),kind=8)
             else
-  !            bf%z(m)=gauss_random(alcmprss,muq(m),mup(m))
-              bf%z(m)=cmplx((ZBQLNOR(muq(m),sigq*sqrt(alcmprss))) &
-              ,((1.0d0/hbar)*(ZBQLNOR(mup(m),sigp*sqrt(alcmprss)))),kind=8)
+              if (randfunc.eq."GAUS") then
+                bf%z(m)=gauss_random(alcmprss,muq(m),mup(m))
+              else
+                bf%z(m)=cmplx((ZBQLNOR(muq(m),sigq*alcmprss)) &
+                ,((1.0d0/hbar)*(ZBQLNOR(mup(m),sigp*alcmprss))),kind=8)
+              end if
             end if
           end do
           call enchk(bf,t,n,redo,k)
@@ -128,9 +131,12 @@ contains
           bf=bs(k)
           do
             do m=1,ndim
-    !          bf%z(m)=gauss_random(alcmprss,muq(m),mup(m))
-              bf%z(m)=cmplx((ZBQLNOR(muq(m)*(-1.),sigq*sqrt(alcmprss))) &
-             ,((1.0d0/hbar)*(ZBQLNOR(mup(m),sigp*sqrt(alcmprss)))),kind=8)
+              if (randfunc.eq."GAUS") then
+                bf%z(m)=gauss_random(alcmprss,(muq(m)*(-1.)),mup(m))
+              else
+                bf%z(m)=cmplx((ZBQLNOR(muq(m)*(-1.),sigq*alcmprss)) &
+                ,((1.0d0/hbar)*(ZBQLNOR(mup(m),sigp*alcmprss))),kind=8)
+              end if
             end do
             call enchk(bf,t,n,redo,k)
             if (redo==1) cycle
@@ -147,9 +153,12 @@ contains
         bf=bs(k)
         do
           do m=1,ndim
-  !          bf%z(m)=gauss_random(alcmprss,muq(m),mup(m))
-            bf%z(m)=cmplx((ZBQLNOR(muq(m),sigq*sqrt(alcmprss))) &
-           ,((1.0d0/hbar)*(ZBQLNOR(mup(m),sigp*sqrt(alcmprss)))),kind=8)
+            if (randfunc.eq."GAUS") then
+              bf%z(m)=gauss_random(alcmprss,muq(m),mup(m))
+            else
+              bf%z(m)=cmplx((ZBQLNOR(muq(m),sigq*alcmprss)) &
+             ,((1.0d0/hbar)*(ZBQLNOR(mup(m),sigp*alcmprss))),kind=8)
+            end if
           end do
           call enchk(bf,t,n,redo,k)
           if (redo==1) cycle
@@ -293,9 +302,12 @@ contains
     do k=kcut,size(swrmbf)
       do
         do m=1,ndim
-!          bf%z(m)=gauss_random(alcmprss,muq(m),mup(m))
-          bf%z(m)=cmplx((ZBQLNOR(muq(m),sigq*sqrt(alcmprss))) &
-         ,((1.0d0/hbar)*(ZBQLNOR(mup(m),sigp*sqrt(alcmprss)))),kind=8)
+          if (randfunc.eq."GAUS") then
+            bf%z(m)=gauss_random(alcmprss,muq(m),mup(m))
+          else
+            bf%z(m)=cmplx((ZBQLNOR(muq(m),sigq*alcmprss)) &
+            ,((1.0d0/hbar)*(ZBQLNOR(mup(m),sigp*alcmprss))),kind=8)
+          end if
         end do
         call enchk(bf,t,n,redo,k)
         if (redo==1) cycle
@@ -562,9 +574,12 @@ contains
           bf%z(1)=cmplx((qstrt+(gridsp*(q-1)*sigq)),&
                         (pstrt+(gridsp*(p-1)*sigp)),kind=8)
           do m=2,ndim
-!            bf%z(m)=gauss_random(1.0d0/alcmprss,muq(m),mup(m))
-            bf%z(m)=cmplx((ZBQLNOR(muq(m),sigq*sqrt(alcmprss))),&
-            ((1.0d0/hbar)*(ZBQLNOR(mup(m),sigp*sqrt(alcmprss)))),kind=8)
+            if (randfunc.eq."GAUS") then
+              bf%z(m)=gauss_random(alcmprss,muq(m),mup(m))
+            else
+              bf%z(m)=cmplx((ZBQLNOR(muq(m),sigq*alcmprss)),&
+              ((1.0d0/hbar)*(ZBQLNOR(mup(m),sigp*alcmprss))),kind=8)
+            end if
           end do
           call enchk(bf,t,n,redo,k)
           if (redo==1) cycle

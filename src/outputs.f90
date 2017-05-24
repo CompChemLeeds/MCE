@@ -347,8 +347,8 @@ contains
     type(basisfn), dimension (:), intent(in) :: bs
     real(kind=8), dimension(:), intent(in) :: mup, muq
     real(kind=8), intent(in) :: t
-    integer::m, j, r, ierr, bsunit
-    character(LEN=22)::filename
+    integer::m, j, r, k, ierr, bsunit, fileun
+    character(LEN=22)::filename, filenm, filenm2, myfmt
     integer, intent(in) :: reps, x, y
     character(LEN=4):: rep
     character(LEN=5)::step
@@ -422,6 +422,42 @@ contains
       end do
       close(bsunit)
     end if
+    
+    filenm = "map-final.out"  
+    fileun = 53690
+
+    open(unit=fileun,file=filenm,status="new",iostat=ierr)
+    if (ierr.ne.0) then
+      write(0,"(a,a)") "Error opening ", filenm
+      errorflag = 1
+      return
+    end if
+    write(fileun,"(a)") "  k  m  q  p"
+    do k = 1,size(bs)
+      do m = 1,ndim
+        write (fileun,"(2(i4,2x),2(e16.8e3,2x))") k,m,dble(bs(k)%z(m)),dimag(bs(k)%z(m))
+      end do
+    end do  
+    close (fileun)
+        
+    filenm2 = "plotmap-final.out"
+        
+    open(unit=fileun,file=filenm2,status="new",iostat=ierr)
+    if (ierr.ne.0) then
+      write(0,"(a,a)") "Error opening ", filenm2
+      errorflag = 1
+      return
+    end if
+    write(fileun,"(a)") 'set terminal png'
+    write(fileun,"(a,a)") 'set output "CSmap-final.png"'
+    write(fileun,"(a)") 'set title "Scatter plot of coherent state centres in final basis set"'
+    write(fileun,"(a)") 'set nokey'
+    write(fileun,"(a)") 'unset key'
+    write(fileun,"(a)") 'set xlabel "q"'
+    write(fileun,"(a)") 'set ylabel "p"'
+    write(fileun,"(a,a,a)") 'p "',trim(filenm),'" u 3:4 w p'
+        
+    close (fileun)
 
     return
 

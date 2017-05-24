@@ -262,7 +262,7 @@ contains
       return
     else
       do m=1,size(sig_sb)
-        sig_sb(m) = 1.0d0/(dexp(beta_sb*wm_sb(m))-1.0d0)
+        sig_sb(m) = 1.0d0/sqrt(dexp(beta_sb*wm_sb(m))-1.0d0)
       end do
     end if
 
@@ -326,12 +326,15 @@ contains
 
     do while (recalc == 1)
       do m=1,ndim
-        mup(m)=ZBQLNOR(mu,sig_sb(m)*sigp)
-        muq(m)=ZBQLNOR(mu,sig_sb(m)*sigq)
-        zin(m)=cmplx(muq(m),mup(m),kind=8)
-!        zin(m)=gauss_random_sb(sig_sb(m),0.0d0,0.0d0)
-!        muq(m)=dble(zin(m))
-!        mup(m)=dimag(zin(m))
+        if (randfunc.eq."ZBQL") then
+          mup(m)=ZBQLNOR(mu,sig_sb(m)*sigp)
+          muq(m)=ZBQLNOR(mu,sig_sb(m)*sigq)
+          zin(m)=cmplx(muq(m),mup(m),kind=8)
+        else
+          zin(m)=gauss_random_sb(sig_sb(m),mu,mu)
+          muq(m)=dble(zin(m))
+          mup(m)=dimag(zin(m))
+        end if
       end do
       if (ECheck.eq."YES") then
         call Hij_sb(H,zin,zin)

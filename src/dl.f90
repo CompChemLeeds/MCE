@@ -263,7 +263,7 @@ contains
       return
     else
       do m=1,size(sig_dl)
-        sig_dl(m) = 1.0d0/(dexp(beta_dl*wm_dl(m))-1.0d0)
+        sig_dl(m) = 1.0d0/sqrt(dexp(beta_dl*wm_dl(m))-1.0d0)
       end do
     end if
 
@@ -330,7 +330,9 @@ contains
 !        mup(m)=ZBQLNOR(mu,sig_dl(m)*sigp)
 !        muq(m)=ZBQLNOR(mu,sig_dl(m)*sigq)
 !        zin(m)=cmplx(muq(m),mup(m),kind=8)
-        zin(m)=gauss_random_dl(sig_dl(m),0.0d0,0.0d0)
+        zin(m)=gauss_random_dl(sig_dl(m),mu,mu)
+        muq(m)=dble(zin(m))
+        mup(m)=dimag(zin(m))
       end do
       if (ECheck.eq."YES") then
         call Hij_dl(H,zin,zin)
@@ -623,8 +625,8 @@ contains
       iset=iset + 1
     end do
     
-    xz = muq + (xz / width)
-    yz = mup + (yz / width)
+    xz = muq + (xz * width)
+    yz = mup + (yz * width)
     
     gauss_random_dl = cmplx(xz,yz,kind=8)
     

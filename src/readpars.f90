@@ -417,6 +417,17 @@ contains
           return
         end if
         n = n+1
+      else if (LINE=="randfunc") then
+        backspace(127)
+        read(127,*,iostat=ierr)LINE,randfunc
+        if(ierr.ne.0) then
+          write(0,"(a)")  "Error reading random number function"
+          call flush(0)
+          errorflag = 1
+          return
+        end if
+        call flush(6)
+        n = n+1
       else if (LINE=="npes") then
         backspace(127)
         read(127,*,iostat=ierr)LINE,npes
@@ -697,7 +708,17 @@ contains
       matfun = 'zheev'
     end if
     
-    if (n.ne.22) then
+    if ((randfunc.ne.'ZBQL').and.(randfunc.ne.'zbql').and.(randfunc.ne.'gaus').and.(randfunc.ne.'GAUS')) then
+      write(0,"(a,a)") "Invalid value for random number function. Must be ZBQL/zbql or GAUS/gaus. Value is ", randfunc
+      errorflag = 1
+      return
+    else if ((randfunc.ne.'ZBQL').or.(randfunc.ne.'zbql')) then
+      randfunc = 'ZBQL'
+    else
+      randfunc = 'GAUS'
+    end if      
+    
+    if (n.ne.23) then
       write(0,"(a,i0)") "Not all required variables read in readbsparams subroutine. n=", n
       errorflag = 1
       return

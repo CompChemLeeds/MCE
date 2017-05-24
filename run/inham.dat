@@ -15,14 +15,14 @@ SBdownnorm 0.9998d0            #    0.998d0   #    0.998d0   #    0.998d0   #   
 
 # Drude Lorentz Parameters
 
-DLDelta 1.0d0                #    1.00d0    #    1.00d0    #    1.00d0    #    1.00d0    #    1.00d0    #    1.00d0    #    1.00d0    #
-DLEps 1.5d0                  #    0.00d0    #    1.00d0    #    1.00d0    #    0.00d0    #    0.00d0    #    0.00d0    #    0.00d0    #
-DLw 0.5d0                    #    2.50d0    #    7.50d0    #    7.50d0    #    2.50d0    #    10.0d0    #    20.0d0    #    40.0d0    #
-DLwmax 25.0d0                #    12.5d0    #    37.5d0    #    37.5d0    #    12.5d0    #    50.0d0    #    100.0d0   #    200.0d0   #
-DLlambda 1.0d0                #    0.09d0    #    0.10d0    #    0.10d0    #    0.09d0    #    1.50d0    #    1.50d0    #    1.50d0    #
-DLBeta 0.5d0                 #    5.00d0    #    5.00d0    #    5.00d0    #    0.20d0    #   1000.0d0   #   1000.0d0   #   1000.0d0   #
-DLupnorm 0.9999d0              #    0.999d0   #    0.999d0   #    0.999d0   #    0.999d0   #    0.999d0   #    0.999d0   #    0.999d0   #
-DLdownnorm 0.9998d0            #    0.998d0   #    0.998d0   #    0.998d0   #    0.998d0   #    0.998d0   #    0.998d0   #    0.998d0   #
+DLDelta 1.0d0
+DLEps 1.5d0
+DLw 0.5d0
+DLwmax 25.0d0
+DLlambda 1.0d0
+DLBeta 0.5d0
+DLupnorm 0.9999d0
+DLdownnorm 0.9998d0
 
 # Pseudo-Tortion Parameters
 
@@ -77,7 +77,7 @@ HHdownnorm 0.998d0
 
 #Energy limit parameters
 ECheck No
-Ntries 10
+Ntries 500
 Ebfmax 5000000.0d0
 Ebfmin -5000000.0d0
 

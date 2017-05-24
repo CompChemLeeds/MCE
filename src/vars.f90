@@ -117,7 +117,8 @@ MODULE globvars
   character(LEN=5) :: cloneflg     ! Flag for cloning
   character(LEN=5) :: matfun       ! Which matrix calcualtion function (zgesv/zheev) used for linear algebra
   character(LEN=5) :: method       ! MCEv1 or MCEv2 used. Later versions to have other methods available
-  character(LEN=2) :: sys          ! System to be simulated. Currently only Spin Boson allowed
+  character(LEN=4) :: randfunc     ! Random number generation function identifier (zbql/gaus)
+  character(LEN=2) :: sys          ! System to be simulated
   character(LEN=1) :: gen          ! Flag to determine if basis set generation needed (global variant)
   character(LEN=1) :: prop         ! Flag to determine if basis set propagation needed
   character(LEN=1) :: step         ! Flag to determine whether adaptive or static stepsize propagation needed

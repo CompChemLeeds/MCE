@@ -114,7 +114,7 @@ MODULE globvars
   character(LEN=5) :: wfn_init     ! Initial structure for z_0 (WHOLE/SPLIT)
   character(LEN=4) :: symm         ! Basis set symmetry parameter (YES/NO/ANTI)
   character(LEN=5) :: nbfadapt     ! Flag for adaptive basis set size
-  character(LEN=5) :: cloneflg     ! Flag for cloning
+  character(LEN=6) :: cloneflg     ! Flag for cloning
   character(LEN=5) :: matfun       ! Which matrix calcualtion function (zgesv/zheev) used for linear algebra
   character(LEN=5) :: method       ! MCEv1 or MCEv2 used. Later versions to have other methods available
   character(LEN=4) :: randfunc     ! Random number generation function identifier (zbql/gaus)

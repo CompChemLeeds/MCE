@@ -182,9 +182,12 @@ contains
     implicit none
     integer::m, ierr
     real(kind=8), dimension(:), allocatable, intent(inout) :: wm_dl
+    real(kind=8) :: pi_rl
 
     if (errorflag .ne. 0) return
     ierr = 0
+    
+    pi_rl = sqrtpi**2.0d0
 
     if (ndim.le.0) then
       write(0,"(a)") "Number of dimensions not correctly read or stored"
@@ -196,7 +199,9 @@ contains
       return
     else
       do m=1,size(wm_dl)
-        wm_dl(m)=wc_dl*dtan((dble(m)/dble(ndim))*datan(wmax_dl/wc_dl))                           ! Drude-Lorentz (or Debye) spectral density
+        wm_dl(m)=wmax_dl*((dble(m)/dble(ndim))**2.)                        ! Wang1999
+!        wm_dl(m)=wc_dl*dtan((pi_rl/2.)*dble(m)/(dble(ndim+1)))             ! Craig2007
+!        wm_dl(m)=wc_dl*dtan((dble(m)/dble(ndim))*datan(wmax_dl/wc_dl))     ! Craig2007 modified 
       end do
     end if
 
@@ -230,8 +235,12 @@ contains
       return
     else
       do m=1,size(Cm_dl)
-        Cm_dl(m)=wm_dl(m)*sqrt((4.0d0*lambda_dl/(pi_rl*wc_dl))*datan(wmax_dl/wc_dl)/dble(ndim))
-        ! ^^^ Drude-Lorentz (or Debye) spectral density.
+        Cm_dl(m)=wm_dl(m)*sqrt((8.*lambda_dl*wc_dl/(pi_rl*dble(ndim)))*sqrt(wmax_dl*wm_dl(m))/(wm_dl(m)**2.+wc_dl**2.))
+        ! ^^^ Wang1999
+!        Cm_dl(m)=wm_dl(m)*sqrt((2.0d0*lambda_dl)/(dble(ndim)+1.0d0))
+        ! ^^^ Craig2007
+!        Cm_dl(m)=wm_dl(m)*sqrt((4.0d0*lambda_dl/(pi_rl*dble(ndim)))*datan(wmax_dl/wc_dl))
+        ! ^^^ Craig2007 modified
       end do
     end if
 
@@ -327,12 +336,12 @@ contains
 
     do while (recalc == 1)
       do m=1,ndim
-!        mup(m)=ZBQLNOR(mu,sig_dl(m)*sigp)
-!        muq(m)=ZBQLNOR(mu,sig_dl(m)*sigq)
-!        zin(m)=cmplx(muq(m),mup(m),kind=8)
-        zin(m)=gauss_random_dl(sig_dl(m),mu,mu)
-        muq(m)=dble(zin(m))
-        mup(m)=dimag(zin(m))
+        mup(m)=ZBQLNOR(mu,sig_dl(m)*sigp)
+        muq(m)=ZBQLNOR(mu,sig_dl(m)*sigq)
+        zin(m)=cmplx(muq(m),mup(m),kind=8)
+!        zin(m)=gauss_random_dl(sig_dl(m),mu,mu)
+!        muq(m)=dble(zin(m))
+!        mup(m)=dimag(zin(m))
       end do
       if (ECheck.eq."YES") then
         call Hij_dl(H,zin,zin)

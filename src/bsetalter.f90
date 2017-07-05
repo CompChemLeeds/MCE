@@ -501,9 +501,9 @@ contains
 
     if (errorflag==1) return
 
-    if (cloneflg=="YES") then
+    if ((cloneflg=="YES").or.((cloneflg=="BLIND+").and.(x.ne.0))) then
       clonetype = 1 ! 1=conditional cloning, 2=blind cloning
-    else if (cloneflg=="BLIND") then
+    else if ((cloneflg=="BLIND").or.((cloneflg=="BLIND+").and.(x.eq.0))) then
       clonetype = 2
     else
       write (0,"(2a)") "Cloneflg is invalid. Should be 'YES' or 'BLIND', but was ", cloneflg

@@ -283,11 +283,11 @@ MODULE Ham
 
     absnorm=sqrt(dble(innorm*dconjg(innorm)))
 
-    if ((absnorm.gt.1.2d0).and.(cmprss=="N")) then
-      write(0,"(a,a)") "Norm is greater than 1.2. Simulation has failed and trajectories ",&
-                "are likely to explode"
-      errorflag = 1
-    end if
+!    if ((absnorm.gt.1.2d0).and.(cmprss=="N")) then
+!      write(0,"(a,a)") "Norm is greater than 1.2. Simulation has failed and trajectories ",&
+!                "are likely to explode"
+!      errorflag = 1
+!    end if
 
     deallocate(zj, zk, stat=ierr)
     if (ierr/=0) then

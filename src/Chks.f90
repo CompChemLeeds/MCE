@@ -103,49 +103,49 @@ contains
       end if
       
       if ((restart.eq.1).and.(recalcs.lt.Ntries)) then
-!        if (cmprss.eq."N") then
+        if (cmprss.eq."N") then
           recalcs = recalcs + 1
-!        end if
+        end if
         write(6,"(a)") "Recalculating..."
         write(6,"(a)") ""
         
         write(timestr,"(i3.3)") recalcs
         
-        filenm = "map-"//trim(timestr)//".out"  
-        fileun = 53690+recalcs
+!        filenm = "map-"//trim(timestr)//".out"  
+!        fileun = 53690+recalcs
 
-        open(unit=fileun,file=filenm,status="new",iostat=ierr)
-        if (ierr.ne.0) then
-          write(0,"(a,a)") "Error opening ", filenm
-          errorflag = 1
-          return
-        end if
-        write(fileun,"(a)") "  k  m  q  p"
-        do k = 1,size(bs)
-          do m = 1,ndim
-            write (fileun,"(2(i4,2x),2(e16.8e3,2x))") k,m,dble(bs(k)%z(m)),dimag(bs(k)%z(m))
-          end do
-        end do  
-        close (fileun)
-        
-        filenm2 = "plotmap-"//trim(timestr)//".out"
-        
-        open(unit=fileun,file=filenm2,status="new",iostat=ierr)
-        if (ierr.ne.0) then
-          write(0,"(a,a)") "Error opening ", filenm2
-          errorflag = 1
-          return
-        end if
-        write(fileun,"(a)") 'set terminal png'
-        write(fileun,"(a,a,a)") 'set output "CSmap-',trim(timestr),'.png"'
-        write(fileun,"(a,es16.8e3,a)") 'set title "Scatter plot of coherent state centres at alcmprss = ', 1./alcmprss ,'"'
-        write(fileun,"(a)") 'set nokey'
-        write(fileun,"(a)") 'unset key'
-        write(fileun,"(a)") 'set xlabel "q"'
-        write(fileun,"(a)") 'set ylabel "p"'
-        write(fileun,"(a,a,a)") 'p "',trim(filenm),'" u 3:4 w p'
-        
-        close (fileun)
+!        open(unit=fileun,file=filenm,status="new",iostat=ierr)
+!        if (ierr.ne.0) then
+!          write(0,"(a,a)") "Error opening ", filenm
+!          errorflag = 1
+!          return
+!        end if
+!        write(fileun,"(a)") "  k  m  q  p"
+!        do k = 1,size(bs)
+!!          do m = 1,ndim
+!            write (fileun,"(2(i4,2x),2(e16.8e3,2x))") k,m,dble(bs(k)%z(m)),dimag(bs(k)%z(m))
+!          end do
+!        end do  
+!        close (fileun)
+!        
+!        filenm2 = "plotmap-"//trim(timestr)//".out"
+!        
+!        open(unit=fileun,file=filenm2,status="new",iostat=ierr)
+!        if (ierr.ne.0) then
+!          write(0,"(a,a)") "Error opening ", filenm2
+!          errorflag = 1
+!          return
+!        end if
+!        write(fileun,"(a)") 'set terminal png'
+!        write(fileun,"(a,a,a)") 'set output "CSmap-',trim(timestr),'.png"'
+!        write(fileun,"(a,es16.8e3,a)") 'set title "Scatter plot of coherent state centres at alcmprss = ', 1./alcmprss ,'"'
+!        write(fileun,"(a)") 'set nokey'
+!        write(fileun,"(a)") 'unset key'
+!        write(fileun,"(a)") 'set xlabel "q"'
+!        write(fileun,"(a)") 'set ylabel "p"'
+!        write(fileun,"(a,a,a)") 'p "',trim(filenm),'" u 3:4 w p'
+!        
+!        close (fileun)
         
         return
       else

@@ -592,9 +592,13 @@ contains
         else if ((LINE2(1:1).eq.'n').or.(LINE2(1:1).eq.'N')) then
           cloneflg = "NO"
         else if ((LINE2(1:1).eq.'b').or.(LINE2(1:1).eq.'B')) then
-          cloneflg = "BLIND"
+          if (LINE2(6:6).eq.'+') then
+            cloneflg = "BLIND+"
+          else
+            cloneflg = "BLIND"
+          end if
         else
-          write(0,"(a,a)") "Error. cloneflg value must be YES/NO/BLIND. Read ", trim(LINE2)
+          write(0,"(a,a)") "Error. cloneflg value must be YES/NO/BLIND/BLIND+. Read ", trim(LINE2)
         end if
         n = n+1
       else if (LINE=="max_cloning") then
@@ -979,6 +983,22 @@ contains
         end if
         if ((method.ne."MCEv1").and.(method.ne."MCEv2").and.(method.ne."AIMC1").and.(method.ne."AIMC2")) then
           write(0,"(a)") "Spin Boson model can only be simulated by MCEv1 or MCEv2, or through AIMC-MCE"
+          errorflag = 1
+          return
+        end if
+        if (basis.eq."GRID") then
+          write(0,"(a)") "This method must not use a static grid."
+          errorflag = 1
+          return
+        end if
+      case ("DL")
+        if (npes.lt.2) then
+          write(0,"(a)") "Debye Spin Boson model must have at least 2 pes'"
+          errorflag = 1
+          return
+        end if
+        if ((method.ne."MCEv1").and.(method.ne."MCEv2").and.(method.ne."AIMC1").and.(method.ne."AIMC2")) then
+          write(0,"(a)") "Debye Spin Boson model can only be simulated by MCEv1 or MCEv2, or through AIMC-MCE"
           errorflag = 1
           return
         end if

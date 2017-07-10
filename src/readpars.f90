@@ -886,22 +886,22 @@ contains
         write(0,"(2(a,i0))") "For AIMC-MCE, def_stp should be odd. Changed from ", def_stp, " to ", def_stp+1
         def_stp = def_stp+1
       end if
-!      if (gen.eq."Y") then
-!        write (0,"(a,a)") "Error! The AIMC-MCE second pass relies on precalculated basis functions, but",&
-!                        " generation flag set to Y"
-!        errorflag = 1
-!        return
-!      end if
+      if (gen.eq."Y") then
+        write (0,"(a,a)") "Error! The AIMC-MCE second pass relies on precalculated basis functions, but",&
+                        " generation flag set to Y"
+        errorflag = 1
+        return
+      end if
     end if
     
     !!!!!! Basis set change parameter check!!!!!!
 
     if (cloneflg.ne.'NO') then
-      if ((method.ne."MCEv2").and.(method.ne."AIMC1")) then
-        write (0,"(a)") "Cloning can only work with MCEv2 or AIMC-MCE (first pass)"
+      if ((method.ne."MCEv2").and.(method.ne."AIMC1").and.(method.ne."MCEv1")) then
+        write (0,"(a)") "Cloning can only work with MCEv2, MCEv1 or AIMC-MCE (first pass)"
         errorflag = 1
         return
-      else if (method.eq."MCEv2") then
+      else if ((method.eq."MCEv2").or.(method.eq."MCEv1")) then
         if ((basis.ne."SWARM").and.(basis.ne."SWTRN").and.(basis.ne."TRAIN")) then
           write (0,"(a)") "Cloning with MCEv2 can only work on a swarm, a train or a swarm of trains"
           errorflag = 1
@@ -923,6 +923,11 @@ contains
         write(0,"(a)") "Maximum number of clones allowed is 20!"
 !        write(0,"(a)") "This will mean that over 1024 clones could be made from EACH member of the initial basis set"
         write(0,"(a)") "Try again with a lower number (8 should be enough for anyone)"
+        errorflag = 1
+        return
+      end if
+      if ((sys.ne."SB").and.(sys.ne."DL").and.(sys.ne."VP")) then
+        write(0,"(a)") "Cloning can only be performed on multi-PES systems, currently SB, DL or VP"
         errorflag = 1
         return
       end if
@@ -975,22 +980,6 @@ contains
           errorflag = 1
           return
         end if                  
-      case ("SB")
-        if (npes.lt.2) then
-          write(0,"(a)") "Spin Boson model must have at least 2 pes'"
-          errorflag = 1
-          return
-        end if
-        if ((method.ne."MCEv1").and.(method.ne."MCEv2").and.(method.ne."AIMC1").and.(method.ne."AIMC2")) then
-          write(0,"(a)") "Spin Boson model can only be simulated by MCEv1 or MCEv2, or through AIMC-MCE"
-          errorflag = 1
-          return
-        end if
-        if (basis.eq."GRID") then
-          write(0,"(a)") "This method must not use a static grid."
-          errorflag = 1
-          return
-        end if
       case ("DL")
         if (npes.lt.2) then
           write(0,"(a)") "Debye Spin Boson model must have at least 2 pes'"
@@ -1007,6 +996,23 @@ contains
           errorflag = 1
           return
         end if 
+      case ("SB")
+        if (npes.lt.2) then
+          write(0,"(a)") "Spin Boson model must have at least 2 pes'"
+          errorflag = 1
+          return
+        end if
+        if ((method.ne."MCEv1").and.(method.ne."MCEv2").and.(method.ne."AIMC1").and.(method.ne."AIMC2")) then
+          write(0,"(a)") "Spin Boson model can only be simulated by MCEv1 or MCEv2, or through AIMC-MCE"
+          errorflag = 1
+          return
+        end if
+        if (basis.eq."GRID") then
+          write(0,"(a)") "This method must not use a static grid."
+          errorflag = 1
+          return
+        end if 
+
       case ("HP")
         if (npes.ne.1) then
           write(0,"(a)") "Harmonic Potential only valid for 1 PES"

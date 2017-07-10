@@ -494,7 +494,7 @@ contains
     integer, dimension(:), allocatable, intent(inout) :: clone, clonenum
     integer, intent (inout) :: nbf
     integer, intent (in) :: x, reps
-    real(kind=8) :: brforce
+    real(kind=8) :: brforce, normar
     integer, dimension(:), allocatable :: clonehere, clonecopy, clonecopy2 
     integer :: k, m, j, n, nbfnew, ierr, r, clonetype
     character(LEN=3)::rep
@@ -519,6 +519,12 @@ contains
       errorflag = 1
       return
     end if
+    
+    if (npes.ne.2) then
+      write(6,*) "Error. Cloning currently only valid for npes=2"
+      errorflag = 1
+      return
+    end if
 
     do k=1,nbf
       if (clone(k).lt.x-clonefreq) clone(k)=0
@@ -527,7 +533,11 @@ contains
 
     if (clonetype==1) then
       do k=1,nbf
-        brforce = ((abs(bs(k)%a_pes(1))*abs(bs(k)%a_pes(2)))**2.0)
+        normar = 0.0d0
+        do r=1,npes
+          normar = normar + dconjg(bs(k)%a_pes(r))*bs(k)%a_pes(r)
+        end do
+        brforce = ((abs(bs(k)%a_pes(1)*bs(k)%a_pes(2))**2.0)/(normar**2.0))
         if ((brforce.gt.0.249).and.(clone(k)==0).and.(clonenum(k).lt.clonemax)) then
           clone(k) = x
           clonehere(k) = 1
@@ -594,25 +604,38 @@ contains
           clone(nbf+j) = x
           clonenum(k) = clonenum(k) + 1
           clonenum(nbf+j) = clonenum(k)
-          bsnew(k)%D_big = bs(k)%D_big * abs(bs(k)%a_pes(in_pes))
-          bsnew(k)%d_pes(in_pes) = bs(k)%d_pes(in_pes)/abs(bs(k)%a_pes(in_pes))
+          if (method=="MCEv1") then
+            bsnew(k)%D_big = bs(k)%D_big
+            bsnew(k)%d_pes(in_pes) = bs(k)%d_pes(in_pes)
+          else
+            bsnew(k)%D_big = bs(k)%D_big * abs(bs(k)%a_pes(in_pes))
+            bsnew(k)%d_pes(in_pes) = bs(k)%d_pes(in_pes)/abs(bs(k)%a_pes(in_pes))
+          end if
           do r=1,npes
             if (r.ne.in_pes) then
               bsnew(k)%d_pes(r) = (0.0d0,0.0d0)
               bsnew(k)%s_pes(r) = bs(k)%s_pes(r)
             end if
           end do
-          bsnew(nbf+j)%D_big = bs(k)%D_big * &
-                                sqrt(1.-(dconjg(bs(k)%a_pes(in_pes))*bs(k)%a_pes(in_pes)))
-          bsnew(nbf+j)%d_pes(in_pes) = (0.0d0,0.0d0)
+          if (method=="MCEv1") then
+            bsnew(nbf+j)%D_big = bs(k)%D_big
+          else
+            bsnew(nbf+j)%D_big = bs(k)%D_big * &
+                                  sqrt(1.-(dconjg(bs(k)%a_pes(in_pes))*bs(k)%a_pes(in_pes)))
+          end if
+          bsnew(nbf+j)%d_pes(in_pes) = (0.0d0,0.0d0)         
           bsnew(nbf+j)%s_pes(in_pes) = bs(k)%s_pes(in_pes)   
           do r=1,npes
             if (r.ne.in_pes) then
               if (x.eq.0) then
                 bsnew(nbf+j)%d_pes(r) = (1.0d0,0.0d0)
               else
-                bsnew(nbf+j)%d_pes(r) = bs(k)%d_pes(r)/&
+                if (method=="MCEv1") then
+                  bsnew(nbf+j)%d_pes(r) = bs(k)%d_pes(r)
+                else
+                  bsnew(nbf+j)%d_pes(r) = bs(k)%d_pes(r)/&
                                   sqrt(1.-(dconjg(bs(k)%a_pes(1))*bs(k)%a_pes(1)))
+                end if                  
               end if
               bsnew(nbf+j)%s_pes(r) = bs(k)%s_pes(r)
             end if
@@ -620,7 +643,7 @@ contains
           do m=1,ndim
             bsnew(nbf+j)%z(m) = bs(k)%z(m)
           end do
-          write(47756,"(3i5,2es25.17e3)") x, k, nbf+j, abs(bs(k)%a_pes(1)), sqrt(1.-((abs(bs(k)%a_pes(1))**2.0d0)))
+          write(47756,"(3i5,2es25.17e3)") x, k, nbf+j, abs(bs(k)%a_pes(1)), abs(bs(k)%a_pes(2))
           j = j+1
         else
           bsnew(k)%D_big = bs(k)%D_big
@@ -645,7 +668,9 @@ contains
         do m=1,ndim
           bs(k)%z(m) = bsnew(k)%z(m)
         end do
-      end do          
+      end do
+      
+      call deallocbs(bsnew)          
    
       n = nbfnew-nbf
    

@@ -199,9 +199,9 @@ contains
       return
     else
       do m=1,size(wm_dl)
-        wm_dl(m)=wmax_dl*((dble(m)/dble(ndim))**2.)                        ! Wang1999
+!        wm_dl(m)=wmax_dl*((dble(m)/dble(ndim))**2.)                        ! Wang1999
 !        wm_dl(m)=wc_dl*dtan((pi_rl/2.)*dble(m)/(dble(ndim+1)))             ! Craig2007
-!        wm_dl(m)=wc_dl*dtan((dble(m)/dble(ndim))*datan(wmax_dl/wc_dl))     ! Craig2007 modified 
+        wm_dl(m)=wc_dl*dtan((dble(m)/dble(ndim))*datan(wmax_dl/wc_dl))     ! SelfDerived 
       end do
     end if
 
@@ -235,12 +235,12 @@ contains
       return
     else
       do m=1,size(Cm_dl)
-        Cm_dl(m)=wm_dl(m)*sqrt((8.*lambda_dl*wc_dl/(pi_rl*dble(ndim)))*sqrt(wmax_dl*wm_dl(m))/(wm_dl(m)**2.+wc_dl**2.))
+!        Cm_dl(m)=wm_dl(m)*sqrt((8.*lambda_dl*wc_dl/(pi_rl*dble(ndim)))*sqrt(wmax_dl*wm_dl(m))/(wm_dl(m)**2.+wc_dl**2.))
         ! ^^^ Wang1999
 !        Cm_dl(m)=wm_dl(m)*sqrt((2.0d0*lambda_dl)/(dble(ndim)+1.0d0))
         ! ^^^ Craig2007
-!        Cm_dl(m)=wm_dl(m)*sqrt((4.0d0*lambda_dl/(pi_rl*dble(ndim)))*datan(wmax_dl/wc_dl))
-        ! ^^^ Craig2007 modified
+        Cm_dl(m)=wm_dl(m)*sqrt((4.0d0*lambda_dl/(pi_rl*dble(ndim)))*datan(wmax_dl/wc_dl))
+        ! ^^^ SelfDerived
       end do
     end if
 

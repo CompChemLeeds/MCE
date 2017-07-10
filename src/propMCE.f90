@@ -59,6 +59,7 @@ contains
   
     end if
 
+    if (errorflag .ne. 0) return
     bs = tempbs
 
     call deallocbs(dbs_dt1)

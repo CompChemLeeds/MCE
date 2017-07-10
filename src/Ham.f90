@@ -151,6 +151,7 @@ MODULE Ham
       write(0,"(a,a)") "Norm is greater than 1.2. Simulation has failed and",&
                         " trajectories are likely to explode"
       write(0,"(a,e16.8e3)") "Norm had a value of ", absnorm
+      errorflag = 1
     end if
 
     return

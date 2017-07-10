@@ -374,12 +374,12 @@ Program MainMCE
           ! properly. If not, restart is set to 1 so basis is recalculated
           call initnormchk(bset,recalcs,restart,alcmprss,gridsp,initnorm,initnorm2)
 
-          if (((basis.eq."TRAIN").or.(basis.eq."SWTRN")).and.(restart.eq.1)) then
-!            if ((((conjflg==1).and.(conjrep.eq.2)).or.(conjflg/=1)).and.(recalcs.lt.Ntries)) then
-!              !$omp critical 
-!              call genzinit(mup, muq)
-!              !$omp end critical
-!            else
+          if (((basis.eq."TRAIN").and.(restart.eq.1))) then
+            if ((((conjflg==1).and.(conjrep.eq.2)).or.(conjflg/=1)).and.(recalcs.lt.Ntries)) then
+              !$omp critical 
+              call genzinit(mup, muq)
+              !$omp end critical
+            else
               do j=1,size(bset)
                 bset(j)%D_big = bset(j)%D_big/sqrt(initnorm)
               end do
@@ -388,7 +388,7 @@ Program MainMCE
               write(6,"(a,e16.8e3)") "               New norm is  ", initnorm
               recalcs = recalcs - 1
               restart = 0
-!            end if
+            end if
           end if 
 
           if ((restart.eq.1).and.(recalcs.lt.Ntries)) then
@@ -417,7 +417,7 @@ Program MainMCE
           stop
         end if
         
-        if ((method=="MCEv2").and.((cloneflg=="BLIND").or.(cloneflg=="BLIND+"))) then
+        if (((method=="MCEv2").or.(method=="MCEv1")).and.((cloneflg=="BLIND").or.(cloneflg=="BLIND+"))) then
           write(rep,"(i3.3)") reps
           open(unit=47756,file="Clonetrack-"//trim(rep)//".out",status="new",iostat=ierr)
           close(47756)
@@ -435,7 +435,9 @@ Program MainMCE
               clonenum(j) = 0
             end do
           end if
+          write (6,'(a)') "Blind cloning arrays generated and cloning starting"
           call cloning (bset, nbf, x, time, clone, clonenum, reps)
+          call flush(6)
         end if        
               
         if (method.eq."AIMC1") then
@@ -603,7 +605,7 @@ Program MainMCE
           close(4532)
         end if
 
-        if ((sys=="SB").and.((method=="MCEv2").or.(method=="AIMC1")).and.(cloneflg=="YES")) then
+        if (((method=="MCEv2").or.(method=="MCEv1").or.(method=="AIMC1")).and.(cloneflg=="YES")) then
           write(rep,"(i3.3)") reps
           open(unit=47756,file="Clonetrack-"//trim(rep)//".out",status="new",iostat=ierr)
           close(47756)
@@ -621,9 +623,11 @@ Program MainMCE
               clonenum(j) = 0
             end do
           end if
+          write (6,"(a)") "Conditional cloning arrays generated"
         end if
 
         write(6,"(a)") "Beginning Propagation"
+        call flush(6)
 
         do while ((time.lt.timeend_loc).and.(x.le.80000))
  
@@ -640,11 +644,12 @@ Program MainMCE
             call reloc_basis(bset, initgrid, nbf, x, time, gridsp, mup, muq)
           end if      
 
-          if ((sys=="SB").and.((method=="MCEv2").or.(method=="AIMC1")).and.(time.le.timeend)) then
-            if ((cloneflg=="YES").or.(cloneflg=="BLIND+")) call cloning (bset, nbf, x, time, clone, clonenum, reps)
+          if (allocated(clone).and.(cloneflg.ne."BLIND").and.(time.le.timeend)) then
+            call cloning (bset, nbf, x, time, clone, clonenum, reps)
           end if
           
-          if (method=="AIMC1") call outbs(bset, reps, mup, muq, time,x,0)     
+!          if (method=="AIMC1") call outbs(bset, reps, mup, muq, time,x,0)
+          call outbs(bset, reps, mup, muq, time,x,0)     
           
           if (method=="AIMC2") then
             call constrtrain (dummybs, x, time, reps, mup, muq,0,0,nbf,map_bfs)
@@ -758,7 +763,7 @@ Program MainMCE
           write(0,"(a)") "Consider revising timestep parameters"
         end if
 
-        if (((method=="MCEv2").or.(method=="AIMC1")).and.(cloneflg.ne."NO")) then
+        if (allocated(clone)) then
           deallocate (clone, stat=ierr)
           if (ierr==0) deallocate(clonenum, stat=ierr)
           if (ierr/=0) then

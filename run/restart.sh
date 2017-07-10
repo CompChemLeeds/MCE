@@ -73,10 +73,10 @@ else
     mkdir $exec/Outbsbackup
   fi
   for i in Outbs-*.out; do 
-    cp $i /nobackup/phy4cs/Outbsbackup/${i%.out}_${restrtnum}.out
+    cp $i /nobackup/$LOGNAME/Outbsbackup/${i%.out}_${restrtnum}.out
   done
   for i in clonearr-*.out; do 
-    cp $i /nobackup/phy4cs/Outbsbackup/${i%.out}_${restrtnum}.out
+    cp $i /nobackup/$LOGNAME/Outbsbackup/${i%.out}_${restrtnum}.out
   done
   
   # Ensure that the basis set is not recalculated

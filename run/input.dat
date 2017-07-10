@@ -4,11 +4,11 @@
 
 # System (Currently can be SB [Spin Boson], HP [Harmonic Potential], FP [Free Particle], DL [Spin Boson with Drude-Lorentz], VP [Pseudo-Tortion]
 #    MP [Morse Potential], IV [Inverted Gaussian], CP [Coulomb Potential], or HH [Henon-Heiles]. SB, DL, VP works only with MCE, all others with CCS. 
-System: SB
+System: DL
 
 #Name of running folder [Default : <method>-<system>-<random number> ie CCS-HP-31254 (input "default", case insensitive)
 #                       Otherwise:  <method>-<system>-<runfolder string> ie CCS-HP-withgrids]
-Runfolder case3_blind+
+Runfolder SelfDerived_450dim_450bf
 
 #Debug flag [ 0: no debug outputs, 1: debug outputs. Does not really work for dynamic basis set sizes]
 debug 0
@@ -26,7 +26,7 @@ restart 0
 cmprss YES
 
 #Propagation method [can be CCS, MCEv1, MCEv2, AIMC-MCE1 (first pass), AIMC-MCE2 (Second pass) or MCE12 (uses both MCE methods). No support for vMCG, F-CCS or 2L-CCS yet.]
-method MCEv2
+method MCEv1
 
 #Number of repeats. Do not need to set manually - this is set by the run command.
 Repeats 100
@@ -35,10 +35,10 @@ Repeats 100
 Conjugate_Repeats NO
 
 # Number of basis functions 
-in_nbf 100
+in_nbf 450
 
 # Number of dimensions
-ndim 60
+ndim 450
 
 #determine which PES you are on initially
 in_PES 1
@@ -47,7 +47,7 @@ in_PES 1
 npes 2
 
 # determines shape of the initial basis [SWARM/SWTRN/TRAIN/GRID/GRSWM]
-basis SWTRN
+basis SWARM
 
 # determines the structure of the Z_0 initial central coherent state [WHOLE/SPLIT]. Split Z_0 is reflected in the q=0 line
 wfn_init WHOLE
@@ -56,7 +56,7 @@ wfn_init WHOLE
 symm NO
 
 # Compression parameter (can be tweaked to allow better norm value, or altered automatically)   Used for swarms/swarm-trains/grid-swarms
-ALCMP 4.0d0
+ALCMP 30.0d0
 
 # Flag for adaptive basis set size (yes/no) [Selecting No will give a constant basis set size. This is default behaviour] Used for Grids/grid-swarms
 nbfadapt no
@@ -85,8 +85,8 @@ qsizez 20
 # the size of the grid in the p,z coordinate. Used for grids/grid-swarms
 psizez 1
 
-# Flag for cloning basis functions (yes/no/blind). Blind cloning clones the entire basis set once before propagation
-Cloning blind+
+# Flag for cloning basis functions (yes/no/blind/blind+). Blind cloning clones the entire basis set once before propagation
+Cloning no
 
 # Maximum number of Cloning events allowed
 max_cloning 4

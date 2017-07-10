@@ -57,6 +57,12 @@
 #This section checks the input arguments for errors.
 grep -i "Conjugate_Repeats YES" input.dat > /dev/null
 CRchk=$?
+# Allow grid altering calibration test on chmlin45 (change hostname to disable)
+if [[ -n $( echo $HOSTNAME | fgrep -e "chmlin451" ) ]]; then
+  grdalt=1
+else
+  grdalt=0
+fi
 if [[ $# -ne 3 ]]; then
   echo "Error: Incorrect number of arguments! Arguments should be:"
   echo "       1: The total number of repeats"
@@ -78,7 +84,7 @@ elif [[ $1 -lt 1 ]]; then
 elif [[ $2 -lt 1 ]]; then
   echo "Not enough threads selected. Must be 1 or greater"
   exit 1
-elif [[ $2 -gt 8 ]]; then
+elif [[ $2 -gt 16 ]]; then
   echo "Too many threads selected. Maximum of 8 available"
   exit 1
 elif [[ $3 -lt 1 ]]; then
@@ -103,7 +109,7 @@ elif [[ $(( $2*$3 )) -gt 100 ]]; then
   exit 1
 else
   echo "Arguments checked"
-  if [[ -n $( echo $HOSTNAME | fgrep -e "arc1" -e "polaris" -e "arc2" ) ]]; then
+  if [[ -n $( echo $HOSTNAME | fgrep -e "arc3" -e "polaris" -e "arc2" ) ]]; then
     HPCFLG=1
   else
     HPCFLG=0
@@ -268,12 +274,6 @@ for a in "${methseq[@]}"; do
   echo "time ./MCE.exe" >> $FILE             # Run program
   echo "date" >> $FILE
   
-  # Allow grid altering calibration test on chmlin45 (change hostname to disable)
-  if [[ -n $( echo $HOSTNAME | fgrep -e "arc12" ) ]]; then
-    grdalt=1
-  else
-    grdalt=0
-  fi
   if [[ $grdalt -eq 1 ]]; then ./gridchanger.sh; fi # Makes calibration input files
   
   for i in "${folseq[@]}"; do
@@ -360,8 +360,11 @@ for a in "${methseq[@]}"; do
 
   # If running on an SGE machine, submit the job array  
   mv $FILE $EXDIR
+  echo "$RUNF/collate.sh $EXDIR $1 $3 $NUMBER "'$0' > $EXDIR/result.sh
+  chmod u+x $EXDIR/result.sh
   cd $EXDIR
   if [[ $CORES -ne 1 ]]; then export OMP_NUM_THREADS=$CORES; fi
+  echo "Would submit $FILE here with parameters $1 $2 $3 to folder $outfol2"
   if [[ $HSTFLG -eq 1 ]]; then
     qsub $FILE
   fi

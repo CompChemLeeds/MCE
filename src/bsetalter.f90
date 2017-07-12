@@ -33,8 +33,9 @@ contains
     complex(kind=8), dimension(:,:), intent(in) :: z0   ! This is the initial grid.
     real(kind=8), dimension(:), intent(in) :: mup, muq
     real(kind=8), intent(in) :: time, gridsp
-    integer, intent(inout) :: nbf, x
-    
+    integer, intent(inout) :: nbf
+    integer, intent(in) :: x   
+ 
     type(basisfn) :: bf
     complex(kind=8), dimension (:,:), allocatable :: ovrlp_mat, zt, znew, bigA, cnew, C_k, dnew
     real(kind=8), dimension (:), allocatable :: DC, qstrt, pstrt
@@ -511,6 +512,7 @@ contains
     integer, intent (inout) :: nbf
     integer, intent (in) :: x, reps
     complex(kind=8), dimension (:,:), allocatable :: znew
+    complex(kind=8), dimension (:), allocatable :: dz
     real(kind=8), dimension (:), allocatable :: dummy_arr
     real(kind=8) :: brforce, normar
     integer, dimension(:), allocatable :: clonehere, clonecopy, clonecopy2 
@@ -609,10 +611,22 @@ contains
       
       write(rep,"(i3.3)") reps
       open(unit=47756,file="Clonetrack-"//trim(rep)//".out",status="old",access="append",iostat=ierr)
+
+      if (method=="MCEv1") then
+        allocate(znew(nbfnew,ndim), stat=ierr)
+        if (ierr==0) allocate (dz(ndim), stat=ierr)
+        if (ierr/=0) then
+          write(0,'(a)') "Error in allocating znew array for MCEv1 cloning/relocation)"
+          errorflag = 1
+          return
+        end if
+      end if
       
       do k=1,nbf
+        dz = (0.0d0,0.0d0)
         do m=1,ndim
           bsnew(k)%z(m) = bs(k)%z(m)
+          znew(k,m) = bs(k)%z(m)
         end do
         do r=1,npes
           bsnew(k)%s_pes(r) = bs(k)%s_pes(r)
@@ -625,6 +639,10 @@ contains
           if (method=="MCEv1") then
             bsnew(k)%D_big = bs(k)%D_big
             bsnew(k)%d_pes(in_pes) = bs(k)%d_pes(in_pes)
+            do m=1,ndim
+              dz(m)=cmplx(ZBQLNOR(dble(bs(k)%z(m)),sqrt(0.5d0)),ZBQLNOR(dimag(bs(k)%z(m)),sqrt(0.5)))
+              znew(k,m) = bs(k)%z(m) - dz(m)
+            end do
           else
             bsnew(k)%D_big = bs(k)%D_big * abs(bs(k)%a_pes(in_pes))
             bsnew(k)%d_pes(in_pes) = bs(k)%d_pes(in_pes)/abs(bs(k)%a_pes(in_pes))
@@ -658,6 +676,11 @@ contains
               bsnew(nbf+j)%s_pes(r) = bs(k)%s_pes(r)
             end if
           end do
+          if (method=="MCEv1") then
+            do m=1,ndim
+              znew(nbf+j,m) = bs(k)%z(m) + dz(m)
+            end do
+          end if
           do m=1,ndim
             bsnew(nbf+j)%z(m) = bs(k)%z(m)
           end do
@@ -690,29 +713,15 @@ contains
       
       call deallocbs(bsnew)
       
-      if (method="MCEv1") then
-        allocate (znew(nbfnew,ndim), stat=ierr)
-        if (ierr/=0) then
-          write (0,"(a)") "Error in allocation of new z array for MCEv1 relocation"
-          errorflag = 1
-          return
-        end if
-        do k=1,nbfnew
-          do m=1,ndim
-            znew(k,m)=bs(k)%z(m)
-          end do
-        end do
+      if (method=="MCEv1") then
         
-          
-        !!!!shift cloned bases a little    
-
         allocate (dummy_arr(ndim), stat=ierr)
         if (ierr/=0) then
           write (0,"(a)") "Error in allocation of dummy array for MCEv1 relocation"
           errorflag = 1
           return
         end if
-        call reloc_basis(bs, znew, nbfnew, 0, 0.0d0, 0.0d0, dummy_arr, dummy_arr)
+        call reloc_basis(bs, znew, nbfnew, x, 0.0d0, 0.0d0, dummy_arr, dummy_arr)
         deallocate (dummy_arr, stat=ierr)
         if (ierr/=0) then
           write (0,"(a)") "Error in deallocation of dummy array for MCEv1 relocation"

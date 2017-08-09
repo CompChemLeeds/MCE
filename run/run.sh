@@ -364,7 +364,6 @@ for a in "${methseq[@]}"; do
   chmod u+x $EXDIR/result.sh
   cd $EXDIR
   if [[ $CORES -ne 1 ]]; then export OMP_NUM_THREADS=$CORES; fi
-  echo "Would submit $FILE here with parameters $1 $2 $3 to folder $outfol2"
   if [[ $HSTFLG -eq 1 ]]; then
     qsub $FILE
   fi

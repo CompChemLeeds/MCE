@@ -8,7 +8,7 @@ System: DL
 
 #Name of running folder [Default : <method>-<system>-<random number> ie CCS-HP-31254 (input "default", case insensitive)
 #                       Otherwise:  <method>-<system>-<runfolder string> ie CCS-HP-withgrids]
-Runfolder SelfDerived_450dim_450bf
+Runfolder SelfDerived_thoss2001_1c
 
 #Debug flag [ 0: no debug outputs, 1: debug outputs. Does not really work for dynamic basis set sizes]
 debug 0
@@ -35,10 +35,10 @@ Repeats 100
 Conjugate_Repeats NO
 
 # Number of basis functions 
-in_nbf 450
+in_nbf 250
 
 # Number of dimensions
-ndim 450
+ndim 200
 
 #determine which PES you are on initially
 in_PES 1

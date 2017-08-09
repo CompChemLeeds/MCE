@@ -19,7 +19,7 @@ DLDelta 1.0d0
 DLEps 0.0d0
 DLw 0.25d0
 DLwmax 25.0d0
-DLlambda 0.25d0
+DLlambda 5.0d0
 DLBeta 0.5d0
 DLupnorm 0.9999d0
 DLdownnorm 0.9998d0

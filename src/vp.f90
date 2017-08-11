@@ -318,7 +318,7 @@ contains
     end do
        
     do m=1,ndim
-      HS1_vp = HS1_vp - ((hbar**2)*gam/(4.0d0))*(z1c(m)**2.0d0+z2(m)**2.0d0-2.0d0*z1c(m)*z2(m)-1.0d0)&
+      HS1_vp = HS1_vp - ((hbar**2)*gam/(4.0d1))*(z1c(m)**2.0d0+z2(m)**2.0d0-2.0d0*z1c(m)*z2(m)-1.0d0)&
                             + (y_10_vp) + (b_1_vp/(2.*gam)+b_1_vp*rho(m)**2.)
     end do
    

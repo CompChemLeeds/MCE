@@ -277,7 +277,7 @@ contains
     rhosum = sum(rho(1:ndim))
 
     do m=1,ndim
-      Htemp = Htemp - ((hbar**2)*gam/(4.0d0))*(z1c(m)**2.0d0+z2(m)**2.0d0-2.0d0*z1c(m)*z2(m)-1.0d0)&
+      Htemp = Htemp - ((hbar**2)*gam/(4.0d1))*(z1c(m)**2.0d0+z2(m)**2.0d0-2.0d0*z1c(m)*z2(m)-1.0d0)&
                             + (y_00_vp - A_0_vp) + (b_0_vp/(2.*gam)+b_0_vp*rho(m)**2.)
     end do
        
@@ -561,13 +561,14 @@ contains
     do k=1,size(bs)
       D(k)=bs(k)%D_big
       Dc(k)=dconjg(D(k))
-      d_small(k)=bs(k)%d_pes(1)
+      d_small(k)=bs(k)%d_pes(2)
       dc_small(k)=dconjg(d_small(k))
-      s(k)=bs(k)%s_pes(1)
+      s(k)=bs(k)%s_pes(2)
     end do         
     
     do k=1,size(bs)
       do j=1,size(bs)
+        if (j.eq.k) then
         rho2 = (0.0d0,0.0d0)
         do m=1,ndim
           zk(m) = bs(k)%z(m)
@@ -580,8 +581,9 @@ contains
               -(0.5d0*dconjg(zj(1:ndim))*zj(1:ndim))&
               -(0.5d0*dconjg(zk(1:ndim))*zk(1:ndim))))
         term1 = Dc(j)*D(k)*dc_small(j)*d_small(k)*cdexp(i*(s(k)-s(j)))* ovrlp * rhosum
-        term2 = Dc(j)*D(k)*dc_small(j)*d_small(k)*cdexp(i*(s(k)-s(j)))* ovrlp * (1./2.*gam + rho2)
-        disp_vp = disp_vp + sqrt((term1 ** 2.) - term2)
+        term2 = Dc(j)*D(k)*dc_small(j)*d_small(k)*cdexp(i*(s(k)-s(j)))* ovrlp * (1./(2.*gam) + rho2)
+        disp_vp = disp_vp + sqrt(term2 - (term1 ** 2.))
+        end if
       end do
     end do
     

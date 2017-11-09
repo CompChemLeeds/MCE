@@ -4,11 +4,11 @@
 
 # System (Currently can be SB [Spin Boson], HP [Harmonic Potential], FP [Free Particle], DL [Spin Boson with Drude-Lorentz], VP [Pseudo-Tortion]
 #    MP [Morse Potential], IV [Inverted Gaussian], CP [Coulomb Potential], or HH [Henon-Heiles]. SB, DL, VP works only with MCE, all others with CCS. 
-System: VP
+System: SB
 
 #Name of running folder [Default : <method>-<system>-<random number> ie CCS-HP-31254 (input "default", case insensitive)
 #                       Otherwise:  <method>-<system>-<runfolder string> ie CCS-HP-withgrids]
-Runfolder 2bf-sym-blind
+Runfolder case4_blind
 
 #Debug flag [ 0: no debug outputs, 1: debug outputs. Does not really work for dynamic basis set sizes]
 debug 0
@@ -35,10 +35,10 @@ Repeats 192
 Conjugate_Repeats NO
 
 # Number of basis functions 
-in_nbf 2
+in_nbf 100
 
 # Number of dimensions
-ndim 1
+ndim 60
 
 #determine which PES you are on initially
 in_PES 2
@@ -89,13 +89,13 @@ psizez 1
 Cloning blind
 
 # Maximum number of Cloning events allowed
-max_cloning 8
+max_cloning 4
 
 # Minimum cloning frequency (ie how many timesteps since last cloning is new cloning event allowed)
 clon_freq 50
 
 # spacing between trajectories for train type basis set. Used for trains/swarm-trains
-trainsp 25 
+trainsp 10 
 
 # default steps per train. Used for swarm-trains only. This is sometimes increased/decreased by 1.
 def_stp 10

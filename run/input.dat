@@ -8,7 +8,7 @@ System: VP
 
 #Name of running folder [Default : <method>-<system>-<random number> ie CCS-HP-31254 (input "default", case insensitive)
 #                       Otherwise:  <method>-<system>-<runfolder string> ie CCS-HP-withgrids]
-Runfolder 2bf-sym-blind
+Runfolder 2bf-sym-m10
 
 #Debug flag [ 0: no debug outputs, 1: debug outputs. Does not really work for dynamic basis set sizes]
 debug 0
@@ -80,7 +80,7 @@ qsizey 0
 psizey 0
 
 # the size of the grid in the q,z coordinate. Used for grids/grid-swarms
-qsizez 20
+qsizez 24
 
 # the size of the grid in the p,z coordinate. Used for grids/grid-swarms
 psizez 1

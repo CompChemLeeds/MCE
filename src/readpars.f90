@@ -563,9 +563,13 @@ contains
         else if ((LINE2(1:1).eq.'n').or.(LINE2(1:1).eq.'N')) then
           cloneflg = "NO"
         else if ((LINE2(1:1).eq.'b').or.(LINE2(1:1).eq.'B')) then
-          cloneflg = "BLIND"
+          if (LINE2(6:6).eq.'+') then
+            cloneflg = "BLIND+"
+          else
+            cloneflg = "BLIND"
+          end if
         else
-          write(0,"(a,a)") "Error. cloneflg value must be YES/NO/BLIND. Read ", trim(LINE2)
+          write(0,"(a,a)") "Error. cloneflg value must be YES/NO/BLIND/BLIND+. Read ", trim(LINE2)
         end if
         n = n+1
       else if (LINE=="max_cloning") then

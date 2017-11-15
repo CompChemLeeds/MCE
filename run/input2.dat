@@ -29,7 +29,7 @@ cmprss YES
 method MCEv2
 
 #Number of repeats. Do not need to set manually - this is set by the run command.
-Repeats 192
+Repeats 1
 
 #Conjugate repeats flag. Allows even number repeats to start at the complex conjugate of the previous runs initial position [YES/NO]
 Conjugate_Repeats NO
@@ -79,7 +79,7 @@ qsizez 100
 # the size of the grid in the p,z coordinate. Used for grids/grid-swarms
 psizez 26
 
-# Flag for cloning basis functions (yes/no/blind/blind+)
+# Flag for cloning basis functions (yes/no)
 Cloning blind
 
 # Maximum number of Cloning events allowed

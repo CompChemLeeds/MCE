@@ -444,24 +444,6 @@ contains
           return
         end if
         n = n+1
-      else if (LINE=="wfn_init") then
-        backspace(127)
-        read(127,*,iostat=ierr)LINE,wfn_init
-        if(ierr.ne.0) then
-          write(0,"(a)")  "Error reading initial wavefunction structure option"
-          errorflag = 1
-          return
-        end if
-        n = n+1
-      else if (LINE=="symm") then
-        backspace(127)
-        read(127,*,iostat=ierr)LINE,symm
-        if(ierr.ne.0) then
-          write(0,"(a)")  "Error reading basis set symmetry option"
-          errorflag = 1
-          return
-        end if
-        n = n+1      
       else if (LINE=="gridsp") then
         backspace(127)
         read(127,*,iostat=ierr)LINE,initsp
@@ -581,9 +563,13 @@ contains
         else if ((LINE2(1:1).eq.'n').or.(LINE2(1:1).eq.'N')) then
           cloneflg = "NO"
         else if ((LINE2(1:1).eq.'b').or.(LINE2(1:1).eq.'B')) then
-          cloneflg = "BLIND"
+          if (LINE2(6:6).eq.'+') then
+            cloneflg = "BLIND+"
+          else
+            cloneflg = "BLIND"
+          end if
         else
-          write(0,"(a,a)") "Error. cloneflg value must be YES/NO/BLIND. Read ", trim(LINE2)
+          write(0,"(a,a)") "Error. cloneflg value must be YES/NO/BLIND/BLIND+. Read ", trim(LINE2)
         end if
         n = n+1
       else if (LINE=="max_cloning") then
@@ -663,29 +649,6 @@ contains
     else if ((basis.eq.'GRSWM').or.(basis.eq.'grswm'))then
       basis = 'GRSWM'
     end if
-    
-    if ((wfn_init.ne."WHOLE").and.(wfn_init.ne."whole").and.(wfn_init.ne."SPLIT").and.(wfn_init.ne."split")) then
-      write(0,"(a,a)") "Invalid value for wfn_init. Must be WHOLE/SPLIT and all upper/lower case. Value is ", wfn_init
-      errorflag = 1
-      return
-    else if (wfn_init.eq."whole") then
-      wfn_init = "WHOLE"
-    else if (wfn_init.eq."split") then
-      wfn_init = "SPLIT"
-    end if
-    
-    if ((symm.ne."YES").and.(symm.ne."yes").and.(symm.ne."Y").and.(symm.ne."y").and.(symm.ne."NO").and.(symm.ne."no")&
-      .and.(symm.ne."N").and.(symm.ne."n").and.(symm.ne."ANTI").and.(symm.ne."anti").and.(symm.ne."A").and.(symm.ne."a")) then
-      write(0,"(a,a)") "Invalid value for symm. Must be YES/NO/ANTI and all upper/lower case. Value is ", symm
-      errorflag = 1
-      return
-    else if ((symm.eq."yes").or.(symm.eq."Y").or.(symm.eq."y")) then
-      symm = "YES"
-    else if ((symm.eq."no").or.(symm.eq."n").or.(symm.eq."N")) then
-      symm = "NO"
-    else if ((symm.eq."anti").or.(symm.eq."A").or.(symm.eq."a")) then
-      symm = "ANTI"
-    end if
 
     if ((matfun.ne.'zgesv').and.(matfun.ne.'ZGESV').and.(matfun.ne.'zheev').and.(matfun.ne.'ZHEEV')) then
       write(0,"(a,a)") "Invalid value for matrix function. Must be ZGESV/zgesv or ZHEEV/zheev. Value is ", matfun
@@ -697,7 +660,7 @@ contains
       matfun = 'zheev'
     end if
     
-    if (n.ne.22) then
+    if (n.ne.20) then
       write(0,"(a,i0)") "Not all required variables read in readbsparams subroutine. n=", n
       errorflag = 1
       return
@@ -929,27 +892,6 @@ contains
     !!!!!!!! Check the System!!!!!!  
     
     select case (sys)
-      case ("VP")
-        if (npes.lt.2) then
-          write(0,"(a)") "Spin Boson model must have at least 2 pes'"
-          errorflag = 1
-          return
-        end if
-        if ((method.ne."MCEv1").and.(method.ne."MCEv2").and.(method.ne."AIMC1").and.(method.ne."AIMC2")) then
-          write(0,"(a)") "Spin Boson model can only be simulated by MCEv1 or MCEv2, or through AIMC-MCE"
-          errorflag = 1
-          return
-        end if
-        if (basis.eq."GRID") then
-          write(0,"(a)") "This method must not use a static grid."
-          errorflag = 1
-          return
-        end if 
-        if (ndim.ne.1) then
-          write(0,"(a)") "This is currently only set up to deal with a single degree of freedom. Please set ndim to 1"
-          errorflag = 1
-          return
-        end if                  
       case ("SB")
         if (npes.lt.2) then
           write(0,"(a)") "Spin Boson model must have at least 2 pes'"

@@ -374,7 +374,7 @@ Program MainMCE
           ! properly. If not, restart is set to 1 so basis is recalculated
           call initnormchk(bset,recalcs,restart,alcmprss,gridsp,initnorm,initnorm2)
 
-          if (((basis.eq."TRAIN").and.(restart.eq.1))) then
+          if ((basis.eq."TRAIN").and.(restart.eq.1)) then
             if ((((conjflg==1).and.(conjrep.eq.2)).or.(conjflg/=1)).and.(recalcs.lt.Ntries)) then
               !$omp critical 
               call genzinit(mup, muq)
@@ -417,7 +417,7 @@ Program MainMCE
           stop
         end if
         
-        if ((method=="MCEv2").and.(cloneflg=="BLIND")) then
+        if (((method=="MCEv2").or.(method=="MCEv1")).and.((cloneflg=="BLIND").or.(cloneflg=="BLIND+"))) then
           write(rep,"(i3.3)") reps
           open(unit=47756,file="Clonetrack-"//trim(rep)//".out",status="new",iostat=ierr)
           close(47756)
@@ -427,6 +427,7 @@ Program MainMCE
             write(0,"(a)") "Error in allocating clone arrays"
             errorflag = 1
           end if
+          write (6,*) "In the cloning conditional"
           if (genloc=="N") then
             call readclone(clonenum, reps, clone)
           else
@@ -435,9 +436,12 @@ Program MainMCE
               clonenum(j) = 0
             end do
           end if
+          write (6,'(a)') "Blind cloning arrays generated and cloning starting"
+          call flush(6)
           call cloning (bset, nbf, x, time, clone, clonenum, reps)
-        end if        
-              
+          call flush(6)
+        end if
+        
         if (method.eq."AIMC1") then
 
           timeold = time
@@ -474,6 +478,11 @@ Program MainMCE
           if (npes.ne.1) write(6,"(a,e15.8)") "Popsum    = ", initnorm2
           if ((cmprss.eq."Y").and.((basis.eq."SWARM").or.(basis.eq."SWTRN"))) write(6,"(a,e15.8)") "Alcmprss  = ", 1.0d0/alcmprss
           if ((cmprss.eq."Y").and.(basis.eq."GRID")) write(6,"(a,e15.8)") "Grid Spacing  = ", gridsp/dsqrt(2.0d0)
+        else
+          write(6,"(a)") "Errors found in basis set generation"
+          call outbs(bset, reps, mup, muq, time,0,0)
+          call flush(6)
+          stop
         end if
 
       end if !End of Basis set generation conditional statement
@@ -570,7 +579,7 @@ Program MainMCE
           if ((nbfadapt.eq."NO").and.(debug==1)) then
             call outtrajheads(reps, nbf)
             call outtraj(bset,x,reps,time,ovrlp,dt)
-!            call histogram(bset, 50, time, -2.46d0, 1.44d0, nbf)
+            call histogram(bset, 50, time, -2.46d0, 1.44d0, nbf)
             call outvarsheads (reps, nbf)
             call outvars(bset,x,reps,time)
           end if
@@ -603,7 +612,7 @@ Program MainMCE
           close(4532)
         end if
 
-        if ((sys=="SB").and.((method=="MCEv2").or.(method=="AIMC1")).and.(cloneflg=="YES")) then
+        if (((method=="MCEv1").or.(method=="MCEv2").or.(method=="AIMC1")).and.(cloneflg=="YES")) then
           write(rep,"(i3.3)") reps
           open(unit=47756,file="Clonetrack-"//trim(rep)//".out",status="new",iostat=ierr)
           close(47756)
@@ -621,6 +630,7 @@ Program MainMCE
               clonenum(j) = 0
             end do
           end if
+          write (6,"(a)") "Conditional cloning arrays generated"
         end if
 
         write(6,"(a)") "Beginning Propagation"
@@ -636,11 +646,11 @@ Program MainMCE
 
           if (basis.ne."GRID") call trajchk(bset) !ensures that the position component of the coherent states are not too widely spaced   
 
-          if (((basis=="GRID").or.(basis=="GRSWM")).and.(mod((x-1),rprj)==0).and.((sys=="IV").or.(sys=="CP"))) then
+          if (((basis=="GRID").or.(basis=="GRSWM")).and.(mod((x-1),rprj)==0)) then
             call reloc_basis(bset, initgrid, nbf, x, time, gridsp, mup, muq)
           end if      
 
-          if ((sys=="SB").and.((method=="MCEv2").or.(method=="AIMC1")).and.(cloneflg=="YES").and.(time.le.timeend)) then
+          if (allocated(clone).and.(cloneflg.ne."BLIND").and.(time.le.timeend)) then
             call cloning (bset, nbf, x, time, clone, clonenum, reps)
           end if
           
@@ -709,7 +719,7 @@ Program MainMCE
             extra(y) = extra(y) + extmp
             if ((nbfadapt.eq."NO").and.(mod(x,1)==0).and.(debug==1)) then
               call outtraj(bset,x,reps,time,ovrlp,dt)
-!              call histogram(bset, 50, time, -2.46d0, 1.44d0, nbf)
+              call histogram(bset, 50, time, -2.46d0, 1.44d0, nbf)
               call outvars(bset,x,reps,time)
             end if
 !            call outdimacf(time,ndimacf,reps)
@@ -758,7 +768,7 @@ Program MainMCE
           write(0,"(a)") "Consider revising timestep parameters"
         end if
 
-        if (((method=="MCEv2").or.(method=="AIMC1")).and.((cloneflg=="YES").or.(cloneflg=="BLIND"))) then
+        if (allocated(clone)) then
           deallocate (clone, stat=ierr)
           if (ierr==0) deallocate(clonenum, stat=ierr)
           if (ierr/=0) then

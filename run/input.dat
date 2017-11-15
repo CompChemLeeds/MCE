@@ -2,13 +2,13 @@
 #					Input File								!!!
 #!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-# System (Currently can be SB [Spin Boson], HP [Harmonic Potential], FP [Free Particle], DL [Spin Boson with Drude-Lorentz], VP [Pseudo-Tortion]
-#    MP [Morse Potential], IV [Inverted Gaussian], CP [Coulomb Potential], or HH [Henon-Heiles]. SB, DL, VP works only with MCE, all others with CCS. 
+# System (Currently can be SB [Spin Boson], HP [Harmonic Potential], FP [Free Particle], DL [Spin Boson with Drude-Lorentz]
+#    MP [Morse Potential], IV [Inverted Gaussian], CP [Coulomb Potential], or HH [Henon-Heiles]. SB, DL works only with MCE, all others with CCS. 
 System: SB
 
 #Name of running folder [Default : <method>-<system>-<random number> ie CCS-HP-31254 (input "default", case insensitive)
 #                       Otherwise:  <method>-<system>-<runfolder string> ie CCS-HP-withgrids]
-Runfolder case4_blind
+Runfolder case4_swtrn
 
 #Debug flag [ 0: no debug outputs, 1: debug outputs. Does not really work for dynamic basis set sizes]
 debug 0
@@ -41,22 +41,16 @@ in_nbf 100
 ndim 60
 
 #determine which PES you are on initially
-in_PES 2
+in_PES 1
 
 #determine n.o of configurations for MCE
 npes 2
 
 # determines shape of the initial basis [SWARM/SWTRN/TRAIN/GRID/GRSWM]
-basis SWARM
-
-# determines the structure of the Z_0 initial central coherent state [WHOLE/SPLIT]. Split Z_0 is reflected in the q=0 line
-wfn_init SPLIT
-
-# allows for symmetric/antisymmetric basis sets to be created. Used with wfn_init=SPLIT [YES/NO/ANTI]
-symm YES
+basis SWTRN
 
 # Compression parameter (can be tweaked to allow better norm value, or altered automatically)   Used for swarms/swarm-trains/grid-swarms
-ALCMP 0.331d0
+ALCMP 200.0d0
 
 # Flag for adaptive basis set size (yes/no) [Selecting No will give a constant basis set size. This is default behaviour] Used for Grids/grid-swarms
 nbfadapt no
@@ -65,7 +59,7 @@ nbfadapt no
 nbfepsilon 1.0d-06
 
 # gives grid spacing. If grid is not selected (previous parameter) this parameter will be read, but not used. Used for grids/grid-swarms
-gridsp 0.20075436E+01
+gridsp 1.40
 
 # the size of the grid in the q,x coordinate. Used for 3d grids
 qsizex 0
@@ -80,13 +74,13 @@ qsizey 0
 psizey 0
 
 # the size of the grid in the q,z coordinate. Used for grids/grid-swarms
-qsizez 20
+qsizez 100
 
 # the size of the grid in the p,z coordinate. Used for grids/grid-swarms
-psizez 1
+psizez 26
 
-# Flag for cloning basis functions (yes/no/blind). Blind cloning clones the entire basis set once before propagation
-Cloning blind
+# Flag for cloning basis functions (yes/no/blind/blind+)
+Cloning blind+
 
 # Maximum number of Cloning events allowed
 max_cloning 4
@@ -95,7 +89,7 @@ max_cloning 4
 clon_freq 50
 
 # spacing between trajectories for train type basis set. Used for trains/swarm-trains
-trainsp 10 
+trainsp 20 
 
 # default steps per train. Used for swarm-trains only. This is sometimes increased/decreased by 1.
 def_stp 10

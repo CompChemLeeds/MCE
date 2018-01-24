@@ -1,7 +1,7 @@
 #Makefile for use on arcx computers.
 
 F90=gfortran
-FFLAGS=-fopenmp -O2
+FFLAGS=-fopenmp -O3
 FLINKS=-Wl,--start-group -lmkl_gf_lp64 -lmkl_sequential -lmkl_core -Wl,--end-group -lpthread
 VPATH=../src
 

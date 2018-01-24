@@ -203,7 +203,7 @@ Program MainMCE
   call checkparams
 
   if (step=="S") then       ! Static stepsize case.
-    tnum = int(abs((timeend-timestrt)/dtinit)) + 2
+    tnum = int(abs(((timeend-timestrt)/dtinit)+0.5)) + 2
   else
     tnum = 1            ! The arrays need to be allocated for reduction in omp
   end if
@@ -283,10 +283,18 @@ Program MainMCE
     
     if ((basis=="GRID").or.(basis=="GRSWM")) then
       allocate (initgrid(in_nbf,ndim), stat=ierr)
-      if (ierr/=0) then
-        write(0,"(a)") "Error allocating the initial grid array in main"
-        errorflag=1
-      end if
+    else
+      allocate (initgrid(1,1), stat=ierr)
+    end if
+    if (ierr/=0) then
+      write(0,"(a)") "Error allocating the initial grid array in main"
+      errorflag=1
+    end if
+    
+    allocate(map_bfs(1,1), stat=ierr) ! allocated to prevent memory error
+    if (ierr/=0) then
+      write (0,"(a,i0)") "Error allocating map_bfs array. ierr was ", ierr
+      errorflag = 1
     end if
   
     allocate (popt(npes), stat=ierr)
@@ -524,6 +532,7 @@ Program MainMCE
               if (dum_in3.gt.finbf) finbf = dum_in3
             end do
             close(354+reps)
+            if (allocated(map_bfs)) deallocate(map_bfs)
             allocate(map_bfs(def_stp,finbf), stat=ierr)
             if (ierr/=0) then
               write (0,"(a,i0)") "Error allocating map_bfs array. ierr was ", ierr
@@ -776,7 +785,7 @@ Program MainMCE
             errorflag = 1
           end if
         end if
-        if (method=="AIMC2") then
+        if (allocated(map_bfs)) then
           deallocate(map_bfs, stat=ierr)
           if (ierr/=0) then
             write (0,"(a,i0)") "Error deallocating map_bfs array. ierr was ", ierr
@@ -804,13 +813,13 @@ Program MainMCE
 
     end do !conjugate repeat
     
-    if ((basis=="GRID").or.(basis=="GRSWM")) then
-      deallocate (initgrid, stat=ierr)
-      if (ierr/=0) then
-        write(0,"(a)") "Error deallocating the initial grid array in main"
-        errorflag=1
-      end if
-    end if  
+!    if ((basis=="GRID").or.(basis=="GRSWM")) then
+    deallocate (initgrid, stat=ierr)
+    if (ierr/=0) then
+      write(0,"(a)") "Error deallocating the initial grid array in main"
+      errorflag=1
+    end if
+!    end if  
 
     if (allocated(mup)) deallocate (mup, muq, popt, stat=ierr)
     if (ierr/=0) then

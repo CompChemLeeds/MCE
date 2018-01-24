@@ -8,7 +8,7 @@ System: SB
 
 #Name of running folder [Default : <method>-<system>-<random number> ie CCS-HP-31254 (input "default", case insensitive)
 #                       Otherwise:  <method>-<system>-<runfolder string> ie CCS-HP-withgrids]
-Runfolder case4_swtrn
+Runfolder test_glibc2
 
 #Debug flag [ 0: no debug outputs, 1: debug outputs. Does not really work for dynamic basis set sizes]
 debug 0
@@ -35,10 +35,10 @@ Repeats 192
 Conjugate_Repeats NO
 
 # Number of basis functions 
-in_nbf 100
+in_nbf 15
 
 # Number of dimensions
-ndim 60
+ndim 15
 
 #determine which PES you are on initially
 in_PES 1
@@ -47,7 +47,7 @@ in_PES 1
 npes 2
 
 # determines shape of the initial basis [SWARM/SWTRN/TRAIN/GRID/GRSWM]
-basis SWTRN
+basis SWARM
 
 # Compression parameter (can be tweaked to allow better norm value, or altered automatically)   Used for swarms/swarm-trains/grid-swarms
 ALCMP 200.0d0
@@ -80,7 +80,7 @@ qsizez 100
 psizez 26
 
 # Flag for cloning basis functions (yes/no/blind/blind+)
-Cloning blind+
+Cloning no
 
 # Maximum number of Cloning events allowed
 max_cloning 4

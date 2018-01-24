@@ -203,7 +203,7 @@ Program MainMCE
   call checkparams
 
   if (step=="S") then       ! Static stepsize case.
-    tnum = int(abs((timeend-timestrt)/dtinit)) + 2
+    tnum = int(abs(((timeend-timestrt)/dtinit)+0.5)) + 2
   else
     tnum = 1            ! The arrays need to be allocated for reduction in omp
   end if
@@ -283,12 +283,20 @@ Program MainMCE
     
     if ((basis=="GRID").or.(basis=="GRSWM")) then
       allocate (initgrid(in_nbf,ndim), stat=ierr)
-      if (ierr/=0) then
-        write(0,"(a)") "Error allocating the initial grid array in main"
-        errorflag=1
-      end if
+    else
+      allocate (initgrid(1,1), stat=ierr)   !allocated to prevent memory errors
     end if
-  
+    if (ierr/=0) then
+      write(0,"(a)") "Error allocating the initial grid array in main"
+      errorflag=1
+    end if
+    
+    allocate(map_bfs(1,1), stat=ierr) ! allocated to prevent memory errors
+      if (ierr/=0) then
+        write (0,"(a,i0)") "Error allocating map_bfs array. ierr was ", ierr
+        errorflag = 1
+    end if
+      
     allocate (popt(npes), stat=ierr)
     if (ierr/=0) then
       write(0,"(a)") "Error in allocating the temporary population array in Main"
@@ -524,9 +532,10 @@ Program MainMCE
               if (dum_in3.gt.finbf) finbf = dum_in3
             end do
             close(354+reps)
-            allocate(map_bfs(def_stp,finbf), stat=ierr)
+            if (allocated(map_bfs)) deallocate(map_bfs, stat=ierr)
+            if (ierr==0) allocate(map_bfs(def_stp,finbf), stat=ierr)
             if (ierr/=0) then
-              write (0,"(a,i0)") "Error allocating map_bfs array. ierr was ", ierr
+              write (0,"(a,i0)") "Error de- and re-allocating map_bfs array. ierr was ", ierr
               errorflag = 1
             end if
             write(0,"(2(a,i0))") "map_bfs size is ", def_stp, " by ", finbf
@@ -776,7 +785,8 @@ Program MainMCE
             errorflag = 1
           end if
         end if
-        if (method=="AIMC2") then
+        
+        if (allocated(map_bfs)) then
           deallocate(map_bfs, stat=ierr)
           if (ierr/=0) then
             write (0,"(a,i0)") "Error deallocating map_bfs array. ierr was ", ierr
@@ -812,7 +822,9 @@ Program MainMCE
       end if
     end if  
 
-    if (allocated(mup)) deallocate (mup, muq, popt, stat=ierr)
+    if (allocated(mup)) deallocate (mup, stat=ierr)
+    if ((allocated(muq)).and.(ierr==0)) deallocate (muq, stat=ierr)
+    if ((allocated(popt)).and.(ierr==0)) deallocate (popt, stat=ierr)
     if (ierr/=0) then
       write(0,"(a,i0)") "Error deallocating mup, muq or popt in repeat ", reps
       errorflag=1

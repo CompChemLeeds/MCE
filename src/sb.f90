@@ -97,7 +97,7 @@ contains
           return
         end if
         n = n+1
-      else if (LINE=='SBw') then
+      else if (LINE=='SBwc') then
         backspace(128)
         read(128,*,iostat=ierr)LINE,wc_sb
         if (ierr.ne.0) then
@@ -175,13 +175,13 @@ contains
 
 !--------------------------------------------------------------------------------------------------
 
-  subroutine genwm_sb(wm_sb)   !   Level 2 Subroutine
+  subroutine genwm_sb(wm_sb, Cm_sb)   !   Level 2 Subroutine
 
     !   Generates the array of discretised frequencies over M degrees of freedom
 
     implicit none
     integer::m, ierr
-    real(kind=8), dimension(:), allocatable, intent(inout) :: wm_sb
+    real(kind=8), dimension(:), allocatable, intent(inout) :: wm_sb, Cm_sb
 
     if (errorflag .ne. 0) return
     ierr = 0
@@ -194,10 +194,21 @@ contains
       write(0,"(a)") "genwm subroutine called but wm not allocated"
       errorflag=1
       return
-    else
+    else if (.not.allocated(Cm_sb)) then
+      write(0,"(a)") "genwm subroutine called but Cm not allocated"
+      errorflag=1
+      return
+    else if (size(Cm_sb).ne.size(wm_sb)) then
+      write(0,"(a)") "genwm subroutine called but Cm and wm do not have the same sizes"
+      errorflag=1
+      return
+    else if (freqflg_sb.eq.0) then
       do m=1,size(wm_sb)
-        wm_sb(m)=-1.0d0*wc_sb*dlog(1.0d0-((dble(m)*(1.0d0-dexp(-1.0d0*wmax_sb/wc_sb)))/dble(ndim)))    ! Ohmic bath
+        wm_sb(m)=-1.0d0*wc_sb*dlog(1.0d0-((dble(m)*(1.0d0-dexp(-1.0d0*wmax_sb/wc_sb)))/dble(ndim)))
+        Cm_sb(m)=wm_sb(m)*sqrt(kondo_sb*wc_sb*(1.0d0-dexp(-1.0d0*wmax_sb/wc_sb))/dble(ndim))
       end do
+    else
+      call readfreq(Cm_sb, wm_sb)
     end if
 
     return
@@ -262,7 +273,7 @@ contains
       return
     else
       do m=1,size(sig_sb)
-        sig_sb(m) = 1.0d0/(dexp(beta_sb*wm_sb(m))-1.0d0)
+        sig_sb(m) = 1.0d0/(sqrt(dexp(beta_sb*wm_sb(m))-1.0d0))
       end do
     end if
 
@@ -321,7 +332,7 @@ contains
       return
     end if
 
-    call genwm_sb(wm_sb)
+    call genwm_sb(wm_sb, Cm_sb)
     call gensig_sb(sig_sb, wm_sb)    
 
     do while (recalc == 1)
@@ -357,7 +368,7 @@ contains
       end if
     end do
 
-    deallocate(zin, H, sig_sb, wm_sb, stat = ierr)
+    deallocate(zin, H, sig_sb, wm_sb, Cm_sb, stat = ierr)
     if (ierr/=0) then
       write(0,"(a)") "Error in deallocation of zin, H, wm or sig in genzinit"
       errorflag=1
@@ -392,8 +403,8 @@ contains
       return
     end if
 
-    call genwm_sb(wm_sb)
-    call genCm_sb(Cm_sb, wm_sb)
+    call genwm_sb(wm_sb, Cm_sb)
+!    call genCm_sb(Cm_sb, wm_sb)
 
     Hbath = Hb_sb(z1,z2,wm_sb)
     Hcoup = Hc_sb(z1,z2,wm_sb, Cm_sb)
@@ -490,8 +501,8 @@ contains
       return
     end if 
 
-    call genwm_sb(wm_sb)
-    call genCm_sb(Cm_sb, wm_sb)
+    call genwm_sb(wm_sb, Cm_sb)
+!    call genCm_sb(Cm_sb, wm_sb)
 
     dh_dz_sb(1,1,:) = dhdz_sb_11(z,wm_sb,Cm_sb)
     dh_dz_sb(1,2,:) = dhdz_sb_12(wm_sb,Cm_sb)
@@ -596,7 +607,7 @@ contains
 
   end function dhdz_sb_22
 
-!*************************************************************************************************!
+!--------------------------------------------------------------------------------------------------
 
   function gauss_random_sb (width, muq, mup)
   
@@ -631,7 +642,61 @@ contains
     
     return
     
-  end function gauss_random_sb   
+  end function gauss_random_sb 
+  
+!--------------------------------------------------------------------------------------------------
+
+  subroutine readfreq(Cm_sb, wm_sb) 
+  
+    implicit none
+    
+    real(kind=8), dimension(:), allocatable, intent(inout) :: wm_sb, Cm_sb
+    
+    real :: r
+    integer(kind=8)::ranseed
+    integer,allocatable::ranseed_array(:)
+    integer:: ranseed_size, rint
+    integer::i,clock, m, ierr
+    character(LEN=100)::LINE
+    
+    if (errorflag .ne. 0) return
+    
+    ierr=0
+    
+    call random_seed(size=ranseed_size)
+    allocate(ranseed_array(ranseed_size))
+    call system_clock(count=clock)
+    ranseed_array = clock + 37* (/ (i-1,i=1,ranseed_size) /)
+    call random_seed(put=ranseed_array)
+    deallocate(ranseed_array)
+    CALL RANDOM_NUMBER(r)
+    r=r*3232768.0
+    rint = int(r)
+    
+    open(unit=rint, file='freq.dat', status='old', iostat=ierr)
+    
+    if (ierr.ne.0) then
+      write(0,"(a)") 'Error in opening freq.dat file'
+      errorflag = 1
+      return
+    end if
+    
+    do i=1,size(wm_sb)
+     
+      read(rint,*,iostat=ierr) m, wm_sb(m), Cm_sb(m)
+      if (i.ne.m) then
+        write (6,"(a,i0,a,i0)") "Mismatch in frequency reading. Read entry ",m," but expected ",i
+        errorflag = 1
+        return
+      end if
+            
+    end do
+    
+    close(rint)
+    
+    return    
+    
+  end subroutine readfreq   
 
 !*************************************************************************************************!
 

@@ -51,6 +51,7 @@ MODULE globvars
   real(kind=8) :: wmax_sb          ! Maximum frequency = 5*wc **SPIN BOSON ONLY**
   real(kind=8) :: delta_sb        ! Coupling between PESs in Hamiltonian - provides off diagonals **SPIN BOSON ONLY**
   real(kind=8) :: eps_sb          ! Symmetry parameter used in calculation of diagonals in hamiltonian **SPIN BOSON ONLY**
+  integer :: freqflg_sb            ! Flag for reading pre-calculated frequencies (1=read, 0=calculate) **SPIN BOSON ONLY**
   
   real(kind=8) :: wc_dl            ! Cutoff frequency **DRUDE LORENTZ ONLY**
   real(kind=8) :: beta_dl          ! Temperature parameter **DRUDE LORENTZ ONLY**
@@ -98,11 +99,12 @@ MODULE globvars
   real(kind=8) :: uplimnorm        ! upper limit of the norm
   real(kind=8) :: lowlimnorm      ! lower limit of the norm
   real(kind=8) :: sqrtpi          ! square root of pi
+  real(kind=8) :: thresh          ! cloning threshold
 
   character(LEN=5) :: ECheck      ! Flag to determine if the energy of basis functions should be checked
   character(LEN=5) :: basis        ! Flag for grids
   character(LEN=5) :: nbfadapt    ! Flag for adaptive basis set size
-  character(LEN=5) :: cloneflg    ! Flag for cloning
+  character(LEN=6) :: cloneflg    ! Flag for cloning
   character(LEN=5) :: matfun      ! Which matrix calcualtion function (zgesv/zheev) used for linear algebra
   character(LEN=5) :: method      ! MCEv1 or MCEv2 used. Later versions to have other methods available
   character(LEN=2) :: sys         ! System to be simulated. Currently only Spin Boson allowed
@@ -147,6 +149,7 @@ contains
     eps_sb = 0.0d0          ! SPIN BOSON PARAMETER
     delta_sb = 0.0d0        ! SPIN BOSON PARAMETER
     beta_sb = 0.0d0          ! SPIN BOSON PARAMETER
+    freqflg_sb = 0           ! SPIN BOSON PARAMETER
 
     mass_fp = 0.0d0          ! FREE PARTICLE PARAMETER
 
@@ -185,6 +188,7 @@ contains
     initsp = 0.0d0
     bfeps = 0.0d0
     sqrtpi = 1.7724538509055160272981674833411451827975494561223871d0
+    thresh = 0.249d0
 
     i = (0.0d0,1.0d0)
 

@@ -506,7 +506,7 @@ contains
     else if ((cloneflg=="BLIND").or.((cloneflg=="BLIND+").and.(x.eq.0))) then
       clonetype = 2
     else
-      write (0,"(2a)") "Cloneflg is invalid. Should be 'YES' or 'BLIND', but was ", cloneflg
+      write (0,"(2a)") "Cloneflg is invalid. Should be 'YES', 'BLIND' or 'BLIND+', but was ", cloneflg
       errorflag = 1
       return
     end if
@@ -528,7 +528,7 @@ contains
     if (clonetype==1) then
       do k=1,nbf
         brforce = ((abs(bs(k)%a_pes(1))*abs(bs(k)%a_pes(2)))**2.0)
-        if ((brforce.gt.0.249).and.(clone(k)==0).and.(clonenum(k).lt.clonemax)) then
+        if ((brforce.gt.thresh).and.(clone(k)==0).and.(clonenum(k).lt.clonemax)) then
           clone(k) = x
           clonehere(k) = 1
         end if 

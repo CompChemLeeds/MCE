@@ -572,6 +572,15 @@ contains
           write(0,"(a,a)") "Error. cloneflg value must be YES/NO/BLIND/BLIND+. Read ", trim(LINE2)
         end if
         n = n+1
+      else if (LINE=="Threshold") then
+        backspace(127)
+        read(127,*,iostat=ierr)LINE,thresh
+        if(ierr.ne.0) then
+          write(0,"(a)")  "Error reading cloning threshold"
+          errorflag = 1
+          return
+        end if
+        n = n+1
       else if (LINE=="max_cloning") then
         backspace(127)
         read(127,*,iostat=ierr)LINE,clonemax
@@ -649,6 +658,14 @@ contains
     else if ((basis.eq.'GRSWM').or.(basis.eq.'grswm'))then
       basis = 'GRSWM'
     end if
+    
+    if (thresh .lt. 0.05d0) then
+      write(0,"(a)") "Cloning threshold too small. Setting to default value of 0.249"
+      thresh = 0.249d0
+    else if (thresh .ge. 0.25d0) then
+      write(0,"(a)") "Cloning threshold larger than allowed limits. Setting to default value of 0.249"
+      thresh = 0.249d0
+    end if
 
     if ((matfun.ne.'zgesv').and.(matfun.ne.'ZGESV').and.(matfun.ne.'zheev').and.(matfun.ne.'ZHEEV')) then
       write(0,"(a,a)") "Invalid value for matrix function. Must be ZGESV/zgesv or ZHEEV/zheev. Value is ", matfun
@@ -660,7 +677,7 @@ contains
       matfun = 'zheev'
     end if
     
-    if (n.ne.20) then
+    if (n.ne.21) then
       write(0,"(a,i0)") "Not all required variables read in readbsparams subroutine. n=", n
       errorflag = 1
       return

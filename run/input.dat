@@ -2,13 +2,14 @@
 #					Input File								!!!
 #!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-# System (Currently can be SB [Spin Boson], HP [Harmonic Potential], FP [Free Particle], DL [Spin Boson with Drude-Lorentz]
-#    MP [Morse Potential], IV [Inverted Gaussian], CP [Coulomb Potential], or HH [Henon-Heiles]. SB, DL works only with MCE, all others with CCS. 
+# System (Currently can be SB [Spin Boson],        HP [Harmonic Potential], FP [Free Particle], MP [Morse Potential], 
+#                          IV [Inverted Gaussian], CP [Coulomb Potential],  HH [Henon-Heiles]. 
+#  SB works only with MCE, all others with CCS. 
 System: SB
 
 #Name of running folder [Default : <method>-<system>-<random number> ie CCS-HP-31254 (input "default", case insensitive)
 #                       Otherwise:  <method>-<system>-<runfolder string> ie CCS-HP-withgrids]
-Runfolder case4_swtrn
+Runfolder case1b_delta100
 
 #Debug flag [ 0: no debug outputs, 1: debug outputs. Does not really work for dynamic basis set sizes]
 debug 0
@@ -26,7 +27,7 @@ restart 0
 cmprss YES
 
 #Propagation method [can be CCS, MCEv1, MCEv2, AIMC-MCE1 (first pass), AIMC-MCE2 (Second pass) or MCE12 (uses both MCE methods). No support for vMCG, F-CCS or 2L-CCS yet.]
-method MCEv2
+method MCEv1
 
 #Number of repeats. Do not need to set manually - this is set by the run command.
 Repeats 192
@@ -35,10 +36,10 @@ Repeats 192
 Conjugate_Repeats NO
 
 # Number of basis functions 
-in_nbf 100
+in_nbf 50
 
 # Number of dimensions
-ndim 60
+ndim 50
 
 #determine which PES you are on initially
 in_PES 1
@@ -47,7 +48,7 @@ in_PES 1
 npes 2
 
 # determines shape of the initial basis [SWARM/SWTRN/TRAIN/GRID/GRSWM]
-basis SWTRN
+basis SWARM
 
 # Compression parameter (can be tweaked to allow better norm value, or altered automatically)   Used for swarms/swarm-trains/grid-swarms
 ALCMP 200.0d0
@@ -80,19 +81,22 @@ qsizez 100
 psizez 26
 
 # Flag for cloning basis functions (yes/no/blind/blind+)
-Cloning blind
+Cloning no
+
+# Cloning threshold (value of |sum_r(a_{r,k})|) - must be >= 0.05 and < 0.25, default 0.249
+Threshold 0.05d0
 
 # Maximum number of Cloning events allowed
 max_cloning 4
 
 # Minimum cloning frequency (ie how many timesteps since last cloning is new cloning event allowed)
-clon_freq 50
+clon_freq 200
 
 # spacing between trajectories for train type basis set. Used for trains/swarm-trains
-trainsp 20 
+trainsp 60 
 
 # default steps per train. Used for swarm-trains only. This is sometimes increased/decreased by 1.
-def_stp 10
+def_stp 20
 
 # Matrix function (zgesv - linear algebra, zheev - matrix inversion)
 matfun zgesv

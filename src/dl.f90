@@ -263,7 +263,7 @@ contains
       return
     else
       do m=1,size(sig_dl)
-        sig_dl(m) = 1.0d0/(dexp(beta_dl*wm_dl(m))-1.0d0)
+        sig_dl(m) = 1.0d0/sqrt((dexp(beta_dl*wm_dl(m))-1.0d0))
       end do
     end if
 

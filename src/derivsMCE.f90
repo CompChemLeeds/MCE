@@ -621,7 +621,8 @@ contains
       do j=1,nbf
         do k=1,nbf
           ovrlpdif = ovrlpphi(j,k) - ovrlp(j,k) 
-          if ((ovrlpdif.ne.0.0d0).and.(basis.ne."TRAIN").and.(basis.ne."SWTRN")) then
+          if ((ovrlpdif.ne.0.0d0).and.(basis.ne."TRAIN").and.(basis.ne."SWTRN").and.&
+            & (cloneflg.ne."BLIND").and.(cloneflg.ne."BLIND+")) then
             write(0,"(a)") "Error! Initial phi-overlap has disimilarilies to z-overlap"
             write(0,'(a,a,i0,a,i0,a)'), "These matricies should be identical ",&
                                   "but differences found at coordinate ", j,",",k,"."

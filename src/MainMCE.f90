@@ -223,11 +223,6 @@ Program MainMCE
   absnorm2 = 0.0d0      ! Absolute value of the sum of the single config. norms
   acf_t = (0.0d0,0.0d0) ! Auto-correlation function
   extra = (0.0d0,0.0d0)
-!  allocate (ndimacf(3*ndim+3), stat=istat)
-!  if (istat/=0) then
-!    write(0,"(a)") "Error allocatin ndimacf array"
-!    errorflag=1
-!  end if
 
   if (conjflg==1) then    ! This statement ensures that if conjugate repetition
     intvl = 2             ! is selected the outer repetition loop will increase
@@ -290,6 +285,7 @@ Program MainMCE
       write(0,"(a)") "Error allocating the initial grid array in main"
       errorflag=1
     end if
+    initgrid = (0.0d0,0.0d0)
     
     allocate(map_bfs(1,1), stat=ierr) ! allocated to prevent memory errors
       if (ierr/=0) then
@@ -302,6 +298,7 @@ Program MainMCE
       write(0,"(a)") "Error in allocating the temporary population array in Main"
       errorflag=1
     end if 
+    popt = 0.0d0
     
     if (genloc.eq."Y") then
       allocate (mup(ndim), stat=ierr)
@@ -571,7 +568,6 @@ Program MainMCE
 !        end do            
         initehr = abs(ehren)
         acft = acf(bset,mup,muq)
-!        ndimacf = acfdim(bset,mup,muq)
         call extras(extmp, bset)
         do r=1,npes
           popt(r) = pop(bset, r,ovrlp)   
@@ -592,8 +588,6 @@ Program MainMCE
             call outvarsheads (reps, nbf)
             call outvars(bset,x,reps,time)
           end if
-!          call outdimacfheads(reps)
-!          call outdimacf(time,ndimacf,reps)
           call outnormpopadapheads(reps)
           call outnormpopadap(initnorm,acft,extmp,initehr,popt,x,reps,time)
         else                         ! For adaptive stepsize the data is output straight away
@@ -607,8 +601,6 @@ Program MainMCE
           write(rep,"(i3.3)") reps
           open (unit=timestpunit,file="timesteps-"//trim(rep)//".out",status="unknown",iostat=istat)
           close (timestpunit)
-!          call outdimacfheads(reps)
-!          call outdimacf(time,ndimacf,reps)
           call outnormpopadapheads(reps)
           call outnormpopadap(initnorm,acft,extmp,initehr,popt,x,reps,time)
         end if 
@@ -659,7 +651,7 @@ Program MainMCE
             call reloc_basis(bset, initgrid, nbf, x, time, gridsp, mup, muq)
           end if      
 
-          if (allocated(clone).and.(cloneflg.ne."BLIND").and.(time.le.timeend)) then
+          if ((allocated(clone)).and.(cloneflg.ne."BLIND").and.(time.le.timeend)) then
             call cloning (bset, nbf, x, time, clone, clonenum, reps)
           end if
           

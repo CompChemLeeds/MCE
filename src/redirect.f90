@@ -8,8 +8,6 @@ MODULE redirect
   use iv
   use cp
   use hh
-  use dl
-
 
 !*************************************************************************************************!
 !*
@@ -37,8 +35,6 @@ contains
     select case (sys)
       case ("SB")
         call readparams_sb
-      case ("DL")
-        call readparams_dl
       case ("HP") 
         call readparams_hp
       case ("FP")
@@ -74,8 +70,6 @@ contains
     select case (sys)
       case ("SB")
         call genzinit_sb(mup,muq)
-      case ("DL")
-        call genzinit_dl(mup,muq)
       case ("HP")
         call genzinit_hp(mup,muq)
       case ("FP")
@@ -112,8 +106,6 @@ contains
     select case (sys)
       case ("SB")
         call Hij_sb(H,z1,z2)
-      case ("DL")
-        call Hij_dl(H,z1,z2)
       case ("HP")
         call Hij_hp(H,z1,z2)
       case ("FP")
@@ -150,8 +142,6 @@ contains
     select case (sys)
       case ("SB")
         dhdz=dh_dz_sb(z)
-      case ("DL")
-        dhdz=dh_dz_dl(z)
       case ("HP")
         dhdz=dh_dz_hp(z)
       case ("FP")
@@ -186,8 +176,6 @@ contains
 
     select case (sys)
       case ("SB")
-        extra=(0.0d0,0.0d0)
-      case ("DL")
         extra=(0.0d0,0.0d0)
       case ("HP")
         extra=(0.0d0,0.0d0)

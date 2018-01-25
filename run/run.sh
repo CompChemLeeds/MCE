@@ -167,7 +167,7 @@ fi
 cp input.dat input2.dat     # Created so it can be edited without conflicts
 
 method=`grep -i "^method" input.dat`
-if [[ $? == 1 || $? == 2 ]]; then
+if [[ $? != 0 ]]; then
   echo "Could not read the method from input.dat. Exitting"
   exit 1
 fi
@@ -179,9 +179,22 @@ else
 fi
 methseq=( `seq 1 $k` )   # Array for number of executions (>1 element only for MCE12)
 
+freqflg=`grep -i "^freqflg" input.dat`
+if [[ $? != 0 ]]; then
+  echo "Could not read the frequency flag from input.dat. Exitting"
+  exit 1
+fi
+freqflg=${freqflg#* }
+if [[ $freqflg != 0 && $freqflg != 1 ]]; then
+  echo "Frequency flag is neither 1 or 0. Read a value of $freqflg"
+  exit 1
+fi
+
+if [[ $freqflg -eq 1 ]]; then ./integrator.exe; fi
+
 sed -i "s/^Repeats.*/Repeats $REPS/g" input2.dat   # Writes number of repeats per
 grep "^Repeats $REPS" input2.dat > /dev/null       # folder to input.dat file
-if [[ $? == 1 || $? == 2 ]]; then
+if [[ $? != 0 ]]; then
   echo "Could not change the number of repeats in input.dat. Exitting"
   exit 1
 fi
@@ -192,8 +205,9 @@ fi
 # the method and whatever string is read from the line in input.dat.
 # Determination of the folder name is carried out later, written to
 # the variable $outfol2
+
 outfol=`grep -i "^Runfolder" input.dat`
-if [[ $? == 1 || $? == 2 ]]; then
+if [[ $? != 0 ]]; then
   echo "Could not read the execution folder from input.dat. Exitting"
   exit 1
 fi
@@ -202,7 +216,7 @@ echo $outfol | grep -i "default" > /dev/null
 outdef=$?
 
 sys=`grep -i "^System:" input.dat`
-if [[ $? == 1 || $? == 2 ]]; then
+if [[ $? != 0 ]]; then
   echo "Could not read the system from input.dat. Exitting"
   exit 1
 fi
@@ -284,8 +298,10 @@ for a in "${methseq[@]}"; do
     if [[ $grdalt -eq 1 ]]; then 
       cp ./calibinputs/input.$i $SUBDIR/input.dat
       cp inham.dat MCE.exe prop.dat $SUBDIR/
+      if [[ $freqflg == 1 ]]; then cp freq.dat $SUBDIR/; fi
     else
       cp inham.dat input2.dat MCE.exe prop.dat $SUBDIR/
+      if [[ $freqflg == 1 ]]; then cp freq.dat $SUBDIR/; fi
       mv $SUBDIR/input2.dat $SUBDIR/input.dat
     fi
     
@@ -328,7 +344,7 @@ for a in "${methseq[@]}"; do
       
       # Copy cloning array files (used for restarted previous run
       clone=`grep -i "^Cloning" input.dat`
-      if [[ $? == 1 || $? == 2 ]]; then
+      if [[ $? != 0 ]]; then
         echo "Could not read the cloning flag from input.dat. Exitting"
         exit 1
       fi

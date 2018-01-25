@@ -123,6 +123,8 @@ Program MainMCE
 !                 not very expensive, however if the program were to be extended to !
 !                 QMD with real molecules it would be useful.                       !
 !                                                                                   !
+!      Further changelog can be found in the commit statements from the git repo    !
+!                                                                                   !
 !***********************************************************************************!
 
   use bsetgen    ! basis set generation module
@@ -703,7 +705,6 @@ Program MainMCE
 !          end do
           ehrtmp = abs(ehren)
           acft = acf(bset,mup,muq)
-!          ndimacf = acfdim(bset,mup,muq)
           call extras(extmp, bset)
           do r=1,npes
             popt(r) = pop(bset, r, ovrlp)  
@@ -723,7 +724,6 @@ Program MainMCE
               call histogram(bset, 50, time, -2.46d0, 1.44d0, nbf)
               call outvars(bset,x,reps,time)
             end if
-!            call outdimacf(time,ndimacf,reps)
             call outnormpopadap(nrmtmp,acft,extmp,ehrtmp,popt,x,reps,time)
           else if (step == "A") then
             timestpunit=1710+reps
@@ -735,7 +735,6 @@ Program MainMCE
               call outtraj(bset,x,reps,time,ovrlp,dt)
               call outvars(bset,x,reps,time)
             end if
-!            call outdimacf(time,ndimacf,reps)
             call outnormpopadap(nrmtmp,acft,extmp,ehrtmp,popt,x,reps,time)
           end if
           deallocate(ovrlp)
@@ -828,12 +827,6 @@ Program MainMCE
   end do ! The main repeat loop
   !$omp end do
   !$omp end parallel
-
-!  deallocate(ndimacf,stat=istat)
-!  if (istat/=0) then
-!    write(0,"(a)") "Error deallocating ndimacf in main"
-!    errorflag=1
-!  end if
 
   write(6,"(a)") "Finished Propagation"
 

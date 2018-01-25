@@ -97,38 +97,65 @@ contains
           return
         end if
         n = n+1
-      else if (LINE=='SBwc') then
+      else if (LINE=='SBBeta') then
         backspace(128)
-        read(128,*,iostat=ierr)LINE,wc_sb
+        read(128,*,iostat=ierr)LINE,beta_sb
         if (ierr.ne.0) then
-          write(0,"(a)") "Error reading wc value"
+          write(0,"(a)") "Error reading beta value"
           errorflag = 1
           return
         end if
         n = n+1
-      else if (LINE=='SBkondo') then
+      else if (LINE=='SBEwc') then
         backspace(128)
-        read(128,*,iostat=ierr)LINE,kondo_sb
+        read(128,*,iostat=ierr)LINE,wc_exp
+        if (ierr.ne.0) then
+          write(0,"(a)") "Error reading wc value for exponential cutoff"
+          errorflag = 1
+          return
+        end if
+        n = n+1
+      else if (LINE=='SBEkondo') then
+        backspace(128)
+        read(128,*,iostat=ierr)LINE,kondo_exp
         if (ierr.ne.0) then
           write(0,"(a)") "Error reading kondo parameter value"
           errorflag = 1
           return
         end if
         n = n+1
-      else if (LINE=='SBwmax') then
+      else if (LINE=='SBEwmaxfact') then
         backspace(128)
-        read(128,*,iostat=ierr)LINE,wmax_sb
+        read(128,*,iostat=ierr)LINE,wmax_exp
         if (ierr.ne.0) then
-          write(0,"(a)") "Error reading wmax value"
+          write(0,"(a)") "Error reading wmax value for exponential cutoff"
           errorflag = 1
           return
         end if
         n = n+1
-      else if (LINE=='SBBeta') then
+      else if (LINE=='SBDwc') then
         backspace(128)
-        read(128,*,iostat=ierr)LINE,beta_sb
+        read(128,*,iostat=ierr)LINE,wc_dl
         if (ierr.ne.0) then
-          write(0,"(a)") "Error reading beta value"
+          write(0,"(a)") "Error reading wc value for drude lorentz cutoff"
+          errorflag = 1
+          return
+        end if
+        n = n+1
+      else if (LINE=='SBDlambda') then
+        backspace(128)
+        read(128,*,iostat=ierr)LINE,lambda_dl
+        if (ierr.ne.0) then
+          write(0,"(a)") "Error reading lambda value for drude lorentz cutoff"
+          errorflag = 1
+          return
+        end if
+        n = n+1
+      else if (LINE=='SBDwmaxfact') then
+        backspace(128)
+        read(128,*,iostat=ierr)LINE,wmax_dl
+        if (ierr.ne.0) then
+          write(0,"(a)") "Error reading wmax factor value for drude lorentz cutoff"
           errorflag = 1
           return
         end if
@@ -157,13 +184,19 @@ contains
 
     end do
 
-!    if (wmax_sb .ne. 5.0d0 * wc_sb) then
-!      wmax_sb = wc_sb * 5.0d0
-!    end if
-
     close (128)
 
-    if (n.ne.8) then
+    if (specden=="EXP") then 
+      wmax_sb = wc_exp * wmax_exp
+    else if (specden=="DL") then 
+      wmax_sb = wc_dl * wmax_dl
+    else if ((specden.ne."UBO").and.(specden.ne."LHC")) then
+      write (0,"(a)") "Error in recognising spectral density while calculating wmax_sb"
+      errorflag = 1
+      return
+    end if
+
+    if (n.ne.11) then
       write(0,"(a)") "Not all required variables read in readparams_sb subroutine"
       errorflag = 1
       return
@@ -203,10 +236,21 @@ contains
       errorflag=1
       return
     else if (freqflg_sb.eq.0) then
-      do m=1,size(wm_sb)
-        wm_sb(m)=-1.0d0*wc_sb*dlog(1.0d0-((dble(m)*(1.0d0-dexp(-1.0d0*wmax_sb/wc_sb)))/dble(ndim)))
-        Cm_sb(m)=wm_sb(m)*sqrt(kondo_sb*wc_sb*(1.0d0-dexp(-1.0d0*wmax_sb/wc_sb))/dble(ndim))
-      end do
+      if (specden.eq."EXP") then
+        do m=1,size(wm_sb)
+          wm_sb(m)=-1.0d0*wc_exp*dlog(1.0d0-((dble(m)*(1.0d0-dexp(-1.0d0*wmax_sb/wc_exp)))/dble(ndim)))
+          Cm_sb(m)=wm_sb(m)*sqrt(kondo_exp*wc_exp*(1.0d0-dexp(-1.0d0*wmax_sb/wc_exp))/dble(ndim))
+        end do
+      else if (specden.eq."DL") then
+        do m=1,size(wm_sb)
+          wm_sb(m)=wc_dl*dtan((dble(m)/dble(ndim))*datan(wmax_sb/wc_dl))
+          Cm_sb(m)=wm_sb(m)*sqrt((4.0d0*lambda_dl/(sqrtpi*sqrtpi*wc_dl))*datan(wmax_sb/wc_dl)/dble(ndim))                           
+        end do
+      else
+        write(0,"(3a)") "Error! Spectral Density set as ", specden, " but this is incompatible with frequency calculation."
+        errorflag = 1
+        return
+      end if 
     else
       call readfreq(Cm_sb, wm_sb)
     end if
@@ -214,40 +258,6 @@ contains
     return
 
   end subroutine genwm_sb
-
-!--------------------------------------------------------------------------------------------------
-
-  subroutine genCm_sb(Cm_sb, wm_sb)   !   Level 2 Subroutine
-  
-    ! Generates the array of coupling strengths, which are dependant upon the frequencies, also over M degrees of freedom
-
-    implicit none
-    real(kind=8) :: pi_rl
-    integer::m, ierr
-    real(kind=8), dimension(:), intent(in) :: wm_sb 
-    real(kind=8), dimension(:), allocatable, intent(inout) :: Cm_sb  
-
-    if (errorflag .ne. 0) return
-    ierr = 0
-    pi_rl = sqrtpi**2.0d0
-
-    if (ndim.le.0) then
-      write(0,"(a)") 'Number of dimensions not correctly read or stored'
-      errorflag = 1
-      return
-    else if (.not.allocated(Cm_sb)) then
-      write(0,"(a)") "genCm subroutine called but Cm not allocated"
-      errorflag=1
-      return
-    else
-      do m=1,size(Cm_sb)
-        Cm_sb(m)=wm_sb(m)*sqrt(kondo_sb*wc_sb*(1.0d0-dexp(-1.0d0*wmax_sb/wc_sb))/dble(ndim))     !Ohmic bath
-      end do
-    end if
-
-    return
-
-  end subroutine genCm_sb
 
 !--------------------------------------------------------------------------------------------------
 
@@ -337,12 +347,12 @@ contains
 
     do while (recalc == 1)
       do m=1,ndim
-!        mup(m)=ZBQLNOR(mu,sig_sb(m)*sigp)
-!        muq(m)=ZBQLNOR(mu,sig_sb(m)*sigq)
-!        zin(m)=cmplx(muq(m),mup(m),kind=8)
-        zin(m)=gauss_random_sb(sig_sb(m),0.0d0,0.0d0)
-        muq(m)=dble(zin(m))
-        mup(m)=dimag(zin(m))
+        mup(m)=ZBQLNOR(mu,sig_sb(m)*sigp)
+        muq(m)=ZBQLNOR(mu,sig_sb(m)*sigq)
+        zin(m)=cmplx(muq(m),mup(m),kind=8)
+!        zin(m)=gauss_random_sb(sig_sb(m),0.0d0,0.0d0)
+!        muq(m)=dble(zin(m))
+!        mup(m)=dimag(zin(m))
       end do
       if (ECheck.eq."YES") then
         call Hij_sb(H,zin,zin)
@@ -404,7 +414,6 @@ contains
     end if
 
     call genwm_sb(wm_sb, Cm_sb)
-!    call genCm_sb(Cm_sb, wm_sb)
 
     Hbath = Hb_sb(z1,z2,wm_sb)
     Hcoup = Hc_sb(z1,z2,wm_sb, Cm_sb)
@@ -502,7 +511,6 @@ contains
     end if 
 
     call genwm_sb(wm_sb, Cm_sb)
-!    call genCm_sb(Cm_sb, wm_sb)
 
     dh_dz_sb(1,1,:) = dhdz_sb_11(z,wm_sb,Cm_sb)
     dh_dz_sb(1,2,:) = dhdz_sb_12(wm_sb,Cm_sb)
@@ -673,6 +681,8 @@ contains
     r=r*3232768.0
     rint = int(r)
     
+    write(0,"(a)") "Entered the frequency reading subroutine"
+    
     open(unit=rint, file='freq.dat', status='old', iostat=ierr)
     
     if (ierr.ne.0) then
@@ -689,11 +699,13 @@ contains
         errorflag = 1
         return
       end if
+      
+      write (0,"(i0,2(1x,es16.8e3))") m, wm_sb(m), Cm_sb(m)
             
     end do
     
     close(rint)
-    
+      
     return    
     
   end subroutine readfreq   

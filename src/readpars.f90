@@ -250,18 +250,62 @@ contains
           return
         end if
         n = n+1
+      else if(LINE=='SpecDen') then
+        backspace(127)
+        read(127,*,iostat=ierr)LINE,specden
+        if (ierr.ne.0) then
+          write(0,"(a)") "Error reading Spin Boson Spectral Density name"
+          errorflag = 1
+          return
+        end if
+        n = n+1
+      else if(LINE=='freqflg') then
+        backspace(127)
+        read(127,*,iostat=ierr)LINE,freqflg_sb
+        if (ierr.ne.0) then
+          write(0,"(a)") "Error reading Spin Boson Frequency calculation flag"
+          errorflag = 1
+          return
+        end if
+        n = n+1
       end if
       read(127,*,iostat=ierr) LINE
 
     end do
 
     close(127)
-
-    if (n.ne.1) then
-      write(0,"(a)") "Not all required variables read in readsys subroutine"
+    
+    if ((sys.ne."SB").and.(sys.ne."HP").and.(sys.ne."FP").and.(sys.ne."MP").and.(sys.ne."IV") &
+          & .and.(sys.ne."CP").and.(sys.ne."HH")) then
+      write(0,"(2a)") "System not recognised. Please recheck input.dat file. Read value of ", sys
       errorflag = 1
       return
     end if
+    
+    if ((sys.eq."SB").and.(specden.ne."EXP").and.(specden.ne."DL").and.(specden.ne."UBO").and.(specden.ne."LHC")) then
+      write(0,"(2a)") "Spectral Density not recognised. Must be EXP, DL, UBO or LHC, but read ", specden
+      errorflag = 1
+      return
+    end if
+    
+    if (specden.eq."LHC") then
+      write(0,"(a)") "The LHC-II Spectral Density calculation is not full set up yet. Please change the spectral density"
+      errorflag = 1
+      return
+    end if
+      
+    if ((freqflg_sb.eq.0).and.((specden=="UBO").or.(specden=="LHC"))) then 
+      write(0,"(3a)") "Frequency flag set for self calculation. This is not compatible with the ", specden, &
+                     & " spectral density, which only works with pre-calculation. Please revise the running parameters"
+      errorflag = 1
+      return
+    end if
+
+    if (n.ne.3) then
+      write(0,"(a)") "Not all required variables read in readsys subroutine"
+      errorflag = 1
+      return
+    end if  
 
     call readparams
 
@@ -924,7 +968,7 @@ contains
           write(0,"(a)") "This method must not use a static grid."
           errorflag = 1
           return
-        end if 
+        end if       
       case ("HP")
         if (npes.ne.1) then
           write(0,"(a)") "Harmonic Potential only valid for 1 PES"
@@ -1116,7 +1160,7 @@ contains
     sigq = sqrt(gam/2.0d0)
 
     if (n.ne.3) then
-      write(0,"(a)") "Not all required variables read in readzparams subroutine."
+      write(0,"(a,i0)") "Not all required variables read in readzparams subroutine. n = ", n
       errorflag = 1
       return
     end if
@@ -1252,7 +1296,7 @@ contains
     call flush(0)
 
     if (n.ne.6) then
-      write(0,"(a,i2,a)") "Error in reading parameters. Only ", n, " of 6 parameters read."
+      write(0,"(a,i0,a)") "Error in reading parameters. Only ", n, " of 6 parameters read."
       errorflag = 1
       return
     end if 

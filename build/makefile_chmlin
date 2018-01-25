@@ -8,23 +8,26 @@ VPATH=../src
 
 # Link step
 
-all: Main avrgpops timehist subavrg interpolate
+all: Main avrgpops timehist subavrg interpolate integrator
 
-Main:BLAS.o zgesv_with_dpndnss.o zheev_with_dpndnss.o randgen.o dcerf.o vars.o alarrays.o sb.o dl.o hp.o fp.o mp.o iv.o cp.o hh.o outputs.o redirect.o Ham.o Chks.o bsetalter.o readpars.o derivsMCE.o propMCE.o bsetgen.o MainMCE.o 
-	 $(F90) $(FFLAGS) -o MCE.exe BLAS.o zgesv_with_dpndnss.o zheev_with_dpndnss.o randgen.o dcerf.o vars.o alarrays.o sb.o dl.o hp.o fp.o mp.o iv.o cp.o hh.o outputs.o redirect.o Ham.o Chks.o bsetalter.o readpars.o derivsMCE.o propMCE.o bsetgen.o MainMCE.o $(FLINKS)
+Main:BLAS.o zgesv_with_dpndnss.o zheev_with_dpndnss.o randgen.o dcerf.o vars.o alarrays.o sb.o hp.o fp.o mp.o iv.o cp.o hh.o outputs.o redirect.o Ham.o Chks.o bsetalter.o readpars.o derivsMCE.o propMCE.o bsetgen.o MainMCE.o 
+	 $(F90) $(FFLAGS) -o MCE.exe BLAS.o zgesv_with_dpndnss.o zheev_with_dpndnss.o randgen.o dcerf.o vars.o alarrays.o sb.o hp.o fp.o mp.o iv.o cp.o hh.o outputs.o redirect.o Ham.o Chks.o bsetalter.o readpars.o derivsMCE.o propMCE.o bsetgen.o MainMCE.o $(FLINKS)
 	 
 avrgpops:avrgpops.f90
-	 $(F90) $(FFLAGS) -o avrgpops.exe $<
+	 $(F90) -O3 -o avrgpops.exe $<
 	 
 subavrg:subavrg.f90
-	 $(F90) -O2 -o subavrg.exe $<
+	 $(F90) -O3 -o subavrg.exe $<
 	 
 timehist:timehist.f90
-	 $(F90) $(FFLAGS) -o timehist.exe $<
+	 $(F90) -O3 -o timehist.exe $<
 	 
 interpolate:neville.o interpolate.o
-	 $(F90) -O2 -o interpolate.exe neville.o interpolate.o
-
+	 $(F90) -O3 -o interpolate.exe neville.o interpolate.o
+	 
+integrator:integrator.f90
+	 $(F90) -O3 -o integrator.exe $<
+	 
 # Compile steps
  
 BLAS.o:BLAS.f
@@ -49,9 +52,6 @@ alarrays.o:alarrays.f90 vars.o
 	 $(F90) $(FFLAGS) -c $<
 
 sb.o:sb.f90 vars.o 
-	 $(F90) $(FFLAGS) -c $<
-	 
-dl.o:dl.f90 vars.o 
 	 $(F90) $(FFLAGS) -c $<
 
 hp.o:hp.f90 vars.o 

@@ -79,7 +79,7 @@ contains
 
     do while (ierr==0)
 
-      if(LINE=='DLDelta') then
+      if(LINE=='SBDelta') then
         backspace(128)
         read(128,*,iostat=ierr)LINE,delta_dl
         if (ierr.ne.0) then
@@ -88,7 +88,7 @@ contains
           return
         end if
         n = n+1
-      else if (LINE=='DLEps') then
+      else if (LINE=='SBEps') then
         backspace(128)
         read(128,*,iostat=ierr)LINE,eps_dl
         if (ierr.ne.0) then
@@ -97,7 +97,7 @@ contains
           return
         end if
         n = n+1
-      else if (LINE=='DLw') then
+      else if (LINE=='SBDwc') then
         backspace(128)
         read(128,*,iostat=ierr)LINE,wc_dl
         if (ierr.ne.0) then
@@ -106,7 +106,7 @@ contains
           return
         end if
         n = n+1
-      else if (LINE=='DLlambda') then
+      else if (LINE=='SBDlambda') then
         backspace(128)
         read(128,*,iostat=ierr)LINE,lambda_dl
         if (ierr.ne.0) then
@@ -115,7 +115,7 @@ contains
           return
         end if
         n = n+1
-      else if (LINE=='DLwmax') then
+      else if (LINE=='SBDwmaxfact') then
         backspace(128)
         read(128,*,iostat=ierr)LINE,wmax_dl
         if (ierr.ne.0) then
@@ -124,7 +124,7 @@ contains
           return
         end if
         n = n+1
-      else if (LINE=='DLBeta') then
+      else if (LINE=='SBBeta') then
         backspace(128)
         read(128,*,iostat=ierr)LINE,beta_dl
         if (ierr.ne.0) then
@@ -133,7 +133,7 @@ contains
           return
         end if
         n = n+1
-      else if(LINE=='DLupnorm') then
+      else if(LINE=='SBupnorm') then
         backspace(128)
         read(128,*,iostat=ierr)LINE,uplimnorm
         if (ierr.ne.0) then
@@ -142,7 +142,7 @@ contains
           return
         end if
         n = n+1
-      else if(LINE=='DLdownnorm') then
+      else if(LINE=='SBdownnorm') then
         backspace(128)
         read(128,*,iostat=ierr)LINE,lowlimnorm
         if (ierr.ne.0) then
@@ -157,9 +157,7 @@ contains
 
     end do
 
-!    if (wmax_dl .ne. 5.0d0 * wc_dl) then
-!      wmax_dl = wc_dl * 5.0d0
-!    end if
+    wmax_dl = wc_dl * wmax_dl
 
     close (128)
 

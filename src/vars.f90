@@ -43,22 +43,21 @@ MODULE globvars
   integer:: clonemax   ! maximum number of cloning events allowed per basis function
   integer:: clonefreq  ! minimum number of timesteps between concurrent coloning events
 
-  real(kind=8),external :: ZBQLNOR                ! The normally distributed random number external function
+  real(kind=8),external :: ZBQLNOR ! The normally distributed random number external function
 
-  real(kind=8) :: wc_sb            ! Cutoff frequency **SPIN BOSON ONLY**
+  real(kind=8) :: wmax_sb          ! Maximum frequency **SPIN BOSON ONLY**
   real(kind=8) :: beta_sb          ! Temperature parameter **SPIN BOSON ONLY**
-  real(kind=8) :: kondo_sb        ! Kondo parameter **SPIN BOSON ONLY**
-  real(kind=8) :: wmax_sb          ! Maximum frequency = 5*wc **SPIN BOSON ONLY**
-  real(kind=8) :: delta_sb        ! Coupling between PESs in Hamiltonian - provides off diagonals **SPIN BOSON ONLY**
-  real(kind=8) :: eps_sb          ! Symmetry parameter used in calculation of diagonals in hamiltonian **SPIN BOSON ONLY**
+  real(kind=8) :: delta_sb         ! Coupling between PESs in Hamiltonian - provides off diagonals **SPIN BOSON ONLY**
+  real(kind=8) :: eps_sb           ! Symmetry parameter used in calculation of diagonals in hamiltonian **SPIN BOSON ONLY**
   integer :: freqflg_sb            ! Flag for reading pre-calculated frequencies (1=read, 0=calculate) **SPIN BOSON ONLY**
   
+  real(kind=8) :: wc_exp           ! Cutoff frequency **SPIN BOSON ONLY**
+  real(kind=8) :: kondo_exp        ! Kondo parameter **SPIN BOSON ONLY**
+  real(kind=8) :: wmax_exp         ! Maximum frequency factor **SPIN BOSON ONLY**
+  
   real(kind=8) :: wc_dl            ! Cutoff frequency **DRUDE LORENTZ ONLY**
-  real(kind=8) :: beta_dl          ! Temperature parameter **DRUDE LORENTZ ONLY**
   real(kind=8) :: lambda_dl        ! Reorganisation Energy parameter **DRUDE LORENTZ ONLY**
-  real(kind=8) :: wmax_dl          ! Maximum frequency **DRUDE LORENTZ ONLY**
-  real(kind=8) :: delta_dl         ! Coupling between PESs in Hamiltonian - provides off diagonals **DRUDE LORENTZ ONLY**
-  real(kind=8) :: eps_dl           ! Symmetry parameter used in calculation of diagonals in hamiltonian **DRUDE LORENTZ ONLY**
+  real(kind=8) :: wmax_dl          ! Maximum frequency factor **DRUDE LORENTZ ONLY**
 
   real(kind=8) :: mass_fp          ! Mass of a particle **FREE PARTICLE ONLY**
 
@@ -72,48 +71,49 @@ MODULE globvars
   real(kind=8) :: mass_iv          ! Particle mass for inverted gaussian **INVERTED GAUSSIAN ONLY**
   real(kind=8) :: freq_iv          ! Laser frequency for inverted gaussian **INVERTED GAUSSIAN ONLY**
   real(kind=8) :: lambda_iv        ! Potential parameter for inverted gaussian **INVERTED GAUSSIAN ONLY**
-  real(kind=8) :: inten_iv        ! Laser intensity for inverted gaussian **INVERTED GAUSSIAN ONLY**
+  real(kind=8) :: inten_iv         ! Laser intensity for inverted gaussian **INVERTED GAUSSIAN ONLY**
 
   real(kind=8) :: mass_cp          ! Particle mass for Coulomb Potential **COULOMB POTENTIAL ONLY**
   real(kind=8) :: freq_cp          ! Laser frequency for Coulomb Potential **COULOMB POTENTIAL ONLY**
   real(kind=8) :: RC_cp            ! Origin potition for Coulomb Potential **COULOMB POTENTIAL ONLY**
-  real(kind=8) :: inten_cp        ! Laser intensity for Coulomb Potential **COULOMB POTENTIAL ONLY**
+  real(kind=8) :: inten_cp         ! Laser intensity for Coulomb Potential **COULOMB POTENTIAL ONLY**
 
   real(kind=8) :: lambda_hh        ! Hennon-Heiles Potential Coupling Constant
 
-  real(kind=8) :: sigp            ! Width of the distribution of imaginary parts of the initial wavefunction
-  real(kind=8) :: sigq            ! Width of the distribution of real parts of the initial wavefunction
+  real(kind=8) :: sigp             ! Width of the distribution of imaginary parts of the initial wavefunction
+  real(kind=8) :: sigq             ! Width of the distribution of real parts of the initial wavefunction
   real(kind=8) :: gam              ! Gamma value, used to calculate the widths sigp and sigq
-  real(kind=8) :: initalcmprss    ! Initial compression parameter. Can be automatically tweaked or left static.
-  real(kind=8) :: mu              ! Center value for the real and imaginary parts of the initial wavefunction 
-  real(kind=8) :: hbar            ! hbar. Currently redundant as hbar assumed to be 1
-  real(kind=8) :: Ebfmin          ! Minimum energy allowed for a single basis function
-  real(kind=8) :: Ebfmax          ! Maximum energy allowed for a single basis function
+  real(kind=8) :: initalcmprss     ! Initial compression parameter. Can be automatically tweaked or left static.
+  real(kind=8) :: mu               ! Center value for the real and imaginary parts of the initial wavefunction 
+  real(kind=8) :: hbar             ! hbar. Currently redundant as hbar assumed to be 1
+  real(kind=8) :: Ebfmin           ! Minimum energy allowed for a single basis function
+  real(kind=8) :: Ebfmax           ! Maximum energy allowed for a single basis function
   real(kind=8) :: dtmin            ! Minimum stepsize for adaptive step system
   real(kind=8) :: dtmax            ! Maximum stepsize for adaptive step system
   real(kind=8) :: timeend          ! Final time value for simulation
-  real(kind=8) :: timestrt        ! Initial time value for simulation (instability occurs when =/= 0)
-  real(kind=8) :: dtinit          ! Initial/Only time step size for adaptive/static stepsize
-  real(kind=8) :: initsp          ! Grid spacing for regular grids
+  real(kind=8) :: timestrt         ! Initial time value for simulation (instability occurs when =/= 0)
+  real(kind=8) :: dtinit           ! Initial/Only time step size for adaptive/static stepsize
+  real(kind=8) :: initsp           ! Grid spacing for regular grids
   real(kind=8) :: bfeps            ! Adaptive basis set cutoff parameter
   real(kind=8) :: uplimnorm        ! upper limit of the norm
-  real(kind=8) :: lowlimnorm      ! lower limit of the norm
-  real(kind=8) :: sqrtpi          ! square root of pi
-  real(kind=8) :: thresh          ! cloning threshold
+  real(kind=8) :: lowlimnorm       ! lower limit of the norm
+  real(kind=8) :: sqrtpi           ! square root of pi
+  real(kind=8) :: thresh           ! cloning threshold
 
-  character(LEN=5) :: ECheck      ! Flag to determine if the energy of basis functions should be checked
+  character(LEN=5) :: ECheck       ! Flag to determine if the energy of basis functions should be checked
   character(LEN=5) :: basis        ! Flag for grids
-  character(LEN=5) :: nbfadapt    ! Flag for adaptive basis set size
-  character(LEN=6) :: cloneflg    ! Flag for cloning
-  character(LEN=5) :: matfun      ! Which matrix calcualtion function (zgesv/zheev) used for linear algebra
-  character(LEN=5) :: method      ! MCEv1 or MCEv2 used. Later versions to have other methods available
-  character(LEN=2) :: sys         ! System to be simulated. Currently only Spin Boson allowed
-  character(LEN=1) :: gen         ! Flag to determine if basis set generation needed (global variant)
-  character(LEN=1) :: prop        ! Flag to determine if basis set propagation needed
-  character(LEN=1) :: step        ! Flag to determine whether adaptive or static stepsize propagation needed
-  character(LEN=1) :: cmprss      ! Flag to determine if automatic tweaking of the compression parameter needed
+  character(LEN=5) :: nbfadapt     ! Flag for adaptive basis set size
+  character(LEN=6) :: cloneflg     ! Flag for cloning
+  character(LEN=5) :: matfun       ! Which matrix calcualtion function (zgesv/zheev) used for linear algebra
+  character(LEN=5) :: method       ! MCEv1 or MCEv2 used. Later versions to have other methods available
+  character(LEN=3) :: specden      ! the spectral density type (EXP,DL or UBO ---- LHC to come)
+  character(LEN=2) :: sys          ! System to be simulated. Currently only Spin Boson allowed
+  character(LEN=1) :: gen          ! Flag to determine if basis set generation needed (global variant)
+  character(LEN=1) :: prop         ! Flag to determine if basis set propagation needed
+  character(LEN=1) :: step         ! Flag to determine whether adaptive or static stepsize propagation needed
+  character(LEN=1) :: cmprss       ! Flag to determine if automatic tweaking of the compression parameter needed
 
-  complex(kind=8) :: i            ! The imaginary unit
+  complex(kind=8) :: i             ! The imaginary unit
 
 contains
 
@@ -142,14 +142,20 @@ contains
     psizez = 0
     trainsp = 0
     def_stp = 0
-
-    wc_sb = 0.0d0            ! SPIN BOSON PARAMETER
+ 
     wmax_sb = 0.0d0          ! SPIN BOSON PARAMETER
-    kondo_sb = 0.0d0        ! SPIN BOSON PARAMETER
-    eps_sb = 0.0d0          ! SPIN BOSON PARAMETER
-    delta_sb = 0.0d0        ! SPIN BOSON PARAMETER
+    eps_sb = 0.0d0           ! SPIN BOSON PARAMETER
+    delta_sb = 0.0d0         ! SPIN BOSON PARAMETER
     beta_sb = 0.0d0          ! SPIN BOSON PARAMETER
     freqflg_sb = 0           ! SPIN BOSON PARAMETER
+    
+    wc_exp = 0.0d0           ! SPIN BOSON [EXPONENTIAL CUTOFF] ONLY
+    kondo_exp = 0.0d0        ! SPIN BOSON [EXPONENTIAL CUTOFF] ONLY
+    wmax_exp = 0.0d0         ! SPIN BOSON [EXPONENTIAL CUTOFF] ONLY
+  
+    wc_dl = 0.0d0            ! SPIN BOSON [DRUDE LORENTZ CUTOFF] ONLY
+    lambda_dl = 0.0d0        ! SPIN BOSON [DRUDE LORENTZ CUTOFF] ONLY
+    wmax_dl = 0.0d0          ! SPIN BOSON [DRUDE LORENTZ CUTOFF] ONLY
 
     mass_fp = 0.0d0          ! FREE PARTICLE PARAMETER
 
@@ -163,12 +169,12 @@ contains
     mass_iv = 0.0d0          ! INVERTED GAUSSIAN PARAMETER
     freq_iv = 0.0d0          ! INVERTED GAUSSIAN PARAMETER
     lambda_iv = 0.0d0        ! INVERTED GAUSSIAN PARAMETER
-    inten_iv = 0.0d0        ! INVERTED GAUSSIAN PARAMETER
+    inten_iv = 0.0d0         ! INVERTED GAUSSIAN PARAMETER
 
     mass_cp = 0.0d0          ! COULOMB POTENTIAL PARAMETER
     freq_cp = 0.0d0          ! COULOMB POTENTIAL PARAMETER
     Rc_cp = 0.0d0            ! COULOMB POTENTIAL PARAMETER
-    inten_cp = 0.0d0        ! COULOMB POTENTIAL PARAMETER
+    inten_cp = 0.0d0         ! COULOMB POTENTIAL PARAMETER
 
     lambda_hh = 0.0d0        ! HENNON-HAILES PARAMETER
 

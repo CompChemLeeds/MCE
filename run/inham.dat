@@ -2,15 +2,24 @@
 
 # Spin Boson Parameters (exp cutoff, DL, UBO, or DL base for LHC)
 
-SBDelta 100.0d0
+SBDelta 1.0d0
 SBEps 0.0d0
-SBwc 250.0d0
-SBwmax 1250.0d0
-SBkondo 0.09d0
-SBBeta 0.05d0
-SBlambda 1.0d0
-SBGamma 0.66666666666d0
-SBw0 6.0d0
+SBBeta 5.0d0
+SB_s_factor 1.0d0
+
+SBEwc 2.5d0
+SBEkondo 0.090d0
+SBEwmaxfact 5.0d0
+
+SBDlambda 1.0d0
+SBDwc 0.50d0
+SBDwmaxfact 20.0d0
+
+SBBlambda 0.20d0
+SBBGamma 0.66666666666d0
+SBBw0 6.0d0
+SBBwmaxfact 10.0d0
+
 SBupnorm 0.999d0
 SBdownnorm 0.998d0
 

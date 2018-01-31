@@ -46,7 +46,7 @@ contains
 
     select case (basis)
       case ("SWARM")
-        call gen_swarm(bs,mup,muq,alcmprss,t)
+        call gen_swarm(bs,mup,muq,alcmprss,t,reps)
       case ("TRAIN")
         call gen_train(bs,mup,muq,t,reps,map_bfs)
       case ("SWTRN")
@@ -54,7 +54,7 @@ contains
       case ("GRID")
         call gen_grid(bs,mup,muq,initgrid,gridsp)
       case ("GRSWM")
-        call gen_grswm(bs,mup,muq,alcmprss,initgrid,gridsp,t)
+        call gen_grswm(bs,mup,muq,alcmprss,initgrid,gridsp,t,reps)
       case default
         write(0,"(a)") "Error! Initial basis calculation method not recognised!"
         write(0,"(a)") "This should have been caught at the read stage!"
@@ -68,12 +68,14 @@ contains
 
 !------------------------------------------------------------------------------------
 
-  subroutine gen_swarm(bs,mup,muq,alcmprss,t)
+  subroutine gen_swarm(bs,mup,muq,alcmprss,t,reps)
 
     implicit none
     type(basisfn), dimension(:), intent(inout) :: bs
     real(kind=8), dimension(:), intent(in) :: mup, muq
     real(kind=8), intent(in) :: alcmprss, t
+    integer, intent(in) :: reps
+    
     type (basisfn) :: bf
     integer::m, k, n, h, ierr, redo
 
@@ -103,7 +105,7 @@ contains
               end if
             end if
           end do
-          call enchk(bf,t,n,redo,k)
+          call enchk(bf,t,n,redo,k,reps)
           if (redo==1) cycle
           if (redo==0) exit
         end do
@@ -118,7 +120,7 @@ contains
             do m=1,ndim
               bf%z(m)=bs(k-h)%z(m)*(-1.0d0)
             end do
-            call enchk(bf,t,n,redo,k)
+            call enchk(bf,t,n,redo,k,reps)
             if (redo==1) cycle
             if (redo==0) exit
           end do
@@ -138,7 +140,7 @@ contains
                 ,((1.0d0/hbar)*(ZBQLNOR(mup(m),sigp*alcmprss))),kind=8)
               end if
             end do
-            call enchk(bf,t,n,redo,k)
+            call enchk(bf,t,n,redo,k,reps)
             if (redo==1) cycle
             if (redo==0) exit
           end do
@@ -160,7 +162,7 @@ contains
              ,((1.0d0/hbar)*(ZBQLNOR(mup(m),sigp*alcmprss))),kind=8)
             end if
           end do
-          call enchk(bf,t,n,redo,k)
+          call enchk(bf,t,n,redo,k,reps)
           if (redo==1) cycle
           if (redo==0) exit
         end do
@@ -309,7 +311,7 @@ contains
             ,((1.0d0/hbar)*(ZBQLNOR(mup(m),sigp*alcmprss))),kind=8)
           end if
         end do
-        call enchk(bf,t,n,redo,k)
+        call enchk(bf,t,n,redo,k,reps)
         if (redo==1) cycle
         if (redo==0) exit
       end do
@@ -547,13 +549,14 @@ contains
 
 !------------------------------------------------------------------------------------
 
-  subroutine gen_grswm(bs,mup,muq,alcmprss,initgrid,gridsp,t)
+  subroutine gen_grswm(bs,mup,muq,alcmprss,initgrid,gridsp,t,reps)
 
     implicit none
     type(basisfn), dimension(:), intent(inout) :: bs
     complex(kind=8), dimension(:,:), intent(inout)::initgrid
     real(kind=8), dimension(:), intent(in) :: mup, muq
     real(kind=8), intent(in) :: alcmprss, gridsp, t
+    integer, intent(in) :: reps
     type (basisfn) :: bf
     real(kind=8):: qstrt, pstrt
     integer::m, k, p, q, n, ierr, redo
@@ -581,7 +584,7 @@ contains
               ((1.0d0/hbar)*(ZBQLNOR(mup(m),sigp*alcmprss))),kind=8)
             end if
           end do
-          call enchk(bf,t,n,redo,k)
+          call enchk(bf,t,n,redo,k,reps)
           if (redo==1) cycle
           if (redo==0) exit
         end do
@@ -830,4 +833,5 @@ contains
     return
     
   end function gauss_random
+  
 end module bsetgen

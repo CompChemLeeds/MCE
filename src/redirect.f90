@@ -62,17 +62,18 @@ contains
 
 !--------------------------------------------------------------------------------------------------
 
-  subroutine genzinit(mup, muq)   !   Level 1 Subroutine
+  subroutine genzinit(mup, muq, reps)   !   Level 1 Subroutine
 
     implicit none
 
     real(kind=8), dimension(:), allocatable, intent(inout) :: mup, muq
+    integer, intent(in) :: reps
 
     if (errorflag .ne. 0) return
 
     select case (sys)
       case ("SB")
-        call genzinit_sb(mup,muq)
+        call genzinit_sb(mup,muq,reps)
       case ("VP")
         call genzinit_vp(mup,muq)
       case ("HP")
@@ -99,12 +100,13 @@ contains
 
 !--------------------------------------------------------------------------------------------------
 
-  subroutine Hord(bs, H, t)
+  subroutine Hord(bs, H, t, reps)
     
     implicit none
     type(basisfn),dimension(:),intent(in)::bs
     type (hamiltonian), dimension (:,:), allocatable, intent(inout) :: H
     real(kind=8), intent (in) :: t
+    integer, intent(in) :: reps
 
     if (errorflag .ne. 0) return
 
@@ -116,7 +118,7 @@ contains
 
     select case (sys)
       case ("SB")
-        call Hord_sb(bs, H, t)
+        call Hord_sb(bs, H, t, reps)
       case ("VP")
         call Hord_vp(bs, H, t)
       case ("HP")
@@ -143,18 +145,19 @@ contains
 
 !--------------------------------------------------------------------------------------------------
 
-  subroutine Hijdiag(H,z,t)
+  subroutine Hijdiag(H,z,t, reps)
 
     implicit none
     complex(kind=8), dimension (:,:), intent(in)::z
     complex(kind=8), dimension(:,:,:), intent (inout)::H
     real(kind=8), intent (in) :: t
+    integer, intent(in) :: reps
 
     if (errorflag .ne. 0) return
 
     select case (sys)
       case ("SB")
-        call Hijdiag_sb(H,z)
+        call Hijdiag_sb(H,z,reps)
       case ("VP")
         call Hijdiag_vp(H,z)
       case ("HP")
@@ -181,18 +184,19 @@ contains
 
 !--------------------------------------------------------------------------------------------------
 
-  subroutine dh_dz(dhdz, z, t)
+  subroutine dh_dz(dhdz, z, t, reps)
 
     implicit none
     complex(kind=8),dimension(:,:,:,:), intent(inout) :: dhdz
     complex(kind=8),dimension(:,:),intent(inout)::z 
     real(kind=8), intent (in) :: t 
+    integer, intent(in) :: reps
 
     if (errorflag .ne. 0) return
 
     select case (sys)
       case ("SB")
-        dhdz=dh_dz_sb(z)
+        dhdz=dh_dz_sb(z,reps)
       case ("VP")
         dhdz=dh_dz_vp(z)
       case ("HP")

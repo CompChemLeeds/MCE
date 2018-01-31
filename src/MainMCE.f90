@@ -347,10 +347,10 @@ Program MainMCE
         restart = 1            ! a flag for if the basis set needs recalculating
 
         if (conjflg==1) then
-          if (conjrep == 2) then      ! first/only calculation
-            !$omp critical            ! Critical block stops subroutine running on 
-            call genzinit(mup, muq)   ! multiple threads simultaneously, needed as 
-            !$omp end critical        ! the UCL random library is not thread safe
+          if (conjrep == 2) then         ! first/only calculation
+            !$omp critical               ! Critical block stops subroutine running on 
+            call genzinit(mup, muq,reps) ! multiple threads simultaneously, needed as 
+            !$omp end critical           ! the UCL random library is not thread safe
           else
             do m=1,ndim
               mup(m) = -1.0d0*mup(m)  ! second calculation takes the conj. of z_init
@@ -358,7 +358,7 @@ Program MainMCE
           end if
         else 
           !$omp critical
-          call genzinit(mup, muq)
+          call genzinit(mup, muq,reps)
           !$omp end critical
         end if
 
@@ -384,7 +384,7 @@ Program MainMCE
           if ((basis.eq."TRAIN").and.(restart.eq.1)) then
             if ((((conjflg==1).and.(conjrep.eq.2)).or.(conjflg/=1)).and.(recalcs.lt.Ntries)) then
               !$omp critical 
-              call genzinit(mup, muq)
+              call genzinit(mup, muq,reps)
               !$omp end critical
             else
               do j=1,size(bset)
@@ -565,7 +565,7 @@ Program MainMCE
           initnorm2 = sqrt(dble(norm2temp*dconjg(norm2temp)))
         end if
 !        do j = 1,nbf
-!          ehren = ehren + HEhr(bset(j), time)
+!          ehren = ehren + HEhr(bset(j), time, reps)
 !        end do            
         initehr = abs(ehren)
         acft = acf(bset,mup,muq)
@@ -701,7 +701,7 @@ Program MainMCE
             nrm2tmp=sqrt(dble(norm2temp*dconjg(norm2temp)))
           end if
 !          do j = 1,nbf
-!            ehren = ehren + HEhr(bset(j), time)
+!            ehren = ehren + HEhr(bset(j), time, reps)
 !          end do
           ehrtmp = abs(ehren)
           acft = acf(bset,mup,muq)

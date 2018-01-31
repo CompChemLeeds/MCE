@@ -297,11 +297,13 @@ MODULE Ham
 !            Hamiltonian Subroutines and Functions
 !***********************************************************************************!
 
-  function Hehr(bf,t)   !   Level 1 Function
+  function Hehr(bf,t,reps)   !   Level 1 Function
 
     implicit none
     type (basisfn), intent(inout)::bf
     real(kind=8), intent (in) :: t
+    integer, intent(in) :: reps
+    
     complex(kind=8)::Hehr, asum
     complex(kind=8),dimension(:,:), allocatable :: z
     complex(kind=8),dimension(:,:,:), allocatable::H
@@ -326,7 +328,7 @@ MODULE Ham
     Hehr = (0.0d0, 0.0d0)
     asum = (0.0d0, 0.0d0)
 
-    call Hijdiag(H,z,t) 
+    call Hijdiag(H,z,t,reps) 
 
     do r=1,npes
       do s=1,npes

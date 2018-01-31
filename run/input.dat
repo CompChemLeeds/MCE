@@ -9,11 +9,11 @@ System: SB
 
 # Spectral Density (only valid for Spin Boson, with values EXP [exponential cutoff], DL [Drude Lorentz/Debye],
 #                                or UBO [Underdamped Brownian Oscillator]. LHC [Light-Harvesting complex] to come later)
-SpecDen DL
+SpecDen UBO
 
 #Name of running folder [Default : <method>-<system>-<random number> ie CCS-HP-31254 (input "default", case insensitive)
 #                       Otherwise:  <method>-<system>-<runfolder string> ie CCS-HP-withgrids]
-Runfolder DLtest-freqflg0
+Runfolder UBOtest-freqflg1
 
 #Debug flag [ 0: no debug outputs, 1: debug outputs. Does not really work for dynamic basis set sizes]
 debug 0
@@ -55,7 +55,7 @@ npes 2
 basis SWARM
 
 # determines the structure of the Z_0 initial central coherent state [WHOLE/SPLIT]. Split Z_0 is reflected in the q=0 line
-wfn_init SPLIT
+wfn_init WHOLE
 
 # allows for symmetric/antisymmetric basis sets to be created. Used with wfn_init=SPLIT [YES/NO/ANTI]
 symm YES
@@ -92,7 +92,7 @@ psizez 26
 
 # frequency flag for using a set of precalculated frequencies with the spin boson model
 # freqflg = 1 enables reading of precalculated frequencies, freqflg = 0 mean they are calculated withing the program
-freqflg 0
+freqflg 1
 
 # Flag for cloning basis functions (yes/no/blind/blind+)
 Cloning no

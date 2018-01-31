@@ -208,13 +208,14 @@ contains
 
 !--------------------------------------------------------------------------------------------------
 
-  subroutine genwm_sb(wm_sb, Cm_sb)   !   Level 2 Subroutine
+  subroutine genwm_sb(wm_sb, Cm_sb, reps)   !   Level 2 Subroutine
 
     !   Generates the array of discretised frequencies over M degrees of freedom
 
     implicit none
     integer::m, ierr
     real(kind=8), dimension(:), allocatable, intent(inout) :: wm_sb, Cm_sb
+    integer, intent(in) :: reps
 
     if (errorflag .ne. 0) return
     ierr = 0
@@ -252,7 +253,7 @@ contains
         return
       end if 
     else
-      call readfreq(Cm_sb, wm_sb)
+      call readfreq(Cm_sb, wm_sb, reps)
     end if
 
     return
@@ -293,19 +294,21 @@ contains
 
 !--------------------------------------------------------------------------------------------------
 
-  subroutine genzinit_sb(mup, muq)   !   Level 1 Subroutine
+  subroutine genzinit_sb(mup, muq,reps)   !   Level 1 Subroutine
 
     ! Generates the initial Gaussian, used as a central point for the larger basis set (which is calculated in a different function)
     
     ! z_in is defined as being subject to the distribution rho(zin) = sigma_sb(m)*exp(-1.0*sigma_sb(m)*abs(zin(m)))
 
     implicit none
-    integer::m, n, recalc, ierr
-    real(kind=8) :: Ezin
     real(kind=8), dimension(:), allocatable, intent(inout) :: mup, muq
-    real(kind=8), dimension(:), allocatable :: sig_sb, wm_sb, Cm_sb
-    complex(kind=8), dimension (:), allocatable:: zin
+    integer, intent(in) :: reps
+    
     complex(kind=8),dimension(:,:), allocatable::H
+    complex(kind=8), dimension (:), allocatable:: zin
+    real(kind=8), dimension(:), allocatable :: sig_sb, wm_sb, Cm_sb
+    real(kind=8) :: Ezin
+    integer::m, n, recalc, ierr
 
     if (errorflag .ne. 0) return
 
@@ -342,7 +345,7 @@ contains
       return
     end if
 
-    call genwm_sb(wm_sb, Cm_sb)
+    call genwm_sb(wm_sb, Cm_sb,reps)
     call gensig_sb(sig_sb, wm_sb)    
 
     do while (recalc == 1)
@@ -394,7 +397,7 @@ contains
 
 !--------------------------------------------------------------------------------------------------
   
-  subroutine Hord_sb(bs, H, t)
+  subroutine Hord_sb(bs, H, t, reps)
 
     implicit none
     integer::k, j, r, s, ierr
@@ -403,6 +406,7 @@ contains
     complex(kind=8), dimension (:,:), allocatable :: Hjk_mat
     real(kind=8), dimension(:), allocatable :: wm_sb, Cm_sb
     real(kind=8), intent (in) :: t
+    integer, intent(in) :: reps
 
     if (errorflag .ne. 0) return
 
@@ -415,7 +419,7 @@ contains
       return
     end if
        
-    call genwm_sb(wm_sb, Cm_sb)
+    call genwm_sb(wm_sb, Cm_sb,reps)
 
     do k=1,size(H,2)
       do j=k,size(H,1)
@@ -478,11 +482,13 @@ contains
   
 !------------------------------------------------------------------------------------
 
-  subroutine Hijdiag_sb(H,z)
+  subroutine Hijdiag_sb(H,z,reps)
 
     implicit none
     complex(kind=8), dimension (:,:), intent(in)::z
     complex(kind=8), dimension(:,:,:), intent (inout)::H
+    integer, intent(in) :: reps
+    
     complex(kind=8), dimension(:), allocatable :: zin
     complex(kind=8):: Hbath, Hcoup
     real(kind=8), dimension(:), allocatable :: wm_sb, Cm_sb
@@ -502,7 +508,7 @@ contains
       return
     end if
 
-    call genwm_sb(wm_sb, Cm_sb)
+    call genwm_sb(wm_sb, Cm_sb,reps)
     
     do k=1,size(z,1)    
     
@@ -577,10 +583,12 @@ contains
 
 !--------------------------------------------------------------------------------------------------
 
-  function dh_dz_sb(z)
+  function dh_dz_sb(z,reps)
 
     implicit none
     complex(kind=8),dimension(:,:),intent(in)::z
+    integer, intent(in) :: reps
+    
     complex(kind=8),dimension(size(z,1),npes,npes,size(z,2)) :: dh_dz_sb    
     real(kind=8), dimension(:), allocatable :: wm_sb, Cm_sb
     integer :: ierr, k
@@ -601,7 +609,7 @@ contains
       return
     end if 
 
-    call genwm_sb(wm_sb, Cm_sb)
+    call genwm_sb(wm_sb, Cm_sb, reps)
 
     do k=1,size(z,1)
       dh_dz_sb(k,1,1,:) = dhdz_sb_11(z(k,:),wm_sb,Cm_sb)
@@ -749,11 +757,12 @@ contains
   
 !--------------------------------------------------------------------------------------------------
 
-  subroutine readfreq(Cm_sb, wm_sb) 
+  subroutine readfreq(Cm_sb, wm_sb, reps) 
   
     implicit none
     
     real(kind=8), dimension(:), allocatable, intent(inout) :: wm_sb, Cm_sb
+    integer, intent(in) :: reps
     
     real :: r
     integer(kind=8)::ranseed
@@ -761,6 +770,7 @@ contains
     integer:: ranseed_size, rint
     integer::i,clock, m, ierr
     character(LEN=100)::LINE
+    character(LEN=3)::repstr
     
     if (errorflag .ne. 0) return
     
@@ -773,13 +783,15 @@ contains
     call random_seed(put=ranseed_array)
     deallocate(ranseed_array)
     CALL RANDOM_NUMBER(r)
-    r=r*3232768.0
+    r=r*3232768.0*dble(reps)
     rint = int(r)
- 
-    open(unit=rint, file='freq.dat', status='old', iostat=ierr)
+    
+    write(repstr,"(i3.3)") reps 
+      
+    open(unit=rint, file="freq"//trim(repstr)//".dat", status='old', iostat=ierr)
     
     if (ierr.ne.0) then
-      write(0,"(a)") 'Error in opening freq.dat file'
+      write(0,"(3a)") 'Error in opening freq'//trim(repstr)//'.dat file'
       errorflag = 1
       return
     end if

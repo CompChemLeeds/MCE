@@ -783,7 +783,7 @@ contains
       randfunc = 'GAUS'
     end if      
     
-    if (n.ne.23) then
+    if (n.ne.24) then
       write(0,"(a,i0)") "Not all required variables read in readbsparams subroutine. n=", n
       errorflag = 1
       return

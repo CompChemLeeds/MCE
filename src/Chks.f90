@@ -163,13 +163,14 @@ contains
 
 !------------------------------------------------------------------------------------
 
-  subroutine enchk(bf,t,n,redo,k)
+  subroutine enchk(bf,t,n,redo,k,reps)
 
     implicit none
     type(basisfn), intent(inout) :: bf
     real(kind=8), intent(in) :: t
     integer, intent(inout) :: n, redo
-    integer, intent(in) :: k
+    integer, intent(in) :: k, reps
+    
     complex(kind=8),dimension(:,:,:), allocatable::H
     complex(kind=8),dimension(:,:), allocatable::z
     real(kind=8)::Echk
@@ -187,7 +188,7 @@ contains
         return
       end if
       
-      call Hijdiag(H, z, t)
+      call Hijdiag(H, z, t, reps)
       
       Echk = 0.0d0
       

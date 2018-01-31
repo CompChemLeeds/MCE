@@ -298,10 +298,18 @@ for a in "${methseq[@]}"; do
     if [[ $grdalt -eq 1 ]]; then 
       cp ./calibinputs/input.$i $SUBDIR/input.dat
       cp inham.dat MCE.exe prop.dat $SUBDIR/
-      if [[ $freqflg == 1 ]]; then cp freq.dat $SUBDIR/; fi
+      if [[ $freqflg == 1 ]]; then 
+        for x in `seq -f "%03g" 1 $REPS`; do
+          cp freq.dat $SUBDIR/freq${x}.dat
+        done
+      fi
     else
       cp inham.dat input2.dat MCE.exe prop.dat $SUBDIR/
-      if [[ $freqflg == 1 ]]; then cp freq.dat $SUBDIR/; fi
+      if [[ $freqflg == 1 ]]; then 
+        for x in `seq -f "%03g" 1 $REPS`; do
+          cp freq.dat $SUBDIR/freq${x}.dat
+        done
+      fi
       mv $SUBDIR/input2.dat $SUBDIR/input.dat
     fi
     

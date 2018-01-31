@@ -38,7 +38,7 @@ contains
     type(basisfn), dimension (:), intent (inout) :: bsout
     real(kind=8), intent(inout) :: time
     integer, intent(inout), dimension(:,:) :: map_bfs
-    integer, intent(in) :: rkstp, genflg, reps, x
+    integer, intent(in) :: reps, rkstp, genflg, x
     
     type(basisfn), dimension(:), allocatable :: dummybs
     complex(kind=8), dimension(:,:), allocatable :: dz, dd
@@ -72,9 +72,9 @@ contains
     select case (method)
     
       case ("MCEv1")
-        dz=zdot(bsin,time)
-        ds=sdot(bsin,dz,time)
-        dd=ddotv1(bsin,time,dz)
+        dz=zdot(bsin,time,reps)
+        ds=sdot(bsin,dz,time,reps)
+        dd=ddotv1(bsin,time,dz,reps)
         dD_big=(0.0d0,0.0d0)
         if (errorflag .ne. 0) return     
         do k = 1,size(bsin)
@@ -89,9 +89,9 @@ contains
         end do 
               
       case ("MCEv2")
-        dz=zdot(bsin,time)
-        ds=sdot(bsin,dz,time)
-        dd=ddotv2(bsin,time)
+        dz=zdot(bsin,time,reps)
+        ds=sdot(bsin,dz,time,reps)
+        dd=ddotv2(bsin,time,reps)
         if (((basis=="TRAIN").or.(basis=="SWTRN")).and.(genflg==1)) then
           dD_big=(0.0d0,0.0d0)
         else
@@ -110,8 +110,8 @@ contains
         end do  
         
       case ("CCS")
-        dz=zdot(bsin,time)
-        ds=sdot(bsin,dz,time)
+        dz=zdot(bsin,time,reps)
+        ds=sdot(bsin,dz,time,reps)
         dd=(0.0d0,0.0d0)
         if (((basis=="TRAIN").or.(basis=="SWTRN")).and.(genflg==1)) then
           dD_big=(0.0d0,0.0d0)
@@ -131,9 +131,9 @@ contains
         end do
         
       case ("AIMC1")
-        dz=zdot(bsin,time)
-        ds=sdot(bsin,dz,time)
-        dd=ddotv2(bsin,time)
+        dz=zdot(bsin,time,reps)
+        ds=sdot(bsin,dz,time,reps)
+        dd=ddotv2(bsin,time,reps)
         dD_big=(0.0d0,0.0d0)
         if (errorflag .ne. 0) return     
         do k = 1,size(bsin)
@@ -192,7 +192,7 @@ contains
 
 !------------------------------------------------------------------------------------
 
-  function zdot(bsin,t)
+  function zdot(bsin,t,reps)
 
     implicit none
 
@@ -204,6 +204,7 @@ contains
     complex(kind=8), dimension(:),allocatable :: a, ac
     complex(kind=8) :: asum
     real(kind=8), intent (in) :: t
+    integer, intent(in) :: reps
     integer :: k, m, r, s, ierr
 
     if (errorflag .ne. 0) return
@@ -227,7 +228,7 @@ contains
       end do
     end do
     
-    call dh_dz(dhdz, z, t)
+    call dh_dz(dhdz, z, t, reps)
 
     do k=1,size(bsin)
       zdottemp = (0.0d0, 0.0d0)
@@ -262,7 +263,7 @@ contains
 
 !------------------------------------------------------------------------------------
 
-  function ddotv1(bsin,time,dz)
+  function ddotv1(bsin,time,dz,reps)
 
     implicit none
 
@@ -275,6 +276,7 @@ contains
     complex(kind=8), dimension(size(bsin),npes) :: ddotv1
     complex(kind=8), dimension(:,:), intent(in) :: dz
     real(kind=8), intent (in) :: time
+    integer, intent(in) :: reps
     integer :: j,k,r,s,nbf,ierr
 
     if (errorflag .ne. 0) return
@@ -302,7 +304,7 @@ contains
     ovrlp = ovrlpmat(bsin)
 
     call allocham(H,nbf)
-    call Hord(bsin,H,time)
+    call Hord(bsin,H,time,reps)
 
     zczd = zczdot(bsin, dz)
 
@@ -394,7 +396,7 @@ contains
 
 !------------------------------------------------------------------------------------
 
-  function ddotv2(bsin,t)
+  function ddotv2(bsin,t,reps)
 
     implicit none
 
@@ -405,6 +407,7 @@ contains
     complex(kind=8), dimension(size(bsin),npes) :: ddotv2
     complex(kind=8), dimension(:,:),allocatable :: z
     real(kind=8), dimension(:),allocatable :: Sk
+    integer, intent(in) :: reps
     integer :: k, m, r, s, ierr
 
     if (errorflag .ne. 0) return
@@ -430,7 +433,7 @@ contains
       end do
     end do
       
-    call Hijdiag(Hkk,z,t)
+    call Hijdiag(Hkk,z,t,reps)
     
     do k=1,size(bsin)
       dk = bsin(k)%d_pes
@@ -464,13 +467,15 @@ contains
 
 !------------------------------------------------------------------------------------
 
-  function sdot(bsin,dz,t)
+  function sdot(bsin,dz,t,reps)
 
     implicit none
 
     type(basisfn), dimension (:), intent (in) :: bsin
     complex(kind=8), dimension (:,:), intent(in) :: dz
     real(kind=8), intent (in) :: t
+    integer, intent(in) :: reps
+    
     real(kind=8), dimension (size(bsin),npes) :: sdot
     complex(kind=8), dimension(:,:), allocatable :: zk, zkc, zkdot, zkdotc
     complex(kind=8), dimension(:,:,:), allocatable :: Hkk
@@ -501,7 +506,7 @@ contains
       end do
     end do
     
-    call Hijdiag(Hkk,zk,t)
+    call Hijdiag(Hkk,zk,t,reps)
       
     do k=1,size(bsin)
       zsum = (0.0d0, 0.0d0)
@@ -622,7 +627,7 @@ contains
     end if
 
     call allocham(H, nbf)
-    call Hord(bsin, H, time)
+    call Hord(bsin, H, time, reps)
     
     h_av_jj = Hjk_avrg(H,bsin)
     h_av_jk = phiHphi(H,bsin)

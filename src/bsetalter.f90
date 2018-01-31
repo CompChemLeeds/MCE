@@ -501,12 +501,12 @@ contains
 
     if (errorflag==1) return
 
-    if (cloneflg=="YES") then
+    if ((cloneflg=="YES").or.((cloneflg=="BLIND+").and.(x.ne.0))) then
       clonetype = 1 ! 1=conditional cloning, 2=blind cloning
-    else if (cloneflg=="BLIND") then
+    else if ((cloneflg=="BLIND").or.((cloneflg=="BLIND+").and.(x.eq.0))) then
       clonetype = 2
     else
-      write (0,"(2a)") "Cloneflg is invalid. Should be 'YES' or 'BLIND', but was ", cloneflg
+      write (0,"(2a)") "Cloneflg is invalid. Should be 'YES', 'BLIND' or 'BLIND+', but was ", cloneflg
       errorflag = 1
       return
     end if
@@ -528,7 +528,7 @@ contains
     if (clonetype==1) then
       do k=1,nbf
         brforce = ((abs(bs(k)%a_pes(1))*abs(bs(k)%a_pes(2)))**2.0)
-        if ((brforce.gt.0.249).and.(clone(k)==0).and.(clonenum(k).lt.clonemax)) then
+        if ((brforce.gt.thresh).and.(clone(k)==0).and.(clonenum(k).lt.clonemax)) then
           clone(k) = x
           clonehere(k) = 1
         end if 
@@ -605,14 +605,14 @@ contains
           bsnew(nbf+j)%D_big = bs(k)%D_big * &
                                 sqrt(1.-(dconjg(bs(k)%a_pes(in_pes))*bs(k)%a_pes(in_pes)))
           bsnew(nbf+j)%d_pes(in_pes) = (0.0d0,0.0d0)
-          bsnew(nbf+j)%s_pes(in_pes) = bs(k)%s_pes(in_pes)   
+          bsnew(nbf+j)%s_pes(in_pes) = bs(k)%s_pes(in_pes)
           do r=1,npes
             if (r.ne.in_pes) then
               if (x.eq.0) then
                 bsnew(nbf+j)%d_pes(r) = (1.0d0,0.0d0)
               else
                 bsnew(nbf+j)%d_pes(r) = bs(k)%d_pes(r)/&
-                                  sqrt(1.-(dconjg(bs(k)%a_pes(1))*bs(k)%a_pes(1)))
+                                sqrt(1.-(dconjg(bs(k)%a_pes(in_pes))*bs(k)%a_pes(in_pes)))
               end if
               bsnew(nbf+j)%s_pes(r) = bs(k)%s_pes(r)
             end if
@@ -620,7 +620,7 @@ contains
           do m=1,ndim
             bsnew(nbf+j)%z(m) = bs(k)%z(m)
           end do
-          write(47756,"(3i5,2es25.17e3)") x, k, nbf+j, abs(bs(k)%a_pes(1)), sqrt(1.-((abs(bs(k)%a_pes(1))**2.0d0)))
+          write(47756,"(3i5,2es25.17e3)") x, k, nbf+j, abs(bs(k)%a_pes(in_pes)), sqrt(1.-((abs(bs(k)%a_pes(in_pes))**2.0d0)))
           j = j+1
         else
           bsnew(k)%D_big = bs(k)%D_big
@@ -645,7 +645,9 @@ contains
         do m=1,ndim
           bs(k)%z(m) = bsnew(k)%z(m)
         end do
-      end do          
+      end do   
+      
+      call deallocbs(bsnew)       
    
       n = nbfnew-nbf
    

@@ -123,6 +123,8 @@ Program MainMCE
 !                 not very expensive, however if the program were to be extended to !
 !                 QMD with real molecules it would be useful.                       !
 !                                                                                   !
+!      Further changelog can be found in the commit statements from the git repo    !
+!                                                                                   !
 !***********************************************************************************!
 
   use bsetgen    ! basis set generation module
@@ -203,7 +205,7 @@ Program MainMCE
   call checkparams
 
   if (step=="S") then       ! Static stepsize case.
-    tnum = int(abs((timeend-timestrt)/dtinit)) + 2
+    tnum = int(abs(((timeend-timestrt)/dtinit)+0.5)) + 2
   else
     tnum = 1            ! The arrays need to be allocated for reduction in omp
   end if
@@ -223,11 +225,6 @@ Program MainMCE
   absnorm2 = 0.0d0      ! Absolute value of the sum of the single config. norms
   acf_t = (0.0d0,0.0d0) ! Auto-correlation function
   extra = (0.0d0,0.0d0)
-!  allocate (ndimacf(3*ndim+3), stat=istat)
-!  if (istat/=0) then
-!    write(0,"(a)") "Error allocatin ndimacf array"
-!    errorflag=1
-!  end if
 
   if (conjflg==1) then    ! This statement ensures that if conjugate repetition
     intvl = 2             ! is selected the outer repetition loop will increase
@@ -283,17 +280,27 @@ Program MainMCE
     
     if ((basis=="GRID").or.(basis=="GRSWM")) then
       allocate (initgrid(in_nbf,ndim), stat=ierr)
-      if (ierr/=0) then
-        write(0,"(a)") "Error allocating the initial grid array in main"
-        errorflag=1
-      end if
+    else
+      allocate (initgrid(1,1), stat=ierr)   !allocated to prevent memory errors
     end if
-  
+    if (ierr/=0) then
+      write(0,"(a)") "Error allocating the initial grid array in main"
+      errorflag=1
+    end if
+    initgrid = (0.0d0,0.0d0)
+    
+    allocate(map_bfs(1,1), stat=ierr) ! allocated to prevent memory errors
+      if (ierr/=0) then
+        write (0,"(a,i0)") "Error allocating map_bfs array. ierr was ", ierr
+        errorflag = 1
+    end if
+      
     allocate (popt(npes), stat=ierr)
     if (ierr/=0) then
       write(0,"(a)") "Error in allocating the temporary population array in Main"
       errorflag=1
     end if 
+    popt = 0.0d0
     
     if (genloc.eq."Y") then
       allocate (mup(ndim), stat=ierr)
@@ -374,7 +381,7 @@ Program MainMCE
           ! properly. If not, restart is set to 1 so basis is recalculated
           call initnormchk(bset,recalcs,restart,alcmprss,gridsp,initnorm,initnorm2)
 
-          if (((basis.eq."TRAIN").and.(restart.eq.1))) then
+          if ((basis.eq."TRAIN").and.(restart.eq.1)) then
             if ((((conjflg==1).and.(conjrep.eq.2)).or.(conjflg/=1)).and.(recalcs.lt.Ntries)) then
               !$omp critical 
               call genzinit(mup, muq)
@@ -417,7 +424,7 @@ Program MainMCE
           stop
         end if
         
-        if ((method=="MCEv2").and.(cloneflg=="BLIND")) then
+        if (((method=="MCEv2").or.(method=="MCEv1")).and.((cloneflg=="BLIND").or.(cloneflg=="BLIND+"))) then
           write(rep,"(i3.3)") reps
           open(unit=47756,file="Clonetrack-"//trim(rep)//".out",status="new",iostat=ierr)
           close(47756)
@@ -427,6 +434,7 @@ Program MainMCE
             write(0,"(a)") "Error in allocating clone arrays"
             errorflag = 1
           end if
+          write (6,*) "In the cloning conditional"
           if (genloc=="N") then
             call readclone(clonenum, reps, clone)
           else
@@ -435,9 +443,12 @@ Program MainMCE
               clonenum(j) = 0
             end do
           end if
+          write (6,'(a)') "Blind cloning arrays generated and cloning starting"
+          call flush(6)
           call cloning (bset, nbf, x, time, clone, clonenum, reps)
-        end if        
-              
+          call flush(6)
+        end if
+        
         if (method.eq."AIMC1") then
 
           timeold = time
@@ -474,6 +485,11 @@ Program MainMCE
           if (npes.ne.1) write(6,"(a,e15.8)") "Popsum    = ", initnorm2
           if ((cmprss.eq."Y").and.((basis.eq."SWARM").or.(basis.eq."SWTRN"))) write(6,"(a,e15.8)") "Alcmprss  = ", 1.0d0/alcmprss
           if ((cmprss.eq."Y").and.(basis.eq."GRID")) write(6,"(a,e15.8)") "Grid Spacing  = ", gridsp/dsqrt(2.0d0)
+        else
+          write(6,"(a)") "Errors found in basis set generation"
+          call outbs(bset, reps, mup, muq, time,0,0)
+          call flush(6)
+          stop
         end if
 
       end if !End of Basis set generation conditional statement
@@ -515,9 +531,10 @@ Program MainMCE
               if (dum_in3.gt.finbf) finbf = dum_in3
             end do
             close(354+reps)
-            allocate(map_bfs(def_stp,finbf), stat=ierr)
+            if (allocated(map_bfs)) deallocate(map_bfs, stat=ierr)
+            if (ierr==0) allocate(map_bfs(def_stp,finbf), stat=ierr)
             if (ierr/=0) then
-              write (0,"(a,i0)") "Error allocating map_bfs array. ierr was ", ierr
+              write (0,"(a,i0)") "Error de- and re-allocating map_bfs array. ierr was ", ierr
               errorflag = 1
             end if
             write(0,"(2(a,i0))") "map_bfs size is ", def_stp, " by ", finbf
@@ -553,7 +570,6 @@ Program MainMCE
 !        end do            
         initehr = abs(ehren)
         acft = acf(bset,mup,muq)
-!        ndimacf = acfdim(bset,mup,muq)
         call extras(extmp, bset)
         do r=1,npes
           popt(r) = pop(bset, r,ovrlp)   
@@ -570,12 +586,10 @@ Program MainMCE
           if ((nbfadapt.eq."NO").and.(debug==1)) then
             call outtrajheads(reps, nbf)
             call outtraj(bset,x,reps,time,ovrlp,dt)
-!            call histogram(bset, 50, time, -2.46d0, 1.44d0, nbf)
+            call histogram(bset, 50, time, -2.46d0, 1.44d0, nbf)
             call outvarsheads (reps, nbf)
             call outvars(bset,x,reps,time)
           end if
-!          call outdimacfheads(reps)
-!          call outdimacf(time,ndimacf,reps)
           call outnormpopadapheads(reps)
           call outnormpopadap(initnorm,acft,extmp,initehr,popt,x,reps,time)
         else                         ! For adaptive stepsize the data is output straight away
@@ -589,8 +603,6 @@ Program MainMCE
           write(rep,"(i3.3)") reps
           open (unit=timestpunit,file="timesteps-"//trim(rep)//".out",status="unknown",iostat=istat)
           close (timestpunit)
-!          call outdimacfheads(reps)
-!          call outdimacf(time,ndimacf,reps)
           call outnormpopadapheads(reps)
           call outnormpopadap(initnorm,acft,extmp,initehr,popt,x,reps,time)
         end if 
@@ -603,7 +615,7 @@ Program MainMCE
           close(4532)
         end if
 
-        if ((sys=="SB").and.((method=="MCEv2").or.(method=="AIMC1")).and.(cloneflg=="YES")) then
+        if (((method=="MCEv1").or.(method=="MCEv2").or.(method=="AIMC1")).and.(cloneflg=="YES")) then
           write(rep,"(i3.3)") reps
           open(unit=47756,file="Clonetrack-"//trim(rep)//".out",status="new",iostat=ierr)
           close(47756)
@@ -621,6 +633,7 @@ Program MainMCE
               clonenum(j) = 0
             end do
           end if
+          write (6,"(a)") "Conditional cloning arrays generated"
         end if
 
         write(6,"(a)") "Beginning Propagation"
@@ -636,11 +649,11 @@ Program MainMCE
 
           if (basis.ne."GRID") call trajchk(bset) !ensures that the position component of the coherent states are not too widely spaced   
 
-          if (((basis=="GRID").or.(basis=="GRSWM")).and.(mod((x-1),rprj)==0).and.((sys=="IV").or.(sys=="CP"))) then
+          if (((basis=="GRID").or.(basis=="GRSWM")).and.(mod((x-1),rprj)==0)) then
             call reloc_basis(bset, initgrid, nbf, x, time, gridsp, mup, muq)
           end if      
 
-          if ((sys=="SB").and.((method=="MCEv2").or.(method=="AIMC1")).and.(cloneflg=="YES").and.(time.le.timeend)) then
+          if ((allocated(clone)).and.(cloneflg.ne."BLIND").and.(time.le.timeend)) then
             call cloning (bset, nbf, x, time, clone, clonenum, reps)
           end if
           
@@ -692,7 +705,6 @@ Program MainMCE
 !          end do
           ehrtmp = abs(ehren)
           acft = acf(bset,mup,muq)
-!          ndimacf = acfdim(bset,mup,muq)
           call extras(extmp, bset)
           do r=1,npes
             popt(r) = pop(bset, r, ovrlp)  
@@ -709,10 +721,9 @@ Program MainMCE
             extra(y) = extra(y) + extmp
             if ((nbfadapt.eq."NO").and.(mod(x,1)==0).and.(debug==1)) then
               call outtraj(bset,x,reps,time,ovrlp,dt)
-!              call histogram(bset, 50, time, -2.46d0, 1.44d0, nbf)
+              call histogram(bset, 50, time, -2.46d0, 1.44d0, nbf)
               call outvars(bset,x,reps,time)
             end if
-!            call outdimacf(time,ndimacf,reps)
             call outnormpopadap(nrmtmp,acft,extmp,ehrtmp,popt,x,reps,time)
           else if (step == "A") then
             timestpunit=1710+reps
@@ -724,7 +735,6 @@ Program MainMCE
               call outtraj(bset,x,reps,time,ovrlp,dt)
               call outvars(bset,x,reps,time)
             end if
-!            call outdimacf(time,ndimacf,reps)
             call outnormpopadap(nrmtmp,acft,extmp,ehrtmp,popt,x,reps,time)
           end if
           deallocate(ovrlp)
@@ -758,7 +768,7 @@ Program MainMCE
           write(0,"(a)") "Consider revising timestep parameters"
         end if
 
-        if (((method=="MCEv2").or.(method=="AIMC1")).and.((cloneflg=="YES").or.(cloneflg=="BLIND"))) then
+        if (allocated(clone)) then
           deallocate (clone, stat=ierr)
           if (ierr==0) deallocate(clonenum, stat=ierr)
           if (ierr/=0) then
@@ -766,7 +776,8 @@ Program MainMCE
             errorflag = 1
           end if
         end if
-        if (method=="AIMC2") then
+        
+        if (allocated(map_bfs)) then
           deallocate(map_bfs, stat=ierr)
           if (ierr/=0) then
             write (0,"(a,i0)") "Error deallocating map_bfs array. ierr was ", ierr
@@ -793,16 +804,16 @@ Program MainMCE
       call flush(0) 
 
     end do !conjugate repeat
-    
-    if ((basis=="GRID").or.(basis=="GRSWM")) then
-      deallocate (initgrid, stat=ierr)
-      if (ierr/=0) then
-        write(0,"(a)") "Error deallocating the initial grid array in main"
-        errorflag=1
-      end if
-    end if  
+  
+    deallocate (initgrid, stat=ierr)
+    if (ierr/=0) then
+      write(0,"(a)") "Error deallocating the initial grid array in main"
+      errorflag=1
+    end if
 
-    if (allocated(mup)) deallocate (mup, muq, popt, stat=ierr)
+    if (allocated(mup)) deallocate (mup, stat=ierr)
+    if ((allocated(muq)).and.(ierr==0)) deallocate (muq, stat=ierr)
+    if ((allocated(popt)).and.(ierr==0)) deallocate (popt, stat=ierr)
     if (ierr/=0) then
       write(0,"(a,i0)") "Error deallocating mup, muq or popt in repeat ", reps
       errorflag=1
@@ -814,12 +825,6 @@ Program MainMCE
   end do ! The main repeat loop
   !$omp end do
   !$omp end parallel
-
-!  deallocate(ndimacf,stat=istat)
-!  if (istat/=0) then
-!    write(0,"(a)") "Error deallocating ndimacf in main"
-!    errorflag=1
-!  end if
 
   write(6,"(a)") "Finished Propagation"
 

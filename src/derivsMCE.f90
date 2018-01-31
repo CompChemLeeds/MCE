@@ -86,8 +86,8 @@ contains
             bsout(k)%s_pes(r) = ds(k,r)
           end do
           bsout(k)%D_big = dD_big(k)
-        end do
-        
+        end do 
+              
       case ("MCEv2")
         dz=zdot(bsin,time)
         ds=sdot(bsin,dz,time)
@@ -179,42 +179,6 @@ contains
         
     end select                 
 
-!    dz=zdot(bsin,time)
-!    ds=sdot(bsin,dz,time)
-
-!    if (method=="MCEv1") then
-!      dd=ddotv1(bsin,time)
-!      dD_big=bigDdotv1(size(bsin))
-!    else if ((method=="MCEv2").or.(trim(method)=="CCS")) then
-!      dd=ddotv2(bsin,time)
-!      if (((basis=="TRAIN").or.(basis=="SWTRN")).and.(genflg==1)) then
-!        dD_big=(0.0d0,0.0d0)
-!      else
-!        dD_big=bigDdotv2 (bsin,x,time)
-!      end if
-!    else if (method=="AIMC1") then
-!      dd=ddotv2(bsin,time)
-!      dD_big=bigDdotv1(size(bsin))
-!    else
-!      write(0,"(a)") "Error! Method unrecognised!"
-!      write(0,"(a)") "How did you even get this far?"
-!      errorflag = 1
-!      return
-!    end if  
-
-!    if (errorflag .ne. 0) return     
-
-!    do k = 1,size(bsin)
-!      do m = 1,ndim
-!        bsout(k)%z(m) = dz(k,m)
-!      end do
-!      do r = 1,npes
-!        bsout(k)%d_pes(r) = dd(k,r)
-!        bsout(k)%s_pes(r) = ds(k,r)
-!      end do
-!      bsout(k)%D_big = dD_big(k)
-!    end do
-
     deallocate (dz,dd,ds,dD_big, stat=ierr)
     if (ierr/=0) then
       write(0,"(a)") "Error in derivatives array deallocation in deriv"
@@ -232,8 +196,9 @@ contains
 
     implicit none
 
-    complex(kind=8), dimension (:) ,allocatable:: zdottemp, z
-    complex(kind=8), dimension (:,:,:),allocatable :: dhdz
+    complex(kind=8), dimension (:) ,allocatable:: zdottemp
+    complex(kind=8), dimension (:,:,:,:),allocatable :: dhdz
+    complex(kind=8), dimension (:,:) ,allocatable:: z
     type(basisfn), dimension (:), intent (in) :: bsin
     complex(kind=8), dimension(size(bsin),ndim) :: zdot
     complex(kind=8), dimension(:),allocatable :: a, ac
@@ -246,8 +211,8 @@ contains
     ierr = 0
 
     allocate(zdottemp(ndim), stat = ierr)
-    if (ierr==0) allocate (z(ndim), stat = ierr)
-    if (ierr==0) allocate (dhdz(npes,npes,ndim), stat = ierr)
+    if (ierr==0) allocate (z(size(bsin),ndim), stat = ierr)
+    if (ierr==0) allocate (dhdz(size(bsin),npes,npes,ndim), stat = ierr)
     if (ierr==0) allocate (a(npes), stat = ierr)
     if (ierr==0) allocate (ac(npes), stat = ierr)
     if (ierr/=0) then
@@ -255,21 +220,27 @@ contains
       errorflag=1
       return
     end if
+    
+    do k=1,size(bsin)
+      do m=1,ndim
+        z(k,m) = bsin(k)%z(m)
+      end do
+    end do
+    
+    call dh_dz(dhdz, z, t)
 
     do k=1,size(bsin)
       zdottemp = (0.0d0, 0.0d0)
-      z = bsin(k)%z
       do r=1,npes
         a(r) = bsin(k)%a_pes(r)
         ac(r) = dconjg(a(r))
       end do
-      call dh_dz(dhdz, z, t)
       asum = (0.0d0, 0.0d0)
       do r=1,npes
         asum = asum + (ac(r)*a(r))
         do s=1,npes
           do m=1,ndim
-            zdottemp(m) = zdottemp(m) + (dhdz(r,s,m)*ac(r)*a(s))
+            zdottemp(m) = zdottemp(m) + (dhdz(k,r,s,m)*ac(r)*a(s))
           end do
         end do
       end do
@@ -429,18 +400,18 @@ contains
 
     type(basisfn), dimension (:), intent (in) :: bsin
     real(kind=8), intent (in) :: t
-    complex(kind=8), dimension(:,:),allocatable :: Hkk
+    complex(kind=8), dimension(:,:,:),allocatable :: Hkk
     complex(kind=8), dimension(:),allocatable :: dk
     complex(kind=8), dimension(size(bsin),npes) :: ddotv2
-    complex(kind=8), dimension(:),allocatable :: z
+    complex(kind=8), dimension(:,:),allocatable :: z
     real(kind=8), dimension(:),allocatable :: Sk
-    integer :: k, r, s, ierr
+    integer :: k, m, r, s, ierr
 
     if (errorflag .ne. 0) return
 
     ierr = 0
 
-    allocate(Hkk(npes,npes),dk(npes),z(ndim),Sk(npes),stat = ierr)
+    allocate(Hkk(size(bsin),npes,npes),dk(npes),z(size(bsin),ndim),Sk(npes),stat = ierr)
     if (ierr/=0) then
       write(0,"(a)") "Error in allocation of matrices or arrays in ddotv2"
       errorflag=1
@@ -454,14 +425,20 @@ contains
     end do
 
     do k=1,size(bsin)
-      z = bsin(k)%z  
-      call Hij(Hkk,z,z,t)
+      do m=1,ndim
+        z(k,m) = bsin(k)%z(m)
+      end do
+    end do
+      
+    call Hijdiag(Hkk,z,t)
+    
+    do k=1,size(bsin)
       dk = bsin(k)%d_pes
       Sk = bsin(k)%S_pes
       do r=1,npes
         do s=1,npes
           if (r.ne.s) then
-            ddotv2(k,r) = ddotv2(k,r) + Hkk(r,s) * dk(s) &!* ovrlpij(z,z) &
+            ddotv2(k,r) = ddotv2(k,r) + Hkk(k,r,s) * dk(s) &!* ovrlpij(z,z) &
                                                  * cdexp(i*(Sk(s)-Sk(r)))
           end if
         end do
@@ -495,8 +472,8 @@ contains
     complex(kind=8), dimension (:,:), intent(in) :: dz
     real(kind=8), intent (in) :: t
     real(kind=8), dimension (size(bsin),npes) :: sdot
-    complex(kind=8), dimension(:), allocatable :: zk, zkc, zkdot, zkdotc
-    complex(kind=8), dimension(:,:), allocatable :: Hkk
+    complex(kind=8), dimension(:,:), allocatable :: zk, zkc, zkdot, zkdotc
+    complex(kind=8), dimension(:,:,:), allocatable :: Hkk
     integer :: k, r, m, ierr
     complex(kind=8) :: zsum
 
@@ -504,7 +481,11 @@ contains
     
     ierr = 0
 
-    allocate(zk(ndim),zkc(ndim),zkdot(ndim),zkdotc(ndim),Hkk(npes,npes),stat = ierr)
+    allocate(zk(size(bsin),ndim), stat=ierr)
+    if (ierr==0) allocate(zkc(size(bsin),ndim), stat=ierr)
+    if (ierr==0) allocate(zkdot(size(bsin),ndim), stat=ierr)
+    if (ierr==0) allocate(zkdotc(size(bsin),ndim), stat=ierr)
+    if (ierr==0) allocate(Hkk(size(bsin),npes,npes),stat = ierr)
     if (ierr/=0) then
       write(0,"(a)") "Error in allocation of matrices or arrays in sdot"
       errorflag=1
@@ -513,18 +494,22 @@ contains
 
     do k = 1,size(bsin)
       do m = 1,ndim
-        zk(m) = bsin(k)%z(m)
-        zkdot(m) = dz(k,m)
-        zkc(m) = dconjg(zk(m))
-        zkdotc(m) = dconjg(zkdot(m))
+        zk(k,m) = bsin(k)%z(m)
+        zkdot(k,m) = dz(k,m)
+        zkc(k,m) = dconjg(zk(k,m))
+        zkdotc(k,m) = dconjg(zkdot(k,m))
       end do
-      call Hij(Hkk,zk,zk,t)
+    end do
+    
+    call Hijdiag(Hkk,zk,t)
+      
+    do k=1,size(bsin)
       zsum = (0.0d0, 0.0d0)
       do m = 1,ndim
-        zsum = zsum + i*0.5d0*(zkdot(m)*zkc(m)-zkdotc(m)*zk(m))
+        zsum = zsum + i*0.5d0*(zkdot(k,m)*zkc(k,m)-zkdotc(k,m)*zk(k,m))
       end do
       do r = 1,npes
-        sdot(k,r) = zsum - dble(Hkk(r,r))
+        sdot(k,r) = zsum - dble(Hkk(k,r,r))
       end do
     end do
 
@@ -621,7 +606,8 @@ contains
       do j=1,nbf
         do k=1,nbf
           ovrlpdif = ovrlpphi(j,k) - ovrlp(j,k) 
-          if ((ovrlpdif.ne.0.0d0).and.(basis.ne."TRAIN").and.(basis.ne."SWTRN").and.(cloneflg.ne."BLIND")) then
+          if ((ovrlpdif.ne.0.0d0).and.(basis.ne."TRAIN").and.(basis.ne."SWTRN").and.&
+            & (cloneflg.ne."BLIND").and.(cloneflg.ne."BLIND+")) then
             write(0,"(a)") "Error! Initial phi-overlap has disimilarilies to z-overlap"
             write(0,'(a,a,i0,a,i0,a)'), "These matrices should be identical ",&
                                   "but differences found at coordinate ", j,",",k,"."

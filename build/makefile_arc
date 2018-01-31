@@ -1,28 +1,32 @@
 #Makefile for use on arcx computers.
+#Made with the aid of the fmkmf utility (Copyright (c) The University of Edinburgh) 
 
 F90=gfortran
-FFLAGS=-fopenmp -O2
+FFLAGS=-fopenmp -O3
 FLINKS=-Wl,--start-group -lmkl_gf_lp64 -lmkl_sequential -lmkl_core -Wl,--end-group -lpthread
 VPATH=../src
 
 # Link step
 
-all: Main avrgpops timehist subavrg interpolate
+all: Main avrgpops timehist subavrg interpolate integrator
 
 Main:randgen.o dcerf.o vars.o alarrays.o sb.o dl.o vp.o hp.o fp.o mp.o iv.o cp.o hh.o outputs.o redirect.o Ham.o Chks.o bsetalter.o readpars.o derivsMCE.o propMCE.o bsetgen.o MainMCE.o 
 	 $(F90) $(FFLAGS) -o MCE.exe randgen.o dcerf.o vars.o alarrays.o sb.o dl.o vp.o hp.o fp.o mp.o iv.o cp.o hh.o outputs.o redirect.o Ham.o Chks.o bsetalter.o readpars.o derivsMCE.o propMCE.o bsetgen.o MainMCE.o $(FLINKS)
 	 
 avrgpops:avrgpops.f90
-	 $(F90) -O2 -o avrgpops.exe $<
+	 $(F90) -O3 -o avrgpops.exe $<
 	 
 subavrg:subavrg.f90
-	 $(F90) -O2 -o subavrg.exe $<
+	 $(F90) -O3 -o subavrg.exe $<
 	 
 timehist:timehist.f90
-	 $(F90) -O2 -o timehist.exe $<
+	 $(F90) -O3 -o timehist.exe $<
 	 
 interpolate:neville.o interpolate.o
-	 $(F90) -O2 -o interpolate.exe neville.o interpolate.o
+	 $(F90) -O3 -o interpolate.exe neville.o interpolate.o
+	 	 
+integrator:integrator.f90
+   $(F90) -O3 -o integrator.exe $<
 
 # Compile steps
  
@@ -74,7 +78,7 @@ redirect.o:redirect.f90 vars.o sb.o hp.o fp.o mp.o iv.o cp.o hh.o
 Ham.o:Ham.f90 vars.o alarrays.o redirect.o 
 	 $(F90) $(FFLAGS) -c $<
 
-Chks.o:Chks.f90 vars.o Ham.o 
+Chks.o:Chks.f90 vars.o Ham.o redirect.o
 	 $(F90) $(FFLAGS) -c $<
 	 
 bsetalter.o:bsetalter.f90 vars.o Ham.o alarrays.o outputs.o 

@@ -101,6 +101,51 @@ contains
   end subroutine genzinit_hh
 
 !------------------------------------------------------------------------------------
+  
+  subroutine Hord_hh(bs, H, t)
+
+    implicit none
+    integer::k, j, r, s, ierr
+    type(basisfn),dimension(:),intent(in)::bs
+    type (hamiltonian), dimension (:,:), allocatable, intent(inout) :: H
+    complex(kind=8), dimension (:,:), allocatable :: Hjk_mat
+    real(kind=8), intent (in) :: t
+
+    if (errorflag .ne. 0) return
+
+    allocate(Hjk_mat(npes,npes), stat = ierr)
+    if (ierr/=0) then
+      write(0,"(a)") "Error in allocation of Hjk_mat matrix in Hord"
+      errorflag=1
+      return
+    end if
+
+    do k=1,size(H,2)
+      do j=k,size(H,1)
+        call Hij_hh(Hjk_mat,bs(j)%z,bs(k)%z)
+        do s=1,size(Hjk_mat,2)
+          do r=1,size(Hjk_mat,1)
+            H(j,k)%Hjk(r,s) = Hjk_mat(r,s)
+            if (j.ne.k) then
+              H(k,j)%Hjk(r,s) = dconjg(H(j,k)%Hjk(r,s))
+            end if
+          end do
+        end do
+      end do
+    end do
+    
+    deallocate (Hjk_mat, stat = ierr)
+    if (ierr/=0) then
+      write(0,"(a)") "Error in deallocation of Hjk_mat matrix in Hord"
+      errorflag=1
+      return
+    end if
+
+    return
+
+  end subroutine Hord_hh
+
+!------------------------------------------------------------------------------------
 
   subroutine Hij_hh(H,z1,z2)
 
@@ -156,21 +201,79 @@ contains
     return 
 
   end subroutine Hij_hh
+  
+!------------------------------------------------------------------------------------
+
+  subroutine Hijdiag_hh(H,z)
+
+    implicit none
+    complex(kind=8), dimension (:,:), intent(in)::z
+    complex(kind=8), dimension(:,:,:), intent (inout)::H
+    complex(kind=8), dimension (:), allocatable :: zc, Htemp
+    real (kind=8) :: prefac
+    integer :: k, m, ierr
+
+    if (errorflag .ne. 0) return
+
+    if (npes.ne.1) then
+      write(0,"(a)") "Error! There is more than 1 pes for the Harmonic Potential"
+      errorflag = 1
+      return
+    end if
+
+    allocate (zc(ndim), stat=ierr)
+    if (ierr==0) allocate (Htemp(ndim), stat=ierr)
+    if (ierr/=0) then
+      write(0,"(a)") "Error allocating z1c or Htemp in Hij_hh"
+      errorflag=1
+    end if
+
+    prefac = lambda_hh/(2.0d0*dsqrt(2.0d0))
+
+    do k=1,size(H,1)
+
+      do m=1,ndim
+        zc(m)=dconjg(z(k,m))
+        Htemp(m) = (zc(m)*z(k,m))+0.5d0
+      end do
+  
+      do m=1,(ndim-1)
+        Htemp(m) = Htemp(m) + prefac*((zc(m)**2.0)+(z(k,m)**2.0)&
+                                            +(2.0*zc(m)*z(k,m))+1)*(zc(m+1)+z(k,m+1))
+        Htemp(m) = Htemp(m) - prefac*((1.0/3.0)*((zc(m+1)**3.0)+(z(k,m+1)**3.0))&
+                                                      +(3.0*(zc(m+1)**2.0)*z(k,m+1)))
+        Htemp(m) = Htemp(m) - prefac*((3.0*zc(m+1)*(z(k,m+1)**2.0))+zc(m+1)+z(k,m+1))
+      end do
+  
+      H(k,1,1) = sum(Htemp)
+      
+    end do
+
+    deallocate (zc, stat=ierr)
+    if (ierr==0) deallocate (Htemp, stat=ierr)
+    if (ierr/=0) then
+      write(0,"(a)") "Error deallocating zc or Htemp in Hij_hh"
+      errorflag=1
+    end if
+
+    return 
+
+  end subroutine Hijdiag_hh
 
 !------------------------------------------------------------------------------------
 
   function dh_dz_hh(z)
 
     implicit none
-    complex(kind=8),dimension(npes,npes,ndim) :: dh_dz_hh
-    complex(kind=8),dimension(:),intent(in)::z
-    complex(kind=8),dimension(:),allocatable::zc
+    complex(kind=8),dimension(:,:),intent(in)::z
+    complex(kind=8),dimension(size(z,1),npes,npes,size(z,2)) :: dh_dz_hh
+    complex(kind=8),dimension(:,:),allocatable::zc
     real(kind=8) :: fact
-    integer :: m, ierr
+    integer :: k, m, ierr
 
     if (errorflag .ne. 0) return
 
-    allocate (zc(ndim), stat=ierr)
+    allocate (zc(size(z,1),size(z,2)), stat=ierr)
     if (ierr/=0) then
       write(0,"(a)") "Error allocating zc array in dh_dz_hh function"
       errorflag = 1
@@ -179,23 +282,25 @@ contains
 
     fact = lambda_hh/(2.0*dsqrt(2.0d0))
 
-    do m=1,ndim
-      zc(m) = dconjg(z(m))
-    end do
-
-    m=ndim
-
-    dh_dz_hh (1,1,1) = z(1) + (2.0*fact*(zc(1)+z(1))*(zc(2)+z(2)))
-    dh_dz_hh (1,1,m) = z(m) + fact*((zc(m-1)**2.0)+(z(m-1)**2.0)&
-                     +(2.0*zc(m-1)*z(m-1))-(zc(m)**2.0)-(z(m)**2.0)-(2.0*zc(m)*z(m)))
-
-    if (ndim.gt.2) then
-      do m=2,ndim-1 
-        dh_dz_hh (1,1,m) = z(m) + fact*((zc(m-1)**2.0)+(z(m-1)**2.0)&
-                         +(2.0*zc(m-1)*z(m-1))-(zc(m)**2.0)-(z(m)**2.0)&
-                         -(2.0*zc(m)*z(m)) + (2.0*(zc(m)+z(m))*(zc(m+1)+z(m+1)))) 
+    do k=1,size(z,1)
+      do m=1,size(z,2)
+        zc(k,m) = dconjg(z(k,m))
       end do
-    end if
+
+      m=size(z,2)
+
+      dh_dz_hh (k,1,1,1) = z(k,1) + (2.0*fact*(zc(k,1)+z(k,1))*(zc(k,2)+z(k,2)))
+      dh_dz_hh (k,1,1,m) = z(k,m) + fact*((zc(k,m-1)**2.0)+(z(k,m-1)**2.0)&
+                     +(2.0*zc(k,m-1)*z(k,m-1))-(zc(k,m)**2.0)-(z(k,m)**2.0)-(2.0*zc(k,m)*z(k,m)))
+
+      if (size(z,2).gt.2) then
+        do m=2,size(z,2)-1 
+          dh_dz_hh (k,1,1,m) = z(k,m) + fact*((zc(k,m-1)**2.0)+(z(k,m-1)**2.0)&
+                           +(2.0*zc(k,m-1)*z(k,m-1))-(zc(k,m)**2.0)-(z(k,m)**2.0)&
+                           -(2.0*zc(k,m)*z(k,m)) + (2.0*(zc(k,m)+z(k,m))*(zc(k,m+1)+z(k,m+1)))) 
+        end do
+      end if
+    end do
 
     deallocate (zc, stat=ierr)
     if (ierr/=0) then

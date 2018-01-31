@@ -101,6 +101,51 @@ contains
   end subroutine genzinit_fp
 
 !------------------------------------------------------------------------------------
+  
+  subroutine Hord_fp(bs, H, t)
+
+    implicit none
+    integer::k, j, r, s, ierr
+    type(basisfn),dimension(:),intent(in)::bs
+    type (hamiltonian), dimension (:,:), allocatable, intent(inout) :: H
+    complex(kind=8), dimension (:,:), allocatable :: Hjk_mat
+    real(kind=8), intent (in) :: t
+
+    if (errorflag .ne. 0) return
+
+    allocate(Hjk_mat(npes,npes), stat = ierr)
+    if (ierr/=0) then
+      write(0,"(a)") "Error in allocation of Hjk_mat matrix in Hord"
+      errorflag=1
+      return
+    end if
+
+    do k=1,size(H,2)
+      do j=k,size(H,1)
+        call Hij_fp(Hjk_mat,bs(j)%z,bs(k)%z)
+        do s=1,size(Hjk_mat,2)
+          do r=1,size(Hjk_mat,1)
+            H(j,k)%Hjk(r,s) = Hjk_mat(r,s)
+            if (j.ne.k) then
+              H(k,j)%Hjk(r,s) = dconjg(H(j,k)%Hjk(r,s))
+            end if
+          end do
+        end do
+      end do
+    end do
+    
+    deallocate (Hjk_mat, stat = ierr)
+    if (ierr/=0) then
+      write(0,"(a)") "Error in deallocation of Hjk_mat matrix in Hord"
+      errorflag=1
+      return
+    end if
+
+    return
+
+  end subroutine Hord_fp
+
+!------------------------------------------------------------------------------------
 
   subroutine Hij_fp(H,z1,z2)
 
@@ -122,20 +167,48 @@ contains
     return   
 
   end subroutine Hij_fp
+  
+!------------------------------------------------------------------------------------
+
+  subroutine Hijdiag_fp(H,z)
+
+    implicit none
+    complex(kind=8), dimension (:,:), intent(in)::z
+    complex(kind=8), dimension(:,:,:), intent (inout)::H
+    integer :: k
+
+    if (errorflag .ne. 0) return
+
+    if (npes.ne.1) then
+      write(0,"(a)") "Error! There is more than 1 pes for the Harmonic Potential"
+      errorflag = 1
+      return
+    end if
+
+    do k=1,size(H,1)
+      H(k,1,1) = (-1.0d0/(4.0d0*gam*mass_fp*hbar))*&
+             sum(dconjg(z(k,1:ndim))**2+z(k,1:ndim)**2-2*dconjg(z(k,1:ndim))*z(k,1:ndim)-1)
+    end do
+
+    return   
+
+  end subroutine Hijdiag_fp
 
 !------------------------------------------------------------------------------------
 
   function dh_dz_fp(z)
 
     implicit none
-    complex(kind=8),dimension(npes,npes,ndim) :: dh_dz_fp
-    complex(kind=8),dimension(:),intent(in)::z
-    integer :: m
+    complex(kind=8),dimension(:,:),intent(in)::z    
+    complex(kind=8),dimension(size(z,1),npes,npes,size(z,2)) :: dh_dz_fp
+    integer :: m, k
 
     if (errorflag .ne. 0) return
-
-    do m=1,ndim    
-      dh_dz_fp(1,1,m) = (-1.0d0/(2.0d0*gam*mass_fp*hbar))*(dconjg(z(m))-z(m))
+    
+    do k=1,size(z,1)
+      do m=1,size(z,2)   
+        dh_dz_fp(k,1,1,m) = (-1.0d0/(2.0d0*gam*mass_fp*hbar))*(dconjg(z(k,m))-z(k,m))
+      end do
     end do
 
     return

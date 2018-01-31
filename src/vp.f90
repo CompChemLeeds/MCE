@@ -216,6 +216,83 @@ contains
   end subroutine genzinit_vp
 
 !--------------------------------------------------------------------------------------------------
+  
+  subroutine Hord_vp(bs, H, t)
+
+    implicit none
+    integer::k, j, r, s, ierr
+    type(basisfn),dimension(:),intent(in)::bs
+    type (hamiltonian), dimension (:,:), allocatable, intent(inout) :: H
+    complex(kind=8), dimension (:,:), allocatable :: Hjk_mat
+    real(kind=8), intent (in) :: t
+
+    if (errorflag .ne. 0) return
+
+    allocate(Hjk_mat(npes,npes), stat = ierr)
+    if (ierr/=0) then
+      write(0,"(a)") "Error in allocation of Hjk_mat matrix in Hord"
+      errorflag=1
+      return
+    end if
+
+    do k=1,size(H,2)
+      do j=k,size(H,1)
+        call Hij_vp(Hjk_mat,bs(j)%z,bs(k)%z)
+        do s=1,size(Hjk_mat,2)
+          do r=1,size(Hjk_mat,1)
+            H(j,k)%Hjk(r,s) = Hjk_mat(r,s)
+            if (j.ne.k) then
+              H(k,j)%Hjk(r,s) = dconjg(H(j,k)%Hjk(r,s))
+            end if
+          end do
+        end do
+      end do
+    end do
+    
+    deallocate (Hjk_mat, stat = ierr)
+    if (ierr/=0) then
+      write(0,"(a)") "Error in deallocation of Hjk_mat matrix in Hord"
+      errorflag=1
+      return
+    end if
+
+    return
+
+  end subroutine Hord_vp
+
+!------------------------------------------------------------------------------------
+
+  subroutine Hijdiag_vp(H,z)
+
+    implicit none
+    complex(kind=8), dimension (:,:), intent(in)::z
+    complex(kind=8), dimension(:,:,:), intent (inout)::H
+    complex(kind=8):: HS0, HS1, HNAC
+    real(kind=8) :: chk
+    integer :: k, ierr
+
+    if (errorflag .ne. 0) return
+
+    ierr = 0
+
+    do k=1,size(H,1)
+
+      HS0 = HS0_vp(z(k,:),z(k,:))
+      HS1 = HS1_vp(z(k,:),z(k,:))
+      HNAC = HNAC_vp(z(k,:),z(k,:))
+
+      H(k,1,1) = HS0
+      H(k,1,2) = HNAC
+      H(k,2,1) = HNAC
+      H(k,2,2) = HS1
+      
+    end do
+
+    return   
+
+  end subroutine Hijdiag_vp
+  
+!------------------------------------------------------------------------------------
 
   subroutine Hij_vp(H,z1,z2)
 
@@ -277,7 +354,7 @@ contains
     rhosum = sum(rho(1:ndim))
 
     do m=1,ndim
-      Htemp = Htemp - ((hbar**2)*gam/(4.0d0))*(z1c(m)**2.0d0+z2(m)**2.0d0-2.0d0*z1c(m)*z2(m)-1.0d0)&
+      Htemp = Htemp - ((hbar**2)*gam/(4.0d1))*(z1c(m)**2.0d0+z2(m)**2.0d0-2.0d0*z1c(m)*z2(m)-1.0d0)&
                             + (y_00_vp - A_0_vp) + (b_0_vp/(2.*gam)+b_0_vp*rho(m)**2.)
     end do
        
@@ -318,7 +395,7 @@ contains
     end do
        
     do m=1,ndim
-      HS1_vp = HS1_vp - ((hbar**2)*gam/(4.0d0))*(z1c(m)**2.0d0+z2(m)**2.0d0-2.0d0*z1c(m)*z2(m)-1.0d0)&
+      HS1_vp = HS1_vp - ((hbar**2)*gam/(4.0d1))*(z1c(m)**2.0d0+z2(m)**2.0d0-2.0d0*z1c(m)*z2(m)-1.0d0)&
                             + (y_10_vp) + (b_1_vp/(2.*gam)+b_1_vp*rho(m)**2.)
     end do
    
@@ -366,9 +443,9 @@ contains
   function dh_dz_vp(z)
 
     implicit none
-    complex(kind=8),dimension(npes,npes,ndim) :: dh_dz_vp
-    complex(kind=8),dimension(:),intent(in)::z
-    integer :: ierr
+    complex(kind=8),dimension(:,:),intent(in)::z
+    complex(kind=8),dimension(size(z,1),npes,npes,size(z,2)) :: dh_dz_vp
+    integer :: k
 
     if (errorflag .ne. 0) return
 
@@ -378,10 +455,12 @@ contains
       return
     end if
 
-    dh_dz_vp(1,1,:) = dhdz_vp_11(z)
-    dh_dz_vp(1,2,:) = dhdz_vp_12(z)
-    dh_dz_vp(2,1,:) = dhdz_vp_21(z)
-    dh_dz_vp(2,2,:) = dhdz_vp_22(z)
+    do k=1,size(z,1)    
+      dh_dz_vp(k,1,1,:) = dhdz_vp_11(z(k,:))
+      dh_dz_vp(k,1,2,:) = dhdz_vp_12(z(k,:))
+      dh_dz_vp(k,2,1,:) = dhdz_vp_21(z(k,:))
+      dh_dz_vp(k,2,2,:) = dhdz_vp_22(z(k,:))
+    end do
 
     return
 
@@ -561,13 +640,14 @@ contains
     do k=1,size(bs)
       D(k)=bs(k)%D_big
       Dc(k)=dconjg(D(k))
-      d_small(k)=bs(k)%d_pes(1)
+      d_small(k)=bs(k)%d_pes(2)
       dc_small(k)=dconjg(d_small(k))
-      s(k)=bs(k)%s_pes(1)
+      s(k)=bs(k)%s_pes(2)
     end do         
     
     do k=1,size(bs)
       do j=1,size(bs)
+        if (j.eq.k) then
         rho2 = (0.0d0,0.0d0)
         do m=1,ndim
           zk(m) = bs(k)%z(m)
@@ -580,8 +660,9 @@ contains
               -(0.5d0*dconjg(zj(1:ndim))*zj(1:ndim))&
               -(0.5d0*dconjg(zk(1:ndim))*zk(1:ndim))))
         term1 = Dc(j)*D(k)*dc_small(j)*d_small(k)*cdexp(i*(s(k)-s(j)))* ovrlp * rhosum
-        term2 = Dc(j)*D(k)*dc_small(j)*d_small(k)*cdexp(i*(s(k)-s(j)))* ovrlp * (1./2.*gam + rho2)
-        disp_vp = disp_vp + sqrt((term1 ** 2.) - term2)
+        term2 = Dc(j)*D(k)*dc_small(j)*d_small(k)*cdexp(i*(s(k)-s(j)))* ovrlp * (1./(2.*gam) + rho2)
+        disp_vp = disp_vp + sqrt(term2 - (term1 ** 2.))
+        end if
       end do
     end do
     

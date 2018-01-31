@@ -526,7 +526,7 @@ contains
     else if ((cloneflg=="BLIND").or.((cloneflg=="BLIND+").and.(x.eq.0))) then
       clonetype = 2
     else
-      write (0,"(2a)") "Cloneflg is invalid. Should be 'YES' or 'BLIND', but was ", cloneflg
+      write (0,"(2a)") "Cloneflg is invalid. Should be 'YES', 'BLIND' or 'BLIND+', but was ", cloneflg
       errorflag = 1
       return
     end if
@@ -558,7 +558,7 @@ contains
           normar = normar + dconjg(bs(k)%a_pes(r))*bs(k)%a_pes(r)
         end do
         brforce = ((abs(bs(k)%a_pes(1)*bs(k)%a_pes(2))**2.0)/(normar**2.0))
-        if ((brforce.gt.0.249).and.(clone(k)==0).and.(clonenum(k).lt.clonemax)) then
+        if ((brforce.gt.thresh).and.(clone(k)==0).and.(clonenum(k).lt.clonemax)) then
           clone(k) = x
           clonehere(k) = 1
         end if 
@@ -684,7 +684,7 @@ contains
           do m=1,ndim
             bsnew(nbf+j)%z(m) = bs(k)%z(m)
           end do
-          write(47756,"(3i5,2es25.17e3)") x, k, nbf+j, abs(bs(k)%a_pes(1)), abs(bs(k)%a_pes(2))
+          write(47756,"(3i5,2es25.17e3)") x, k, nbf+j, abs(bs(k)%a_pes(in_pes)), sqrt(1.-((abs(bs(k)%a_pes(in_pes))**2.0d0)))
           j = j+1
         else
           bsnew(k)%D_big = bs(k)%D_big

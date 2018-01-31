@@ -242,124 +242,6 @@ MODULE Ham
 
 !------------------------------------------------------------------------------------
 
-  function innorm(bs)   !   Level 1 Function
-
-    implicit none
-    type(basisfn),dimension(:),intent(in)::bs    
-    complex(kind=8)::innorm, asum
-    complex(kind=8), dimension(:), allocatable::zj,zk 
-    real(kind=8)::absnorm
-    integer::k, j, r, m, ierr
-
-    if (errorflag .ne. 0) return
-
-    ierr = 0
-
-    innorm = (0.0d0, 0.0d0)
-
-    allocate(zj(ndim), zk(ndim), stat=ierr)
-    if (ierr/=0) then
-      write(0,"(a)") "Error allocating z arrays"
-      errorflag = 1
-      return
-    end if
-    
-    if (((basis=="GRID").or.(basis=="GRSWM")).and.(mod(in_nbf,2)==1)) then
-      innorm = (1.0d0,0.0d0)
-    else
-      do k=1,size(bs)
-        do j=1,size(bs)
-          asum = (0.0d0, 0.0d0)
-          do m=1,ndim
-            zj(m)=bs(j)%z(m)
-            zk(m)=bs(k)%z(m)
-          end do
-          do r=1,npes
-            asum = asum + (dconjg(bs(j)%a_pes(r))*bs(k)%a_pes(r))
-          end do
-            innorm = innorm + dconjg(bs(j)%D_big)*ovrlpij(zj,zk)*asum*bs(k)%D_big
-        end do
-      end do
-    end if
-
-    absnorm=sqrt(dble(innorm*dconjg(innorm)))
-
-!    if ((absnorm.gt.1.2d0).and.(cmprss=="N")) then
-!      write(0,"(a,a)") "Norm is greater than 1.2. Simulation has failed and trajectories ",&
-!                "are likely to explode"
-!      errorflag = 1
-!    end if
-
-    deallocate(zj, zk, stat=ierr)
-    if (ierr/=0) then
-      write(0,"(a)") "Error deallocating z arrays"
-      errorflag = 1
-      return
-    end if
-
-    return
-
-  end function innorm
-
-!------------------------------------------------------------------------------------
-
-  function inpop(bs, pes)   !   Level 1 Function
-
-    implicit none
-    type(basisfn),dimension(:),intent(in)::bs
-    complex(kind=8), dimension(:), allocatable::zj,zk 
-    complex(kind=8)::cpop
-    integer::k,j,ierr, m
-    integer, intent(in):: pes
-    real(kind=8)::inpop
-
-    if (errorflag .ne. 0) return
-
-    ierr = 0
-
-    cpop = (0.0d0, 0.0d0)
-
-    allocate(zj(ndim), zk(ndim), stat=ierr)
-    if (ierr/=0) then
-      write(0,"(a)") "Error allocating z arrays"
-      errorflag = 1
-      return
-    end if
-
-    if (((basis=="GRID").or.(basis=="GRSWM")).and.(mod(in_nbf,2)==1)) then
-      if (pes==in_pes) then
-        inpop = 1.0d0
-      else
-        inpop = 0.0d0
-      end if
-    else    
-      do k=1,size(bs)
-        do j=1,size(bs)
-          do m=1,ndim
-            zj(m)=bs(j)%z(m)
-            zk(m)=bs(k)%z(m)
-          end do
-          cpop = cpop + dconjg(bs(j)%D_big) * ovrlpij(zj,zk) * bs(k)%D_big &
-                  * dconjg(bs(j)%d_pes(pes)) * bs(k)%d_pes(pes) * &
-                    cdexp(i*(bs(k)%s_pes(pes)-bs(j)%s_pes(pes)))
-        end do
-      end do
-      inpop = abs(cpop) 
-    end if
-
-    deallocate(zj, zk, stat=ierr)
-    if (ierr/=0) then
-      write(0,"(a)") "Error deallocating z arrays"
-      errorflag = 1
-      return
-    end if
-
-    return
-
-  end function inpop
-
-!------------------------------------------------------------------------------------
-
   function acf(bs, mup, muq)   !   Level 1 Function
 
     implicit none
@@ -411,144 +293,9 @@ MODULE Ham
 
   end function acf
 
-!------------------------------------------------------------------------------------
-
-  function acfdim(bs, mup, muq)   !   Level 1 Function
-
-    implicit none
-    type(basisfn),dimension(:),intent(in)::bs
-    real(kind=8), dimension(:), intent(in)::mup,muq
-    real(kind=8), dimension(:), allocatable :: s
-    real(kind=8) , dimension(3*ndim+3) :: acfdim
-    complex(kind=8), dimension (:), allocatable :: zinit, Dbig, d, acft, ovrlpprod
-    complex(kind=8), dimension (:,:), allocatable :: ovrlp
-    real(kind=8) :: chk
-    integer::k,m,ierr
-
-    if (errorflag .ne. 0) return
-
-    ierr = 0
-
-    allocate(zinit(ndim), stat = ierr)
-    if (ierr==0) allocate(Dbig(size(bs)), stat=ierr)
-    if (ierr==0) allocate(d(size(bs)), stat=ierr)
-    if (ierr==0) allocate(s(size(bs)), stat=ierr)
-    if (ierr==0) allocate(ovrlp(size(bs),ndim), stat=ierr)
-    if (ierr==0) allocate(acft(ndim+1), stat=ierr)
-    if (ierr==0) allocate(ovrlpprod(size(bs)), stat=ierr)
-    if (ierr/=0) then
-      write(0,"(a)") "Error in allocation of arrays in acf"
-      errorflag=1
-      return
-    end if
-
-    acft = (0.0d0,0.0d0)
-    ovrlpprod = (1.0d0,0.0d0)
-
-    zinit(1:ndim) = cmplx(muq(1:ndim), mup(1:ndim), kind=8)
-
-    do k=1,size(bs)
-      Dbig(k)=bs(k)%D_big
-      d(k)=bs(k)%d_pes(in_pes)
-      s(k)=bs(k)%s_pes(in_pes)
-      do m=1,ndim
-        chk = (abs(zinit(m)-bs(k)%z(m)))**2
-        if (chk.gt.20000d0) then
-          ovrlp(k,m) = (0.0d0,0.0d0)
-        else
-          ovrlp(k,m) = cdexp((dconjg(zinit(m))*bs(k)%z(m))-&
-             (0.5d0*dconjg(zinit(m))*zinit(m))-(0.5d0*dconjg(bs(k)%z(m))*bs(k)%z(m)))
-          ovrlpprod(k) = ovrlpprod(k) * ovrlp(k,m) 
-        end if       
-      end do
-    end do 
-
-    do m=1,ndim
-      do k=1,size(bs)
-        acft(m) = acft(m) + (ovrlp(k,m)*Dbig(k)*d(k)*cdexp(i*s(k)))
-      end do
-    end do
-
-    do k=1,size(bs)
-      acft(ndim+1) = acft(ndim+1) + (ovrlpprod(k)*Dbig(k)*d(k)*cdexp(i*s(k)))
-    end do
-
-    do m=1,ndim
-      acfdim(m+1) = dimag(i*acft(m))
-      acfdim(m+ndim+2) = dimag(acft(m))
-      acfdim(m+2*ndim+3) = abs(acft(m))
-    end do
-
-    acfdim(1) = dimag(i*acft(ndim+1))
-    acfdim(ndim+2) = dimag(acft(ndim+1))
-    acfdim(2*ndim+3) = abs(acft(ndim+1))
-
-    deallocate(zinit, Dbig, d, s, ovrlp, acft, stat = ierr)
-    if (ierr/=0) then
-      write(0,"(a)") "Error in deallocation of arrays in acf"
-      errorflag=1
-      return
-    end if
-
-    return
-
-  end function acfdim
-
-
 !***********************************************************************************!
 !            Hamiltonian Subroutines and Functions
 !***********************************************************************************!
-
-  subroutine Hord(bs, H, t)
-
-    implicit none
-    integer::k, j, r, s, ierr
-    type(basisfn),dimension(:),intent(in)::bs
-    type (hamiltonian), dimension (:,:), allocatable, intent(inout) :: H
-    complex(kind=8), dimension (:,:), allocatable :: Hjk_mat
-    real(kind=8), intent (in) :: t
-
-    if (errorflag .ne. 0) return
-
-    if (.not.allocated(H)) then
-      write(0,"(a)") "Error! Hord has not been allocated in Hord subroutine."    
-      errorflag = 1
-      return
-    end if
-
-    allocate(Hjk_mat(npes,npes), stat = ierr)
-    if (ierr/=0) then
-      write(0,"(a)") "Error in allocation of Hjk_mat matrix in Hord"
-      errorflag=1
-      return
-    end if
-
-    do k=1,size(H,2)
-      do j=k,size(H,1)
-        call Hij(Hjk_mat,bs(j)%z,bs(k)%z,t)
-        do s=1,size(Hjk_mat,2)
-          do r=1,size(Hjk_mat,1)
-            H(j,k)%Hjk(r,s) = Hjk_mat(r,s)
-            if (j.ne.k) then
-              H(k,j)%Hjk(r,s) = dconjg(H(j,k)%Hjk(r,s))
-            end if
-          end do
-        end do
-      end do
-    end do
-    
-    deallocate (Hjk_mat, stat = ierr)
-    if (ierr/=0) then
-      write(0,"(a)") "Error in deallocation of Hjk_mat matrix in Hord"
-      errorflag=1
-      return
-    end if
-
-    return
-
-  end subroutine Hord
-
-!------------------------------------------------------------------------------------
 
   function Hehr(bf,t)   !   Level 1 Function
 
@@ -556,28 +303,34 @@ MODULE Ham
     type (basisfn), intent(inout)::bf
     real(kind=8), intent (in) :: t
     complex(kind=8)::Hehr, asum
-    complex(kind=8),dimension(:,:), allocatable::H
-    integer::r,s,ierr
+    complex(kind=8),dimension(:,:), allocatable :: z
+    complex(kind=8),dimension(:,:,:), allocatable::H
+    integer::m,r,s,ierr
 
     if (errorflag .ne. 0) return
 
     ierr = 0
 
-    allocate(H(npes,npes), stat = ierr)
+    allocate(H(1,npes,npes), stat = ierr)
+    if (ierr==0) allocate (z(1,ndim), stat = ierr)
     if (ierr/=0) then
       write(0,"(a)") "Error in allocation of H matrix in Hehr"
       errorflag=1
       return
     end if
+    
+    do m=1,ndim
+      z(1,m)=bf%z(m)
+    end do
 
     Hehr = (0.0d0, 0.0d0)
     asum = (0.0d0, 0.0d0)
 
-    call Hij(H,bf%z,bf%z,t) 
+    call Hijdiag(H,z,t) 
 
     do r=1,npes
       do s=1,npes
-        Hehr = Hehr + H(r,s)*dconjg(bf%a_pes(r))*bf%a_pes(s)
+        Hehr = Hehr + H(1,r,s)*dconjg(bf%a_pes(r))*bf%a_pes(s)
       end do
       asum = asum + dconjg(bf%a_pes(r))*bf%a_pes(r)
     end do

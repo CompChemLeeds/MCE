@@ -2,13 +2,18 @@
 #					Input File								!!!
 #!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-# System (Currently can be SB [Spin Boson], HP [Harmonic Potential], FP [Free Particle], DL [Spin Boson with Drude-Lorentz], VP [Pseudo-Tortion]
-#    MP [Morse Potential], IV [Inverted Gaussian], CP [Coulomb Potential], or HH [Henon-Heiles]. SB, DL, VP works only with MCE, all others with CCS. 
-System: DL
+# System (Currently can be SB [Spin Boson],        HP [Harmonic Potential], FP [Free Particle], MP [Morse Potential], 
+#                          IV [Inverted Gaussian], CP [Coulomb Potential],  HH [Henon-Heiles]. 
+#  SB works only with MCE, all others with CCS. 
+System: SB
+
+# Spectral Density (only valid for Spin Boson, with values EXP [exponential cutoff], DL [Drude Lorentz/Debye],
+#                                or UBO [Underdamped Brownian Oscillator]. LHC [Light-Harvesting complex] to come later)
+SpecDen DL
 
 #Name of running folder [Default : <method>-<system>-<random number> ie CCS-HP-31254 (input "default", case insensitive)
 #                       Otherwise:  <method>-<system>-<runfolder string> ie CCS-HP-withgrids]
-Runfolder SelfDerived_thoss2001_1c
+Runfolder DLtest-freqflg0
 
 #Debug flag [ 0: no debug outputs, 1: debug outputs. Does not really work for dynamic basis set sizes]
 debug 0
@@ -38,7 +43,7 @@ Conjugate_Repeats NO
 in_nbf 250
 
 # Number of dimensions
-ndim 200
+ndim 250
 
 #determine which PES you are on initially
 in_PES 1
@@ -50,13 +55,13 @@ npes 2
 basis SWARM
 
 # determines the structure of the Z_0 initial central coherent state [WHOLE/SPLIT]. Split Z_0 is reflected in the q=0 line
-wfn_init WHOLE
+wfn_init SPLIT
 
 # allows for symmetric/antisymmetric basis sets to be created. Used with wfn_init=SPLIT [YES/NO/ANTI]
-symm NO
+symm YES
 
 # Compression parameter (can be tweaked to allow better norm value, or altered automatically)   Used for swarms/swarm-trains/grid-swarms
-ALCMP 30.0d0
+ALCMP 200.0d0
 
 # Flag for adaptive basis set size (yes/no) [Selecting No will give a constant basis set size. This is default behaviour] Used for Grids/grid-swarms
 nbfadapt no
@@ -65,7 +70,7 @@ nbfadapt no
 nbfepsilon 1.0d-06
 
 # gives grid spacing. If grid is not selected (previous parameter) this parameter will be read, but not used. Used for grids/grid-swarms
-gridsp 0.20075436E+01
+gridsp 1.40
 
 # the size of the grid in the q,x coordinate. Used for 3d grids
 qsizex 0
@@ -80,25 +85,32 @@ qsizey 0
 psizey 0
 
 # the size of the grid in the q,z coordinate. Used for grids/grid-swarms
-qsizez 20
+qsizez 100
 
 # the size of the grid in the p,z coordinate. Used for grids/grid-swarms
-psizez 1
+psizez 26
 
-# Flag for cloning basis functions (yes/no/blind/blind+). Blind cloning clones the entire basis set once before propagation
+# frequency flag for using a set of precalculated frequencies with the spin boson model
+# freqflg = 1 enables reading of precalculated frequencies, freqflg = 0 mean they are calculated withing the program
+freqflg 0
+
+# Flag for cloning basis functions (yes/no/blind/blind+)
 Cloning no
+
+# Cloning threshold (value of |sum_r(a_{r,k})|) - must be >= 0.05 and < 0.25, default 0.249
+Threshold 0.249d0
 
 # Maximum number of Cloning events allowed
 max_cloning 4
 
 # Minimum cloning frequency (ie how many timesteps since last cloning is new cloning event allowed)
-clon_freq 50
+clon_freq 200
 
 # spacing between trajectories for train type basis set. Used for trains/swarm-trains
-trainsp 20 
+trainsp 60 
 
-# default basis functions per train. Used for swarm-trains only. This is sometimes increased/decreased by 1.
-def_stp 10
+# default steps per train. Used for swarm-trains only. This is sometimes increased/decreased by 1.
+def_stp 20
 
 # Matrix function (zgesv - linear algebra, zheev - matrix inversion)
 matfun zgesv

@@ -250,18 +250,62 @@ contains
           return
         end if
         n = n+1
+      else if(LINE=='SpecDen') then
+        backspace(127)
+        read(127,*,iostat=ierr)LINE,specden
+        if (ierr.ne.0) then
+          write(0,"(a)") "Error reading Spin Boson Spectral Density name"
+          errorflag = 1
+          return
+        end if
+        n = n+1
+      else if(LINE=='freqflg') then
+        backspace(127)
+        read(127,*,iostat=ierr)LINE,freqflg_sb
+        if (ierr.ne.0) then
+          write(0,"(a)") "Error reading Spin Boson Frequency calculation flag"
+          errorflag = 1
+          return
+        end if
+        n = n+1
       end if
       read(127,*,iostat=ierr) LINE
 
     end do
 
     close(127)
-
-    if (n.ne.1) then
-      write(0,"(a)") "Not all required variables read in readsys subroutine"
+    
+    if ((sys.ne."SB").and.(sys.ne."HP").and.(sys.ne."FP").and.(sys.ne."MP").and.(sys.ne."IV") &
+          & .and.(sys.ne."CP").and.(sys.ne."HH")) then
+      write(0,"(2a)") "System not recognised. Please recheck input.dat file. Read value of ", sys
       errorflag = 1
       return
     end if
+    
+    if ((sys.eq."SB").and.(specden.ne."EXP").and.(specden.ne."DL").and.(specden.ne."UBO").and.(specden.ne."LHC")) then
+      write(0,"(2a)") "Spectral Density not recognised. Must be EXP, DL, UBO or LHC, but read ", specden
+      errorflag = 1
+      return
+    end if
+    
+    if (specden.eq."LHC") then
+      write(0,"(a)") "The LHC-II Spectral Density calculation is not full set up yet. Please change the spectral density"
+      errorflag = 1
+      return
+    end if
+      
+    if ((freqflg_sb.eq.0).and.((specden=="UBO").or.(specden=="LHC"))) then 
+      write(0,"(3a)") "Frequency flag set for self calculation. This is not compatible with the ", specden, &
+                     & " spectral density, which only works with pre-calculation. Please revise the running parameters"
+      errorflag = 1
+      return
+    end if
+
+    if (n.ne.3) then
+      write(0,"(a)") "Not all required variables read in readsys subroutine"
+      errorflag = 1
+      return
+    end if  
 
     call readparams
 
@@ -601,6 +645,15 @@ contains
           write(0,"(a,a)") "Error. cloneflg value must be YES/NO/BLIND/BLIND+. Read ", trim(LINE2)
         end if
         n = n+1
+      else if (LINE=="Threshold") then
+        backspace(127)
+        read(127,*,iostat=ierr)LINE,thresh
+        if(ierr.ne.0) then
+          write(0,"(a)")  "Error reading cloning threshold"
+          errorflag = 1
+          return
+        end if
+        n = n+1
       else if (LINE=="max_cloning") then
         backspace(127)
         read(127,*,iostat=ierr)LINE,clonemax
@@ -700,6 +753,14 @@ contains
       symm = "NO"
     else if ((symm.eq."anti").or.(symm.eq."A").or.(symm.eq."a")) then
       symm = "ANTI"
+    end if
+
+    if (thresh .lt. 0.05d0) then
+      write(0,"(a)") "Cloning threshold too small. Setting to default value of 0.249"
+      thresh = 0.249d0
+    else if (thresh .ge. 0.25d0) then
+      write(0,"(a)") "Cloning threshold larger than allowed limits. Setting to default value of 0.249"
+      thresh = 0.249d0
     end if
 
     if ((matfun.ne.'zgesv').and.(matfun.ne.'ZGESV').and.(matfun.ne.'zheev').and.(matfun.ne.'ZHEEV')) then
@@ -926,8 +987,8 @@ contains
         errorflag = 1
         return
       end if
-      if ((sys.ne."SB").and.(sys.ne."DL").and.(sys.ne."VP")) then
-        write(0,"(a)") "Cloning can only be performed on multi-PES systems, currently SB, DL or VP"
+      if ((sys.ne."SB").and.(sys.ne."VP")) then
+        write(0,"(a)") "Cloning can only be performed on multi-PES systems, currently SB, or VP"
         errorflag = 1
         return
       end if
@@ -980,22 +1041,6 @@ contains
           errorflag = 1
           return
         end if                  
-      case ("DL")
-        if (npes.lt.2) then
-          write(0,"(a)") "Debye Spin Boson model must have at least 2 pes'"
-          errorflag = 1
-          return
-        end if
-        if ((method.ne."MCEv1").and.(method.ne."MCEv2").and.(method.ne."AIMC1").and.(method.ne."AIMC2")) then
-          write(0,"(a)") "Debye Spin Boson model can only be simulated by MCEv1 or MCEv2, or through AIMC-MCE"
-          errorflag = 1
-          return
-        end if
-        if (basis.eq."GRID") then
-          write(0,"(a)") "This method must not use a static grid."
-          errorflag = 1
-          return
-        end if 
       case ("SB")
         if (npes.lt.2) then
           write(0,"(a)") "Spin Boson model must have at least 2 pes'"
@@ -1012,7 +1057,6 @@ contains
           errorflag = 1
           return
         end if 
-
       case ("HP")
         if (npes.ne.1) then
           write(0,"(a)") "Harmonic Potential only valid for 1 PES"
@@ -1204,7 +1248,7 @@ contains
     sigq = sqrt(gam/2.0d0)
 
     if (n.ne.3) then
-      write(0,"(a)") "Not all required variables read in readzparams subroutine."
+      write(0,"(a,i0)") "Not all required variables read in readzparams subroutine. n = ", n
       errorflag = 1
       return
     end if
@@ -1340,7 +1384,7 @@ contains
     call flush(0)
 
     if (n.ne.6) then
-      write(0,"(a,i2,a)") "Error in reading parameters. Only ", n, " of 6 parameters read."
+      write(0,"(a,i0,a)") "Error in reading parameters. Only ", n, " of 6 parameters read."
       errorflag = 1
       return
     end if 

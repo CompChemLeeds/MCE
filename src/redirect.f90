@@ -156,7 +156,7 @@ contains
       case ("SB")
         call Hijdiag_sb(H,z)
       case ("VP")
-        call Hijdiag_vp(H,z1,z2)
+        call Hijdiag_vp(H,z)
       case ("HP")
         call Hijdiag_hp(H,z)
       case ("FP")

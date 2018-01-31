@@ -216,6 +216,83 @@ contains
   end subroutine genzinit_vp
 
 !--------------------------------------------------------------------------------------------------
+  
+  subroutine Hord_vp(bs, H, t)
+
+    implicit none
+    integer::k, j, r, s, ierr
+    type(basisfn),dimension(:),intent(in)::bs
+    type (hamiltonian), dimension (:,:), allocatable, intent(inout) :: H
+    complex(kind=8), dimension (:,:), allocatable :: Hjk_mat
+    real(kind=8), intent (in) :: t
+
+    if (errorflag .ne. 0) return
+
+    allocate(Hjk_mat(npes,npes), stat = ierr)
+    if (ierr/=0) then
+      write(0,"(a)") "Error in allocation of Hjk_mat matrix in Hord"
+      errorflag=1
+      return
+    end if
+
+    do k=1,size(H,2)
+      do j=k,size(H,1)
+        call Hij_vp(Hjk_mat,bs(j)%z,bs(k)%z)
+        do s=1,size(Hjk_mat,2)
+          do r=1,size(Hjk_mat,1)
+            H(j,k)%Hjk(r,s) = Hjk_mat(r,s)
+            if (j.ne.k) then
+              H(k,j)%Hjk(r,s) = dconjg(H(j,k)%Hjk(r,s))
+            end if
+          end do
+        end do
+      end do
+    end do
+    
+    deallocate (Hjk_mat, stat = ierr)
+    if (ierr/=0) then
+      write(0,"(a)") "Error in deallocation of Hjk_mat matrix in Hord"
+      errorflag=1
+      return
+    end if
+
+    return
+
+  end subroutine Hord_vp
+
+!------------------------------------------------------------------------------------
+
+  subroutine Hijdiag_vp(H,z)
+
+    implicit none
+    complex(kind=8), dimension (:,:), intent(in)::z
+    complex(kind=8), dimension(:,:,:), intent (inout)::H
+    complex(kind=8):: HS0, HS1, HNAC
+    real(kind=8) :: chk
+    integer :: k, ierr
+
+    if (errorflag .ne. 0) return
+
+    ierr = 0
+
+    do k=1,size(H,1)
+
+      HS0 = HS0_vp(z(k,:),z(k,:))
+      HS1 = HS1_vp(z(k,:),z(k,:))
+      HNAC = HNAC_vp(z(k,:),z(k,:))
+
+      H(k,1,1) = HS0
+      H(k,1,2) = HNAC
+      H(k,2,1) = HNAC
+      H(k,2,2) = HS1
+      
+    end do
+
+    return   
+
+  end subroutine Hijdiag_vp
+  
+!------------------------------------------------------------------------------------
 
   subroutine Hij_vp(H,z1,z2)
 
@@ -366,9 +443,9 @@ contains
   function dh_dz_vp(z)
 
     implicit none
-    complex(kind=8),dimension(npes,npes,ndim) :: dh_dz_vp
-    complex(kind=8),dimension(:),intent(in)::z
-    integer :: ierr
+    complex(kind=8),dimension(:,:),intent(in)::z
+    complex(kind=8),dimension(size(z,1),npes,npes,size(z,2)) :: dh_dz_vp
+    integer :: k
 
     if (errorflag .ne. 0) return
 
@@ -378,10 +455,12 @@ contains
       return
     end if
 
-    dh_dz_vp(1,1,:) = dhdz_vp_11(z)
-    dh_dz_vp(1,2,:) = dhdz_vp_12(z)
-    dh_dz_vp(2,1,:) = dhdz_vp_21(z)
-    dh_dz_vp(2,2,:) = dhdz_vp_22(z)
+    do k=1,size(z,1)    
+      dh_dz_vp(k,1,1,:) = dhdz_vp_11(z(k,:))
+      dh_dz_vp(k,1,2,:) = dhdz_vp_12(z(k,:))
+      dh_dz_vp(k,2,1,:) = dhdz_vp_21(z(k,:))
+      dh_dz_vp(k,2,2,:) = dhdz_vp_22(z(k,:))
+    end do
 
     return
 

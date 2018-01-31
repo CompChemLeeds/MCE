@@ -101,6 +101,76 @@ contains
    end subroutine genzinit_hp
 
 !------------------------------------------------------------------------------------
+  
+  subroutine Hord_hp(bs, H, t)
+
+    implicit none
+    integer::k, j, r, s, ierr
+    type(basisfn),dimension(:),intent(in)::bs
+    type (hamiltonian), dimension (:,:), allocatable, intent(inout) :: H
+    complex(kind=8), dimension (:,:), allocatable :: Hjk_mat
+    real(kind=8), intent (in) :: t
+
+    if (errorflag .ne. 0) return
+
+    allocate(Hjk_mat(npes,npes), stat = ierr)
+    if (ierr/=0) then
+      write(0,"(a)") "Error in allocation of Hjk_mat matrix in Hord"
+      errorflag=1
+      return
+    end if
+
+    do k=1,size(H,2)
+      do j=k,size(H,1)
+        call Hij_hp(Hjk_mat,bs(j)%z,bs(k)%z)
+        do s=1,size(Hjk_mat,2)
+          do r=1,size(Hjk_mat,1)
+            H(j,k)%Hjk(r,s) = Hjk_mat(r,s)
+            if (j.ne.k) then
+              H(k,j)%Hjk(r,s) = dconjg(H(j,k)%Hjk(r,s))
+            end if
+          end do
+        end do
+      end do
+    end do
+    
+    deallocate (Hjk_mat, stat = ierr)
+    if (ierr/=0) then
+      write(0,"(a)") "Error in deallocation of Hjk_mat matrix in Hord"
+      errorflag=1
+      return
+    end if
+
+    return
+
+  end subroutine Hord_hp
+
+!------------------------------------------------------------------------------------
+
+   subroutine Hijdiag_hp(H,z)
+
+    implicit none
+    complex(kind=8), dimension (:,:), intent(in)::z
+    complex(kind=8), dimension(:,:,:), intent (inout)::H
+    integer :: k
+
+    if (errorflag .ne. 0) return
+
+    if (npes.ne.1) then
+      write(0,"(a)") "Error! There is more than 1 pes for the Harmonic Potential"
+      errorflag = 1
+      return
+    end if
+
+    do k=1,size(H,1)
+      H(k,1,1) = hbar*freq_hp*sum(dconjg(z(k,1:ndim))*z(k,1:ndim))+(0.5*dble(ndim))
+    end do
+
+    return 
+
+   end subroutine Hijdiag_hp
+   
+!------------------------------------------------------------------------------------
 
    subroutine Hij_hp(H,z1,z2)
 
@@ -127,14 +197,16 @@ contains
    function dh_dz_hp(z)
 
     implicit none
-    complex(kind=8),dimension(npes,npes,ndim) :: dh_dz_hp
-    complex(kind=8),dimension(:),intent(in)::z
-    integer :: m
+    complex(kind=8),dimension(:,:),intent(in)::z
+    complex(kind=8),dimension(size(z,1),npes,npes,size(z,2)) :: dh_dz_hp
+    integer :: m, k
 
     if (errorflag .ne. 0) return
 
-    do m=1,ndim
-      dh_dz_hp(1,1,m) = hbar*freq_hp*z(m)
+    do k=1,size(z,1)
+      do m=1,size(z,2)
+        dh_dz_hp(k,1,1,m) = hbar*freq_hp*z(k,m)
+      end do
     end do
 
     return

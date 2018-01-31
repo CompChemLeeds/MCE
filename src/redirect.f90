@@ -94,30 +94,72 @@ contains
 
 !--------------------------------------------------------------------------------------------------
 
-  subroutine Hij(H,z1,z2,t)
+  subroutine Hord(bs, H, t)
+    
+    implicit none
+    type(basisfn),dimension(:),intent(in)::bs
+    type (hamiltonian), dimension (:,:), allocatable, intent(inout) :: H
+    real(kind=8), intent (in) :: t
+
+    if (errorflag .ne. 0) return
+
+    if (.not.allocated(H)) then
+      write(0,"(a)") "Error! Hord has not been allocated in Hord subroutine."    
+      errorflag = 1
+      return
+    end if
+
+    select case (sys)
+      case ("SB")
+        call Hord_sb(bs, H, t)
+      case ("HP")
+        call Hord_hp(bs, H, t)
+      case ("FP")
+        call Hord_fp(bs, H, t)
+      case ("MP")
+        call Hord_mp(bs, H, t)
+      case ("IV")
+        call Hord_iv(bs, H, t)
+      case ("CP")
+        call Hord_cp(bs, H, t)
+      case ("HH")
+        call Hord_hh(bs, H, t)
+      case default
+        write(0,"(a)") "Error! The system was not recognised!"
+        write(0,"(a)") "If you are seeing this something is terribly wrong"
+        errorflag=1
+    end select    
+    
+    return
+
+  end subroutine Hord
+
+!--------------------------------------------------------------------------------------------------
+
+  subroutine Hijdiag(H,z,t)
 
     implicit none
-    complex(kind=8), dimension (:), intent(in)::z1,z2
-    complex(kind=8), dimension(:,:), intent (inout)::H
+    complex(kind=8), dimension (:,:), intent(in)::z
+    complex(kind=8), dimension(:,:,:), intent (inout)::H
     real(kind=8), intent (in) :: t
 
     if (errorflag .ne. 0) return
 
     select case (sys)
       case ("SB")
-        call Hij_sb(H,z1,z2)
+        call Hijdiag_sb(H,z)
       case ("HP")
-        call Hij_hp(H,z1,z2)
+        call Hijdiag_hp(H,z)
       case ("FP")
-        call Hij_fp(H,z1,z2)
+        call Hijdiag_fp(H,z)
       case ("MP")
-        call Hij_mp(H,z1,z2)
+        call Hijdiag_mp(H,z)
       case ("IV")
-        call Hij_iv(H,z1,z2,t)
+        call Hijdiag_iv(H,z,t)
       case ("CP")
-        call Hij_cp(H,z1,z2,t)
+        call Hijdiag_cp(H,z,t)
       case ("HH")
-        call Hij_hh(H,z1,z2)
+        call Hijdiag_hh(H,z)
       case default
         write(0,"(a)") "Error! The system was not recognised!"
         write(0,"(a)") "If you are seeing this something is terribly wrong"
@@ -126,15 +168,15 @@ contains
 
     return   
 
-  end subroutine Hij
+  end subroutine Hijdiag
 
 !--------------------------------------------------------------------------------------------------
 
   subroutine dh_dz(dhdz, z, t)
 
     implicit none
-    complex(kind=8),dimension(:,:,:), intent(inout) :: dhdz
-    complex(kind=8),dimension(:),intent(inout)::z 
+    complex(kind=8),dimension(:,:,:,:), intent(inout) :: dhdz
+    complex(kind=8),dimension(:,:),intent(inout)::z 
     real(kind=8), intent (in) :: t 
 
     if (errorflag .ne. 0) return

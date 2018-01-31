@@ -2,6 +2,7 @@ MODULE Chks
 
   use globvars
   use Ham
+  use redirect
 
 !***********************************************************************************!
 !*
@@ -128,21 +129,35 @@ contains
     real(kind=8), intent(in) :: t
     integer, intent(inout) :: n, redo
     integer, intent(in) :: k
-    complex(kind=8),dimension(:,:), allocatable::H
+    complex(kind=8),dimension(:,:,:), allocatable::H
+    complex(kind=8),dimension(:,:), allocatable::z
     real(kind=8)::Echk
-    integer :: ierr
+    integer :: j,r,s,ierr
 
     if (errorflag/=0) return
 
     if (ECheck.eq."YES") then
-      allocate(H(npes,npes), stat = ierr)
+    
+      allocate(H(1,npes,npes), stat = ierr)
+      if (ierr==0) allocate (z(1,ndim), stat = ierr)
       if (ierr/=0) then
         write(0,"(a)") "Error in H allocation in genbasis"
         errorflag=1
         return
       end if
-      call Hij(H, bf%z, bf%z, t)
-      Echk = dble(H(in_pes,in_pes))
+      
+      call Hijdiag(H, z, t)
+      
+      Echk = 0.0d0
+      
+      do j=1,size(H,1)
+        do r=1,size(H,2)
+          do s=1,size(H,3)
+            Echk = Echk + H(j,r,s)
+          end do
+        end do
+      end do
+      
       if ((Echk.gt.Ebfmax).or.(Echk.lt.Ebfmin)) then
         if (n.lt.Ntries) then
           n = n+1

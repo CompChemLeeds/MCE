@@ -355,7 +355,7 @@ contains
 !        mup(m)=dimag(zin(m))
       end do
       if (ECheck.eq."YES") then
-        call Hij_sb(H,zin,zin)
+        call Hij_sb(H,zin,zin,wm_sb,Cm_sb)
         Ezin = dble(H(in_pes,in_pes))
         if ((Ezin.gt.Ebfmax).or.(Ezin.lt.Ebfmin)) then
           if (n.lt.Ntries) then
@@ -390,30 +390,70 @@ contains
   end subroutine genzinit_sb
 
 !--------------------------------------------------------------------------------------------------
+  
+  subroutine Hord_sb(bs, H, t)
 
-  subroutine Hij_sb(H,z1,z2)
+    implicit none
+    integer::k, j, r, s, ierr
+    type(basisfn),dimension(:),intent(in)::bs
+    type (hamiltonian), dimension (:,:), allocatable, intent(inout) :: H
+    complex(kind=8), dimension (:,:), allocatable :: Hjk_mat
+    real(kind=8), dimension(:), allocatable :: wm_sb, Cm_sb
+    real(kind=8), intent (in) :: t
+
+    if (errorflag .ne. 0) return
+
+    allocate(Hjk_mat(npes,npes), stat = ierr)
+    if (ierr==0) allocate (wm_sb(ndim), stat=ierr)
+    if (ierr==0) allocate (Cm_sb(ndim), stat=ierr)
+    if (ierr/=0) then
+      write(0,"(a)") "Error in allocation of Hjk_mat, wm_sb and Cm_sb matrix in Hord_sb"
+      errorflag=1
+      return
+    end if
+       
+    call genwm_sb(wm_sb, Cm_sb)
+
+    do k=1,size(H,2)
+      do j=k,size(H,1)
+        call Hij_sb(Hjk_mat,bs(j)%z,bs(k)%z, wm_sb, Cm_sb)
+        do s=1,size(Hjk_mat,2)
+          do r=1,size(Hjk_mat,1)
+            H(j,k)%Hjk(r,s) = Hjk_mat(r,s)
+            if (j.ne.k) then
+              H(k,j)%Hjk(r,s) = dconjg(H(j,k)%Hjk(r,s))
+            end if
+          end do
+        end do
+      end do
+    end do
+    
+    deallocate (Hjk_mat, wm_sb, Cm_sb, stat = ierr)
+    if (ierr/=0) then
+      write(0,"(a)") "Error in deallocation of Hjk_mat, wm_sb or Cm_sb matrix in Hord_sb"
+      errorflag=1
+      return
+    end if
+
+    return
+
+  end subroutine Hord_sb
+
+!------------------------------------------------------------------------------------
+
+  subroutine Hij_sb(H,z1,z2,wm_sb,Cm_sb)
 
     implicit none
     complex(kind=8), dimension (:), intent(in)::z1,z2
     complex(kind=8), dimension(:,:), intent (inout)::H
     complex(kind=8):: Hbath, Hcoup
-    real(kind=8), dimension(:), allocatable :: wm_sb, Cm_sb
+    real(kind=8), dimension(:), intent(in) :: wm_sb, Cm_sb
     real(kind=8) :: chk
     integer :: ierr
 
     if (errorflag .ne. 0) return
 
     ierr = 0
-
-    allocate (wm_sb(ndim), stat=ierr)
-    if (ierr==0) allocate (Cm_sb(ndim), stat=ierr)
-    if (ierr/=0) then
-      write(0,"(a)") "Error in wm or Cm allocation in Hij"
-      errorflag=1
-      return
-    end if
-
-    call genwm_sb(wm_sb, Cm_sb)
 
     Hbath = Hb_sb(z1,z2,wm_sb)
     Hcoup = Hc_sb(z1,z2,wm_sb, Cm_sb)
@@ -429,6 +469,54 @@ contains
       H = (0.0d0, 0.0d0)
     end if
 
+    return   
+
+  end subroutine Hij_sb
+  
+!------------------------------------------------------------------------------------
+
+  subroutine Hijdiag_sb(H,z)
+
+    implicit none
+    complex(kind=8), dimension (:,:), intent(in)::z
+    complex(kind=8), dimension(:,:,:), intent (inout)::H
+    complex(kind=8), dimension(:), allocatable :: zin
+    complex(kind=8):: Hbath, Hcoup
+    real(kind=8), dimension(:), allocatable :: wm_sb, Cm_sb
+    real(kind=8) :: chk
+    integer :: k, m, ierr
+
+    if (errorflag .ne. 0) return
+
+    ierr = 0
+
+    allocate (wm_sb(ndim), stat=ierr)
+    if (ierr==0) allocate (Cm_sb(ndim), stat=ierr)
+    if (ierr==0) allocate (zin(ndim), stat=ierr)
+    if (ierr/=0) then
+      write(0,"(a)") "Error in zin, wm or Cm allocation in Hijdiag"
+      errorflag=1
+      return
+    end if
+
+    call genwm_sb(wm_sb, Cm_sb)
+    
+    do k=1,size(z,1)    
+    
+      do m=1,size(z,2)
+        zin(m) = z(k,m)
+      end do    
+
+      Hbath = Hb_sb(zin,zin,wm_sb)
+      Hcoup = Hc_sb(zin,zin,wm_sb, Cm_sb)
+   
+      H(k,1,1) = Hbath+eps_sb+Hcoup
+      H(k,1,2) = cmplx(delta_sb,0.0d0,kind=8)!+Hcoup
+      H(k,2,1) = cmplx(delta_sb,0.0d0,kind=8)!+Hcoup
+      H(k,2,2) = Hbath-eps_sb-Hcoup
+
+    end do
+
     deallocate(wm_sb, Cm_sb, stat=ierr)
     if (ierr/=0) then
       write(0,"(a)") "Error in deallocation of wm or Cm in Hij"
@@ -438,7 +526,7 @@ contains
 
     return   
 
-  end subroutine Hij_sb
+  end subroutine Hijdiag_sb
 
 !--------------------------------------------------------------------------------------------------
 
@@ -489,10 +577,10 @@ contains
   function dh_dz_sb(z)
 
     implicit none
-    complex(kind=8),dimension(npes,npes,ndim) :: dh_dz_sb
-    complex(kind=8),dimension(:),intent(in)::z
+    complex(kind=8),dimension(:,:),intent(in)::z
+    complex(kind=8),dimension(size(z,1),npes,npes,size(z,2)) :: dh_dz_sb    
     real(kind=8), dimension(:), allocatable :: wm_sb, Cm_sb
-    integer :: ierr
+    integer :: ierr, k
 
     if (errorflag .ne. 0) return
 
@@ -512,15 +600,19 @@ contains
 
     call genwm_sb(wm_sb, Cm_sb)
 
-    dh_dz_sb(1,1,:) = dhdz_sb_11(z,wm_sb,Cm_sb)
-    dh_dz_sb(1,2,:) = dhdz_sb_12(wm_sb,Cm_sb)
-    dh_dz_sb(2,1,:) = dhdz_sb_21(wm_sb,Cm_sb)
-    dh_dz_sb(2,2,:) = dhdz_sb_22(z,wm_sb,Cm_sb)
+    do k=1,size(z,1)
+      dh_dz_sb(k,1,1,:) = dhdz_sb_11(z(k,:),wm_sb,Cm_sb)
+      dh_dz_sb(k,1,2,:) = dhdz_sb_12(wm_sb,Cm_sb)
+      dh_dz_sb(k,2,1,:) = dhdz_sb_21(wm_sb,Cm_sb)
+      dh_dz_sb(k,2,2,:) = dhdz_sb_22(z(k,:),wm_sb,Cm_sb)
+    end do
 
-!    dh_dz_sb(1,1,:) = dhdz_sb_11(z,wm_sb)
-!    dh_dz_sb(1,2,:) = dhdz_sb_12(wm_sb,Cm_sb)
-!    dh_dz_sb(2,1,:) = dhdz_sb_21(wm_sb,Cm_sb)
-!    dh_dz_sb(2,2,:) = dhdz_sb_22(z,wm_sb)
+!    do k=1,size(z,1)
+!      dh_dz_sb(1,1,:) = dhdz_sb_11(z(k,:),wm_sb)
+!      dh_dz_sb(1,2,:) = dhdz_sb_12(wm_sb,Cm_sb)
+!      dh_dz_sb(2,1,:) = dhdz_sb_21(wm_sb,Cm_sb)
+!      dh_dz_sb(2,2,:) = dhdz_sb_22(z(k,:),wm_sb)
+!    end do
 
     deallocate (wm_sb, Cm_sb, stat=ierr)
     if (ierr/=0) then
@@ -680,9 +772,7 @@ contains
     CALL RANDOM_NUMBER(r)
     r=r*3232768.0
     rint = int(r)
-    
-    write(0,"(a)") "Entered the frequency reading subroutine"
-    
+ 
     open(unit=rint, file='freq.dat', status='old', iostat=ierr)
     
     if (ierr.ne.0) then
@@ -699,9 +789,7 @@ contains
         errorflag = 1
         return
       end if
-      
-      write (0,"(i0,2(1x,es16.8e3))") m, wm_sb(m), Cm_sb(m)
-            
+                 
     end do
     
     close(rint)

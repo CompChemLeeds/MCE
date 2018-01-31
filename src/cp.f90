@@ -136,6 +136,51 @@ contains
     return
 
   end subroutine genzinit_cp
+  
+!------------------------------------------------------------------------------------
+  
+  subroutine Hord_cp(bs, H, t)
+
+    implicit none
+    integer::k, j, r, s, ierr
+    type(basisfn),dimension(:),intent(in)::bs
+    type (hamiltonian), dimension (:,:), allocatable, intent(inout) :: H
+    complex(kind=8), dimension (:,:), allocatable :: Hjk_mat
+    real(kind=8), intent (in) :: t
+
+    if (errorflag .ne. 0) return
+
+    allocate(Hjk_mat(npes,npes), stat = ierr)
+    if (ierr/=0) then
+      write(0,"(a)") "Error in allocation of Hjk_mat matrix in Hord"
+      errorflag=1
+      return
+    end if
+
+    do k=1,size(H,2)
+      do j=k,size(H,1)
+        call Hij_cp(Hjk_mat,bs(j)%z,bs(k)%z,t)
+        do s=1,size(Hjk_mat,2)
+          do r=1,size(Hjk_mat,1)
+            H(j,k)%Hjk(r,s) = Hjk_mat(r,s)
+            if (j.ne.k) then
+              H(k,j)%Hjk(r,s) = dconjg(H(j,k)%Hjk(r,s))
+            end if
+          end do
+        end do
+      end do
+    end do
+    
+    deallocate (Hjk_mat, stat = ierr)
+    if (ierr/=0) then
+      write(0,"(a)") "Error in deallocation of Hjk_mat matrix in Hord"
+      errorflag=1
+      return
+    end if
+
+    return
+
+  end subroutine Hord_cp
 
 !------------------------------------------------------------------------------------
 
@@ -195,6 +240,73 @@ contains
     return   
 
   end subroutine Hij_cp
+  
+!------------------------------------------------------------------------------------
+
+  subroutine Hijdiag_cp(H,z,t)
+
+    implicit none
+    complex(kind=8), dimension (:,:), intent(in)::z
+    complex(kind=8), dimension(:,:,:), intent (inout)::H
+    real(kind=8), intent (in) :: t
+    integer :: m, ierr, k
+    complex(kind=8), dimension (:), allocatable :: Htemp, rho
+    complex(kind=8) :: rho2, zc 
+
+    if (errorflag .ne. 0) return
+
+    if (npes.ne.1) then
+      write(0,"(a)") "Error! There is more than 1 pes for the Inverse Gaussian"
+      errorflag = 1
+      return
+    end if
+
+    if (ndim.ne.3) then
+      write(0,"(a)") "Error! Coulomb potential is only valid in 3D"
+      errorflag = 1
+      return
+    end if
+
+    allocate (Htemp(ndim), stat=ierr)
+    if (ierr==0) allocate(rho(size(z)))
+    if (ierr/=0) then
+      write(0,"(a)") "Error allocating Htemp in Hij_cp"
+      errorflag=1
+    end if
+
+    do k=1,size(H,1)
+
+      do m=1,ndim
+        rho(m)=((dconjg(z(k,m))+z(k,m))/sqrt(2.0d0*gam))-Rc_cp
+      end do
+      rho2 = sum(rho(1:ndim)**2.0d0)
+  
+      do m=1,ndim
+        zc = dconjg(z(k,m))
+        Htemp(m) = (0.0d0,0.0d0)
+        Htemp(m) = Htemp(m) - (1.0d0/4.0d0)*&
+                         (zc**2.0d0+z(k,m)**2.0d0-2.0d0*zc*z(k,m)-1.0d0) !free particle
+        if (abs(rho2) < tiny(1.0d0)) then             !checks that not near singularity
+          Htemp(m) = Htemp(m) + 2.0d0*sqrt(gam)/(sqrtpi)   !empirically determined limit
+        else
+          Htemp(m) = Htemp(m) + (c_error_func(sqrt(gam*rho2)/sqrt(rho2))) !Atom. Pot.
+        end if
+        if (m==1)Htemp(m) = Htemp(m) + inten_cp*rho(m)*dcos(freq_cp*t)    !laser field
+      end do
+  
+      H(k,1,1) = sum(Htemp(1:ndim))
+      
+    end do
+
+    deallocate(Htemp, rho, stat=ierr)
+    if (ierr/=0) then
+      write(0,"(a)") "Error deallocating Htemp and rho in Hij_cp"
+      errorflag=1
+    end if
+
+    return   
+
+  end subroutine Hijdiag_cp
 
 !------------------------------------------------------------------------------------
 
@@ -203,40 +315,58 @@ contains
 ! This is laid out so as to allow easy conversion to calculating off diagonal elements
 
     implicit none
-    complex(kind=8),dimension(npes,npes,ndim) :: dh_dz_cp
-    complex(kind=8),dimension(:),intent(in)::z
+    complex(kind=8),dimension(:,:),intent(in)::z
+    complex(kind=8),dimension(size(z,1),npes,npes,size(z,2)) :: dh_dz_cp
     complex(kind=8), dimension(:), allocatable :: rho
     real(kind=8), intent (in) :: t
-    complex(kind=8) :: dhdztmp, rho2, arho, datpotdz
+    complex(kind=8) :: dhdztmp, datpotdz, rho2, arho
     real(kind=8) :: rt2g
-    integer :: m
+    integer :: k, m, ierr
 
     if (errorflag .ne. 0) return
 
-    rt2g = sqrt(2.0d0*gam)
-    allocate(rho(size(z)))
-    do m=1,ndim
-      rho(m)=(dconjg(z(m))+z(m))/sqrt(2.0d0*gam)-Rc_cp
-    end do
-    rho2 = sum(rho(1:ndim)**2.0d0)
-    arho = sqrt(rho2)
+    allocate (rho(size(z,2)), stat=ierr)
+    if (ierr/=0) then
+      write(0,"(a)") "Error allocating rho array in dh_dz_cp function"
+      errorflag = 1
+      return
+    end if
 
-    datpotdz = (2.0d0*sqrt(gam)*cdexp(-gam*rho2))/(sqrtpi*rho2)-&
+    rt2g = sqrt(2.0d0*gam)
+    
+    do k=1,size(z,1)
+    
+      do m=1,size(z,2)
+        rho(m)=(dconjg(z(k,m))+z(k,m))/sqrt(2.0d0*gam)-Rc_cp
+      end do
+      rho2 = sum(rho(:)**2.0d0)
+      arho = sqrt(rho2)
+
+      datpotdz = (2.0d0*sqrt(gam)*cdexp(-gam*rho2))/(sqrtpi*rho2)-&
                                         (c_error_func(sqrt(gam)*arho)/(arho**3.0))
 
-    do m=1,ndim    
-      dhdztmp = (0.0d0,0.0d0) 
-      dhdztmp = dhdztmp - (1.0/2.0)*(dconjg(z(m))-z(m))            ! free particle
-      if (abs(rho2) .ge. tiny(1.0d0)) then             !checks that not near singularity
-        if (datpotdz /= datpotdz) then  !check for NaN or Inf from the exponential
-          continue                     !take no action
-        else
-          dhdztmp = dhdztmp + (1.0d0/(rt2g))*rho(m)*datpotdz  !atomic potential
+      do m=1,size(z,2)    
+        dhdztmp = (0.0d0,0.0d0) 
+        dhdztmp = dhdztmp - (1.0/2.0)*(dconjg(z(k,m))-z(k,m))            ! free particle
+        if (abs(rho2) .ge. tiny(1.0d0)) then             !checks that not near singularity
+          if (datpotdz /= datpotdz) then  !check for NaN or Inf from the exponential
+            continue                     !take no action
+          else
+            dhdztmp = dhdztmp + (1.0d0/(rt2g))*rho(m)*datpotdz  !atomic potential
+          end if
         end if
-      end if
-      if (m==1) dhdztmp = dhdztmp + (inten_cp/rt2g)*dcos(freq_cp*t)  ! laser field
-      dh_dz_cp (1,1,m) = dhdztmp
+        if (m==1) dhdztmp = dhdztmp + (inten_cp/rt2g)*dcos(freq_cp*t)  ! laser field
+        dh_dz_cp (k,1,1,m) = dhdztmp
+      end do
+    
     end do
+    
+    deallocate (rho, stat=ierr)
+    if (ierr/=0) then
+      write(0,"(a)") "Error deallocating rho array in dh_dz_cp function"
+      errorflag = 1
+      return
+    end if    
 
     return
 

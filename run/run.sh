@@ -309,7 +309,7 @@ for a in "${methseq[@]}"; do
     if [[ $gen -eq 0 ]]; then
       if [[ $method == "AIMC-MCE2" ]]; then
         if [[ -f "Outbs-001-00000-0_$i.out" || -f "Outbs-0001-00000-0_$i.out" ]]; then
-          echo "Outbs-001-00000-0_$i.out found in $PWD"
+          echo "Outbs-0001-00000-0_$i.out found in $PWD"
           for x in Outbs-*_$i.out; do
             cp $x $SUBDIR/${x%_$i.out}.out
           done
@@ -330,12 +330,12 @@ for a in "${methseq[@]}"; do
         fi 
       else
         if [[ -f "Outbs-001_$i.out" || -f "Outbs-0001_$i.out" ]]; then 
-          echo "Outbs-001_$i.out found in $PWD"
+          echo "Outbs-0001_$i.out found in $PWD"
           for x in Outbs-*_$i.out; do
             cp $x $SUBDIR/${x%_$i.out}.out
           done
         else
-          echo "Outbs-001_$i.out not found in $PWD"
+          echo "Outbs-0001_$i.out not found in $PWD"
           echo "For propagation to occur without basis set generation,"
           echo "all relevant input bases must be present"
           exit 1

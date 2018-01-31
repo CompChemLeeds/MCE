@@ -9,11 +9,11 @@ System: SB
 
 # Spectral Density (only valid for Spin Boson, with values EXP [exponential cutoff], DL [Drude Lorentz/Debye],
 #                                or UBO [Underdamped Brownian Oscillator]. LHC [Light-Harvesting complex] to come later)
-SpecDen EXP
+SpecDen DL
 
 #Name of running folder [Default : <method>-<system>-<random number> ie CCS-HP-31254 (input "default", case insensitive)
 #                       Otherwise:  <method>-<system>-<runfolder string> ie CCS-HP-withgrids]
-Runfolder inttest2
+Runfolder DLtest-freqflg0
 
 #Debug flag [ 0: no debug outputs, 1: debug outputs. Does not really work for dynamic basis set sizes]
 debug 0
@@ -40,10 +40,10 @@ Repeats 192
 Conjugate_Repeats NO
 
 # Number of basis functions 
-in_nbf 15
+in_nbf 250
 
 # Number of dimensions
-ndim 15
+ndim 250
 
 #determine which PES you are on initially
 in_PES 1
@@ -86,13 +86,13 @@ psizez 26
 
 # frequency flag for using a set of precalculated frequencies with the spin boson model
 # freqflg = 1 enables reading of precalculated frequencies, freqflg = 0 mean they are calculated withing the program
-freqflg 1
+freqflg 0
 
 # Flag for cloning basis functions (yes/no/blind/blind+)
 Cloning no
 
 # Cloning threshold (value of |sum_r(a_{r,k})|) - must be >= 0.05 and < 0.25, default 0.249
-Threshold 0.05d0
+Threshold 0.249d0
 
 # Maximum number of Cloning events allowed
 max_cloning 4

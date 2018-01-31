@@ -2,7 +2,7 @@
 #Made with the aid of the fmkmf utility (Copyright (c) The University of Edinburgh) 
 
 F90=gfortran
-FFLAGS=-fopenmp -O3
+FFLAGS=-g -pg -fopenmp -O3
 FLINKS=-lm -Warray-bounds
 VPATH=../src
 
@@ -81,7 +81,7 @@ redirect.o:redirect.f90 vars.o sb.o hp.o fp.o mp.o iv.o cp.o hh.o
 Ham.o:Ham.f90 vars.o alarrays.o redirect.o 
 	 $(F90) $(FFLAGS) -c $<
 
-Chks.o:Chks.f90 vars.o Ham.o 
+Chks.o:Chks.f90 vars.o Ham.o redirect.o
 	 $(F90) $(FFLAGS) -c $<
 	 
 bsetalter.o:bsetalter.f90 vars.o Ham.o alarrays.o outputs.o 

@@ -45,6 +45,14 @@ MODULE globvars
 
   real(kind=8),external :: ZBQLNOR ! The normally distributed random number external function
 
+  real(kind=8) :: y_00_vp          ! S_0 offset **PSEUDO-TORTION POTENTIAL ONLY**
+  real(kind=8) :: A_0_vp           ! S_0 amplitude **PSEUDO-TORTION POTENTIAL ONLY**
+  real(kind=8) :: b_0_vp           ! S_0 parabolic parameter **PSEUDO-TORTION POTENTIAL ONLY**
+  real(kind=8) :: width_vp         ! S_0 gaussian width **PSEUDO-TORTION POTENTIAL ONLY**
+  real(kind=8) :: A_NAC_vp         ! Non-adiabatic Coupling amplitude **PSEUDO-TORTION POTENTIAL ONLY**
+  real(kind=8) :: y_10_vp          ! S_1 offset **PSEUDO-TORTION POTENTIAL ONLY**
+  real(kind=8) :: b_1_vp           ! S_1 parabolic parameter **PSEUDO-TORTION POTENTIAL ONLY**
+
   real(kind=8) :: wmax_sb          ! Maximum frequency **SPIN BOSON ONLY**
   real(kind=8) :: beta_sb          ! Temperature parameter **SPIN BOSON ONLY**
   real(kind=8) :: delta_sb         ! Coupling between PESs in Hamiltonian - provides off diagonals **SPIN BOSON ONLY**
@@ -99,9 +107,12 @@ MODULE globvars
   real(kind=8) :: lowlimnorm       ! lower limit of the norm
   real(kind=8) :: sqrtpi           ! square root of pi
   real(kind=8) :: thresh           ! cloning threshold
+  real(kind=8) :: pirl             ! pi
 
   character(LEN=5) :: ECheck       ! Flag to determine if the energy of basis functions should be checked
-  character(LEN=5) :: basis        ! Flag for grids
+  character(LEN=5) :: basis        ! Initial basis set structure option
+  character(LEN=5) :: wfn_init     ! Initial structure for z_0 (WHOLE/SPLIT)
+  character(LEN=4) :: symm         ! Basis set symmetry parameter (YES/NO/ANTI)
   character(LEN=5) :: nbfadapt     ! Flag for adaptive basis set size
   character(LEN=6) :: cloneflg     ! Flag for cloning
   character(LEN=5) :: matfun       ! Which matrix calcualtion function (zgesv/zheev) used for linear algebra
@@ -142,6 +153,15 @@ contains
     psizez = 0
     trainsp = 0
     def_stp = 0
+    
+    y_00_vp = 0.0d0          ! PSEUDO-TORTION POTENTIAL PARAMETER
+    A_0_vp = 0.0d0           ! PSEUDO-TORTION POTENTIAL PARAMETER
+    b_0_vp = 0.0d0           ! PSEUDO-TORTION POTENTIAL PARAMETER
+    width_vp = 0.0d0         ! PSEUDO-TORTION POTENTIAL PARAMETER
+    A_NAC_vp = 0.0d0         ! PSEUDO-TORTION POTENTIAL PARAMETER
+    y_10_vp = 0.0d0          ! PSEUDO-TORTION POTENTIAL PARAMETER
+    b_1_vp = 0.0d0           ! PSEUDO-TORTION POTENTIAL PARAMETER
+
  
     wmax_sb = 0.0d0          ! SPIN BOSON PARAMETER
     eps_sb = 0.0d0           ! SPIN BOSON PARAMETER
@@ -195,6 +215,7 @@ contains
     bfeps = 0.0d0
     sqrtpi = 1.7724538509055160272981674833411451827975494561223871d0
     thresh = 0.249d0
+    pirl = sqrtpi**2.0d0
 
     i = (0.0d0,1.0d0)
 

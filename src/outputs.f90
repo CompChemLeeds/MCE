@@ -647,7 +647,7 @@ contains
       write(fileun,*), ""
       write(fileun,*), ""
     else
-      write(fileun,"(a)") "Time Norm Re(ACF(t)) Im(ACF(t) |ACF(t)| Re(Extra) Im(Extra) |Extra| Sum(HEhr) Pops 1...n"
+      write(fileun,"(a)") "Time Norm Re(ACF(t)) Im(ACF(t) |ACF(t)| Re(Extra) Im(Extra) |Extra| Sum(HEhr) Pops(1...n)"
       write(fileun,*), ""
       write(fileun,*), ""
     end if
@@ -702,14 +702,24 @@ contains
       write(fileun,"(a,a,a)") 'set output "Dipole-',trim(rep),'.png"'
       write(fileun,"(a)") 'set title "Graph of Dipole Acceleration"'
       write(fileun,"(a)") 'set ylabel "Dipole Acceleration"'
+      write(fileun,"(a)") 'set xlabel "Time (au)"'
+      write(fileun,"(a,a,a)") 'plot "', filenm, '" u 1:6 t "Real" w l'
+    else if (sys=="VP") then
+      write(fileun,"(a,a,a)") 'set output "Disp-',trim(rep),'.png"'
+      write(fileun,"(a)") 'set title "Graph of Dispersion"'
+      write(fileun,"(a)") 'set ylabel "<\Delta x>"'
+      write(fileun,"(a)") 'set xlabel "Time (au)"'
+      write(fileun,"(a,a,a)") 'plot "', filenm, '" u 1:6 t "Real" w l'
     else
       write(fileun,"(a,a,a)") 'set output "Extra-',trim(rep),'.png"'
       write(fileun,"(a)") 'set title "Graph of Extra Calculated Quantity"'
       write(fileun,"(a)") 'set ylabel "Extra"'
+      write(fileun,"(a)") 'set xlabel "Time (au)"'
+      write(fileun,"(a,a,a)") 'plot "', filenm, '" u 1:6 t "Real" w l, "" u 1:7 t "Imaginary" w l, "" u 1:8 t "Absolute" w l'
     end if
-    write(fileun,"(a)") 'set xlabel "Time (au)"'
-    write(fileun,"(a,a,a)") 'plot "', filenm, '" u 1:6 t "Real" w l, "" u 1:7 t "Imaginary" w l, "" u 1:8 t "Absolute" w l'
+    
     close(fileun)
+
 
     filenm2="plotdif-"//rep//".gnu"
 
@@ -982,7 +992,7 @@ contains
       write(150,*), ""
       write(150,*), ""
     else
-      write(150,"(a)") "Time Norm Re(ACF(t)) Im(ACF(t) |ACF(t)| Re(Extra) Im(Extra) |Extra| Sum(HEhr) Pops 1...n"
+      write(150,"(a)") "Time Norm Re(ACF(t)) Im(ACF(t) |ACF(t)| Re(Extra) Im(Extra) |Extra| Sum(HEhr) Pops(1...n)"
       write(150,*), ""
       write(150,*), ""
       write(myfmt,'(a,i0,a)') '(', 9+npes, '(1x,e16.8e3))'
@@ -1410,9 +1420,10 @@ contains
     complex(kind=8), dimension(:,:), intent(in) :: ovrlp
     real(kind=8), intent(in) :: time, dt
     integer, intent (in) :: x
+    complex(kind=8) :: asum
     real(kind=8), dimension (:), allocatable :: p, q
     real(kind=8) :: lwrovrlp, ovrlpsum, c
-    integer::ierr, k, j, m, fields, fileun
+    integer::ierr, k, j, m, r, fields, fileun
     character(LEN=21) :: filenm, myfmt
     integer, intent(in) :: reps
     character(LEN=10):: timestr
@@ -1459,7 +1470,11 @@ contains
     
     do k=1,size(bs)
       do j=1,size(bs)
-        ovrlpsum=ovrlpsum+abs(ovrlp(j,k))
+        asum = (0.0d0,0.0d0)
+        do r=1,npes
+          asum = asum + (dconjg(bs(j)%a_pes(r))*bs(k)%a_pes(r))
+        end do
+        ovrlpsum=ovrlpsum+abs(ovrlp(j,k)*asum)
         c=c+1.0d0
       end do
     end do
@@ -1469,7 +1484,11 @@ contains
     
     do k=1,size(bs)
       do j=1,k-1
-        lwrovrlp=lwrovrlp+abs(ovrlp(j,k))
+        asum = (0.0d0,0.0d0)
+        do r=1,npes
+          asum = asum + (dconjg(bs(j)%a_pes(r))*bs(k)%a_pes(r))
+        end do
+        lwrovrlp=lwrovrlp+abs(ovrlp(j,k)*asum)
         c=c+1.0d0
       end do
     end do 
@@ -1491,7 +1510,7 @@ contains
 
     close(fileun)
 
-    if ((debug==1).and.(reps==1).and.(dmod(time,1.0d0).lt.dt)) then
+    if ((debug==1).and.(reps==1).and.(dmod(time,1.0d0).lt.dt).and.(.false.)) then
 
       write(timestr,"(i3.3,f0.4)") int(time), time-int(time)
     
@@ -1505,10 +1524,11 @@ contains
         return
       end if
 
-      write(fileun,"(a)") "k  m  q  p"
+      write(fileun,"(a)") "  k  m  q  p  Re(Dk)  Im(Dk)  Abs(Dk)"
       do k = 1,size(bs)
         do m = 1,ndim
-          write (fileun,"(2(i4,2x),2(e16.8e3,2x))") k,m,dble(bs(k)%z(m)),dimag(bs(k)%z(m))
+          write (fileun,"(2(i4,2x),5(e16.8e3,2x))") k,m,dble(bs(k)%z(m)),dimag(bs(k)%z(m)),&
+                            dble(bs(k)%D_big),dimag(bs(k)%D_big),abs(bs(k)%D_big)
         end do
       end do
 

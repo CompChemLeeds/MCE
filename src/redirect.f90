@@ -2,6 +2,7 @@ MODULE redirect
 
   use globvars
   use sb
+  use vp
   use hp
   use fp
   use mp
@@ -35,6 +36,8 @@ contains
     select case (sys)
       case ("SB")
         call readparams_sb
+      case ("VP")
+        call readparams_vp
       case ("HP") 
         call readparams_hp
       case ("FP")
@@ -70,6 +73,8 @@ contains
     select case (sys)
       case ("SB")
         call genzinit_sb(mup,muq)
+      case ("VP")
+        call genzinit_vp(mup,muq)
       case ("HP")
         call genzinit_hp(mup,muq)
       case ("FP")
@@ -112,6 +117,8 @@ contains
     select case (sys)
       case ("SB")
         call Hord_sb(bs, H, t)
+      case ("VP")
+        call Hord_vp(bs, H, t)
       case ("HP")
         call Hord_hp(bs, H, t)
       case ("FP")
@@ -148,6 +155,8 @@ contains
     select case (sys)
       case ("SB")
         call Hijdiag_sb(H,z)
+      case ("VP")
+        call Hijdiag_vp(H,z1,z2)
       case ("HP")
         call Hijdiag_hp(H,z)
       case ("FP")
@@ -184,6 +193,8 @@ contains
     select case (sys)
       case ("SB")
         dhdz=dh_dz_sb(z)
+      case ("VP")
+        dhdz=dh_dz_vp(z)
       case ("HP")
         dhdz=dh_dz_hp(z)
       case ("FP")
@@ -219,8 +230,10 @@ contains
     select case (sys)
       case ("SB")
         extra=(0.0d0,0.0d0)
+      case ("VP")
+        extra=disp_vp(bs)
       case ("HP")
-        extra=(0.0d0,0.0d0)
+        extra=disp_hp(bs)
       case ("FP")
         extra=(0.0d0,0.0d0)
       case ("MP")

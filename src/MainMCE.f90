@@ -804,14 +804,12 @@ Program MainMCE
       call flush(0) 
 
     end do !conjugate repeat
-    
-    if ((basis=="GRID").or.(basis=="GRSWM")) then
-      deallocate (initgrid, stat=ierr)
-      if (ierr/=0) then
-        write(0,"(a)") "Error deallocating the initial grid array in main"
-        errorflag=1
-      end if
-    end if  
+  
+    deallocate (initgrid, stat=ierr)
+    if (ierr/=0) then
+      write(0,"(a)") "Error deallocating the initial grid array in main"
+      errorflag=1
+    end if
 
     if (allocated(mup)) deallocate (mup, stat=ierr)
     if ((allocated(muq)).and.(ierr==0)) deallocate (muq, stat=ierr)

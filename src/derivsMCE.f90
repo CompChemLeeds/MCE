@@ -502,10 +502,6 @@ contains
     end do
     
     call Hijdiag(Hkk,zk,t)
-    
-    do k=1,size(bsin)
-      write(0,"(i0,4(es25.17e3))") k, dble(Hkk(k,1,1)), dble(Hkk(k,1,2)), dble(Hkk(k,2,1)), dble(Hkk(k,2,2))
-    end do
       
     do k=1,size(bsin)
       zsum = (0.0d0, 0.0d0)
@@ -613,7 +609,7 @@ contains
           if ((ovrlpdif.ne.0.0d0).and.(basis.ne."TRAIN").and.(basis.ne."SWTRN").and.&
             & (cloneflg.ne."BLIND").and.(cloneflg.ne."BLIND+")) then
             write(0,"(a)") "Error! Initial phi-overlap has disimilarilies to z-overlap"
-            write(0,'(a,a,i0,a,i0,a)'), "These matricies should be identical ",&
+            write(0,'(a,a,i0,a,i0,a)'), "These matrices should be identical ",&
                                   "but differences found at coordinate ", j,",",k,"."
             write(0,'(a,4(e15.8,a))'), "Expected (",dimag(i*ovrlp(j,k)),","&
                                  ,dimag(ovrlp(j,k)),") but got (",&

@@ -658,8 +658,8 @@ contains
     if (errorflag .ne. 0) return
 
     do m=1,ndim
-!      dhdz_sb_12 = (Cm_sb(m)/sqrt(2.0d0*wm_sb(m)))
-      dhdz_sb_12 = (0.0d0,0.0d0)
+!      dhdz_sb_12(m) = (Cm_sb(m)/sqrt(2.0d0*wm_sb(m)))
+      dhdz_sb_12(m) = (0.0d0,0.0d0)
     end do
 
     return

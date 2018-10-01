@@ -713,7 +713,7 @@ contains
             C_k(k) = (ovrlpij(zpq, zinit) - ovrlpij(zpq, zinit2))/sqrt(2.0d0)
           end if
         end do
-              
+
         if (ierr==0) deallocate(zinit2, stat = ierr)
         if (ierr/=0) then
           write(0,"(a)") "Error in zinit2 deallocation in genD_big"
@@ -732,8 +732,8 @@ contains
           do k=1,size(bs)
             C_k(k) = C_k(k) * dconjg(bs(k)%a_pes(in_pes))
           end do
-        end if        
-        
+        end if
+
       end if  
    
       deallocate(zpq, stat = ierr)
@@ -779,10 +779,10 @@ contains
         bs(j)%D_big = (1.0d0,0.0d0)
       end do
     end if
-    
+
     do k=1,size(bs)
       bs(k)%D_big = D(k)
-    end do    
+    end do
 
     return
 

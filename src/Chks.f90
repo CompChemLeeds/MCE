@@ -32,7 +32,6 @@ contains
     complex(kind=8), dimension(:,:), allocatable :: ovrlp
     integer, intent (inout) :: recalcs, restart
     real(kind=8), intent(inout) :: alcmprss, gridsp, absnorm, popsum
-    real(kind=8) :: poptmp
     complex(kind=8)::normtemp
     integer :: r, k, m, fields, fileun, ierr
     character(LEN=21) :: filenm, filenm2, myfmt
@@ -53,8 +52,7 @@ contains
     absnorm = abs(normtemp)
 
     do r=1,npes
-      poptmp = pop(bs, r, ovrlp)
-      popsum = popsum + poptmp
+      popsum = popsum + pop(bs, r, ovrlp)
     end do
     deallocate(ovrlp)
  

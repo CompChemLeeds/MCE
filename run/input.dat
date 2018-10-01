@@ -43,7 +43,7 @@ Conjugate_Repeats NO
 in_nbf 200
 
 # Number of dimensions
-ndim 10
+ndim 50
 
 #determine which PES you are on initially
 in_PES 1
@@ -64,7 +64,7 @@ miller 1
 symm YES
 
 # Compression parameter (can be tweaked to allow better norm value, or altered automatically)   Used for swarms/swarm-trains/grid-swarms
-ALCMP 0.13321605E+01
+ALCMP 0.33537575E+01
 
 # Flag for adaptive basis set size (yes/no) [Selecting No will give a constant basis set size. This is default behaviour] Used for Grids/grid-swarms
 nbfadapt no

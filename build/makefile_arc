@@ -10,8 +10,8 @@ VPATH=../src
 
 all: Main avrgpops timehist subavrg interpolate integrator
 
-Main:randgen.o dcerf.o vars.o alarrays.o sb.o dl.o vp.o hp.o fp.o mp.o iv.o cp.o hh.o outputs.o redirect.o Ham.o Chks.o bsetalter.o readpars.o derivsMCE.o propMCE.o bsetgen.o MainMCE.o 
-	 $(F90) $(FFLAGS) -o MCE.exe randgen.o dcerf.o vars.o alarrays.o sb.o dl.o vp.o hp.o fp.o mp.o iv.o cp.o hh.o outputs.o redirect.o Ham.o Chks.o bsetalter.o readpars.o derivsMCE.o propMCE.o bsetgen.o MainMCE.o $(FLINKS)
+Main:randgen.o dcerf.o vars.o alarrays.o sb.o vp.o hp.o fp.o mp.o iv.o cp.o hh.o outputs.o redirect.o Ham.o Chks.o bsetalter.o readpars.o derivsMCE.o propMCE.o bsetgen.o MainMCE.o 
+	 $(F90) $(FFLAGS) -o MCE.exe randgen.o dcerf.o vars.o alarrays.o sb.o vp.o hp.o fp.o mp.o iv.o cp.o hh.o outputs.o redirect.o Ham.o Chks.o bsetalter.o readpars.o derivsMCE.o propMCE.o bsetgen.o MainMCE.o $(FLINKS)
 	 
 avrgpops:avrgpops.f90
 	 $(F90) -O3 -o avrgpops.exe $<
@@ -26,7 +26,7 @@ interpolate:neville.o interpolate.o
 	 $(F90) -O3 -o interpolate.exe neville.o interpolate.o
 	 	 
 integrator:integrator.f90
-   $(F90) -O3 -o integrator.exe $<
+	 $(F90) -O3 -o integrator.exe $<
 
 # Compile steps
  
@@ -43,9 +43,6 @@ alarrays.o:alarrays.f90 vars.o
 	 $(F90) $(FFLAGS) -c $<
 
 sb.o:sb.f90 vars.o 
-	 $(F90) $(FFLAGS) -c $<
-	 
-dl.o:dl.f90 vars.o 
 	 $(F90) $(FFLAGS) -c $<
 
 vp.o:vp.f90 vars.o

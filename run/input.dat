@@ -13,7 +13,7 @@ SpecDen UBO
 
 #Name of running folder [Default : <method>-<system>-<random number> ie CCS-HP-31254 (input "default", case insensitive)
 #                       Otherwise:  <method>-<system>-<runfolder string> ie CCS-HP-withgrids]
-Runfolder UBOtest-freqflg1
+Runfolder UBOchk-1000bf-500dim-swarm
 
 #Debug flag [ 0: no debug outputs, 1: debug outputs. Does not really work for dynamic basis set sizes]
 debug 0
@@ -31,19 +31,19 @@ restart 0
 cmprss YES
 
 #Propagation method [can be CCS, MCEv1, MCEv2, AIMC-MCE1 (first pass), AIMC-MCE2 (Second pass) or MCE12 (uses both MCE methods). No support for vMCG, F-CCS or 2L-CCS yet.]
-method MCEv1
+method MCEv2
 
 #Number of repeats. Do not need to set manually - this is set by the run command.
-Repeats 100
+Repeats 1
 
 #Conjugate repeats flag. Allows even number repeats to start at the complex conjugate of the previous runs initial position [YES/NO]
 Conjugate_Repeats NO
 
 # Number of basis functions 
-in_nbf 250
+in_nbf 1000
 
 # Number of dimensions
-ndim 250
+ndim 500
 
 #determine which PES you are on initially
 in_PES 1

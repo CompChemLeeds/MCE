@@ -672,6 +672,15 @@ contains
           return
         end if
         n = n+1
+      else if (LINE=="miller") then
+        backspace(127)
+        read(127,*,iostat=ierr)LINE,miller
+        if(ierr.ne.0) then
+          write(0,"(a)")  "Error reading Miller amplitudes"
+          errorflag = 1
+          return
+        end if
+        n = n+1
       end if
 
       read(127,*,iostat=ierr) LINE
@@ -714,6 +723,22 @@ contains
       errorflag = 1
       return
     end if
+    
+    if (miller==1) then
+      if (npes.ne.2) then
+        write(0,"(a)") "Miller amplitudes are only valid with npes = 2."
+        write(0,"(a,i0)") "Npes was read as ", npes
+        ierr=-1
+        errorflag=1
+        return
+      end if
+    else if (miller.ne.0) then
+      write(0,"(a)") "Only allowed values for the miller flag are 1 or 0"
+      write(0,"(a,i0)") "Value read was ", miller
+      ierr=-1
+      errorflag = 1
+      return
+    end if    
     
     if ((basis.ne.'TRAIN').and.(basis.ne.'train').and.(basis.ne.'SWARM').and.(basis.ne.'swarm').and.(basis.ne.'SWTRN')&
       .and.(basis.ne.'swtrn').and.(basis.ne.'GRID').and.(basis.ne.'grid').and.(basis.ne.'GRSWM').and.(basis.ne.'grswm')) then
@@ -783,7 +808,7 @@ contains
       randfunc = 'GAUS'
     end if      
     
-    if (n.ne.24) then
+    if (n.ne.25) then
       write(0,"(a,i0)") "Not all required variables read in readbsparams subroutine. n=", n
       errorflag = 1
       return

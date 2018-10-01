@@ -626,8 +626,9 @@ contains
     complex(kind=8),dimension(:,:),allocatable::ovrlp_mat
     complex(kind=8),dimension(:), allocatable::zinit, zinit2, zpq
     complex(kind=8),dimension(:), allocatable:: C_k, D
+    real(kind=8) :: x,y
     integer, intent(inout) :: restart
-    integer::k, j, ierr
+    integer::k, j, r, ierr
 
     if (errorflag .ne. 0) return
     ierr = 0
@@ -641,8 +642,24 @@ contains
 
     if ((basis.ne."TRAIN").and.(basis.ne."SWTRN")) then
       do j=1,size(bs)
-        bs(j)%a_pes(in_pes) = (1.0d0,0.0d0)
-        bs(j)%d_pes(in_pes) = (1.0d0,0.0d0)
+        if ((miller==1).and.(npes==2)) then
+          call random_number(x)
+          x = x * 2.0 * pirl
+          call random_number(y)
+          y = y * 2.0 * pirl
+          do r=1,npes
+            if (r==in_pes) then
+              bs(j)%a_pes(r)=cmplx(dcos(x),0.0d0)
+            else
+              bs(j)%a_pes(r)=cmplx(dsin(x)*dcos(y),dsin(x)*dsin(y))
+            end if
+          end do
+        else
+          bs(j)%a_pes(in_pes) = (1.0d0,0.0d0)
+        end if
+        do r=1,npes
+          bs(j)%d_pes(r) = bs(j)%a_pes(r)
+        end do
       end do
     end if
 
@@ -696,7 +713,7 @@ contains
             C_k(k) = (ovrlpij(zpq, zinit) - ovrlpij(zpq, zinit2))/sqrt(2.0d0)
           end if
         end do
-        
+              
         if (ierr==0) deallocate(zinit2, stat = ierr)
         if (ierr/=0) then
           write(0,"(a)") "Error in zinit2 deallocation in genD_big"
@@ -710,6 +727,12 @@ contains
           zpq(1:ndim) = bs(k)%z(1:ndim)
           C_k(k) = ovrlpij(zpq, zinit)
         end do
+        
+        if ((miller==1).and.(npes==2)) then
+          do k=1,size(bs)
+            C_k(k) = C_k(k) * dconjg(bs(k)%a_pes(in_pes))
+          end do
+        end if        
         
       end if  
    
@@ -749,10 +772,6 @@ contains
 
     end if
 
-    do k=1,size(bs)
-      bs(k)%D_big = D(k)
-    end do
-
     if (method == "MCEv1") then
       do j=1,size(bs)
         bs(j)%a_pes(in_pes) = bs(j)%D_big
@@ -760,6 +779,10 @@ contains
         bs(j)%D_big = (1.0d0,0.0d0)
       end do
     end if
+    
+    do k=1,size(bs)
+      bs(k)%D_big = D(k)
+    end do    
 
     return
 

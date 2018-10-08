@@ -196,7 +196,7 @@ if [[ $freqflg != 0 && $freqflg != 1 ]]; then
   exit 1
 fi
 
-if [[ $freqflg -eq 1 ]]; then ./integrator.exe; fi
+if [[ $freqflg -eq 1 && ! -f freq.dat ]]; then ./integrator.exe; fi
 
 sed -i "s/^Repeats.*/Repeats $REPS/g" input2.dat   # Writes number of repeats per
 grep "^Repeats $REPS" input2.dat > /dev/null       # folder to input.dat file

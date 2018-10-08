@@ -626,7 +626,7 @@ contains
     complex(kind=8),dimension(:,:),allocatable::ovrlp_mat
     complex(kind=8),dimension(:), allocatable::zinit, zinit2, zpq
     complex(kind=8),dimension(:), allocatable:: C_k, D
-    real(kind=8) :: x,y
+    real(kind=8) :: x,y,sumamps
     integer, intent(inout) :: restart
     integer::k, j, r, ierr
 
@@ -642,18 +642,33 @@ contains
 
     if ((basis.ne."TRAIN").and.(basis.ne."SWTRN")) then
       do j=1,size(bs)
-        if ((miller==1).and.(npes==2)) then
-          call random_number(x)
-          x = x * 2.0 * pirl
-          call random_number(y)
-          y = y * 2.0 * pirl
-          do r=1,npes
-            if (r==in_pes) then
-              bs(j)%a_pes(r)=cmplx(dcos(x),0.0d0)
-            else
-              bs(j)%a_pes(r)=cmplx(dsin(x)*dcos(y),dsin(x)*dsin(y))
-            end if
-          end do
+        if (miller==1) then
+          if ((npes==2).and.(method == "MCEv2")) then
+            call random_number(x)
+            x = x * 2.0 * pirl
+            call random_number(y)
+            y = y * 2.0 * pirl
+            do r=1,npes
+              if (r==in_pes) then
+                bs(j)%a_pes(r)=cmplx(dcos(x),0.0d0)
+              else
+                bs(j)%a_pes(r)=cmplx(dsin(x)*dcos(y),dsin(x)*dsin(y))
+              end if
+            end do
+          else
+            sumamps = 0.0d0
+            do r=1,npes
+              call random_number(x)
+              call random_number(y)
+              x = x * 2.0 - 1.0
+              y = y * 2.0 - 1.0
+              bs(j)%a_pes(r) = cmplx(x,y)
+              sumamps = sumamps + dsqrt(dble(cmplx(x,y) * cmplx(x,-1.0*y)))
+            end do
+            do r=1,npes
+              bs(j)%a_pes(r) = bs(j)%a_pes(r) / sumamps
+            end do
+          end if
         else
           bs(j)%a_pes(in_pes) = (1.0d0,0.0d0)
         end if

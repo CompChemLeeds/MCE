@@ -9,11 +9,11 @@ System: SB
 
 # Spectral Density (only valid for Spin Boson, with values EXP [exponential cutoff], DL [Drude Lorentz/Debye],
 #                                or UBO [Underdamped Brownian Oscillator]. LHC [Light-Harvesting complex] to come later)
-SpecDen EXP
+SpecDen UBO
 
 #Name of running folder [Default : <method>-<system>-<random number> ie CCS-HP-31254 (input "default", case insensitive)
 #                       Otherwise:  <method>-<system>-<runfolder string> ie CCS-HP-withgrids]
-Runfolder millertest
+Runfolder millertest2_miller1_UBO
 
 #Debug flag [ 0: no debug outputs, 1: debug outputs. Does not really work for dynamic basis set sizes]
 debug 0
@@ -43,7 +43,7 @@ Conjugate_Repeats NO
 in_nbf 200
 
 # Number of dimensions
-ndim 50
+ndim 100
 
 #determine which PES you are on initially
 in_PES 1
@@ -95,7 +95,7 @@ psizez 26
 
 # frequency flag for using a set of precalculated frequencies with the spin boson model
 # freqflg = 1 enables reading of precalculated frequencies, freqflg = 0 mean they are calculated withing the program
-freqflg 0
+freqflg 1
 
 # Flag for cloning basis functions (yes/no/blind/blind+)
 Cloning no

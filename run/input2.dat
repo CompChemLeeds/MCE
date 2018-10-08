@@ -34,7 +34,7 @@ cmprss NO
 method MCEv2
 
 #Number of repeats. Do not need to set manually - this is set by the run command.
-Repeats 100
+Repeats 1
 
 #Conjugate repeats flag. Allows even number repeats to start at the complex conjugate of the previous runs initial position [YES/NO]
 Conjugate_Repeats NO

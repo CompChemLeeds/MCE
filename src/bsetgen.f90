@@ -639,7 +639,7 @@ contains
       errorflag=1
       return
     end if 
-
+    
     if ((basis.ne."TRAIN").and.(basis.ne."SWTRN")) then
       do j=1,size(bs)
         if (miller==1) then
@@ -787,17 +787,19 @@ contains
 
     end if
 
-    if (method == "MCEv1") then
-      do j=1,size(bs)
-        bs(j)%a_pes(in_pes) = bs(j)%D_big
-        bs(j)%d_pes(in_pes) = bs(j)%D_big
-        bs(j)%D_big = (1.0d0,0.0d0)
-      end do
-    end if
-
     do k=1,size(bs)
       bs(k)%D_big = D(k)
     end do
+
+    if (method == "MCEv1") then
+      do j=1,size(bs)
+        do r=1,npes
+          bs(j)%a_pes(r) = bs(j)%a_pes(r) * bs(j)%D_big
+          bs(j)%d_pes(r) = bs(j)%a_pes(r)
+        end do
+        bs(j)%D_big = (1.0d0,0.0d0)
+      end do
+    end if
 
     return
 

@@ -9,11 +9,11 @@ System: SB
 
 # Spectral Density (only valid for Spin Boson, with values EXP [exponential cutoff], DL [Drude Lorentz/Debye],
 #                                or UBO [Underdamped Brownian Oscillator]. LHC [Light-Harvesting complex] to come later)
-SpecDen EXP
+SpecDen UBO
 
 #Name of running folder [Default : <method>-<system>-<random number> ie CCS-HP-31254 (input "default", case insensitive)
 #                       Otherwise:  <method>-<system>-<runfolder string> ie CCS-HP-withgrids]
-Runfolder millertest_miller1_EXP
+Runfolder miller0_UBO_60dim_400bf
 
 #Debug flag [ 0: no debug outputs, 1: debug outputs. Does not really work for dynamic basis set sizes]
 debug 0
@@ -28,10 +28,10 @@ prop YES
 restart 0
 
 #Flag for adaptive altering of the compression parameter in swarms/grid-swarms/train-swarms or the grid spacing for grids. [YES/NO]
-cmprss NO
+cmprss YES
 
 #Propagation method [can be CCS, MCEv1, MCEv2, AIMC-MCE1 (first pass), AIMC-MCE2 (Second pass) or MCE12 (uses both MCE methods). No support for vMCG, F-CCS or 2L-CCS yet.]
-method MCEv2
+method MCEv1
 
 #Number of repeats. Do not need to set manually - this is set by the run command.
 Repeats 100
@@ -40,10 +40,10 @@ Repeats 100
 Conjugate_Repeats NO
 
 # Number of basis functions 
-in_nbf 200
+in_nbf 400
 
 # Number of dimensions
-ndim 50
+ndim 60
 
 #determine which PES you are on initially
 in_PES 1
@@ -57,8 +57,8 @@ basis SWARM
 # determines the structure of the Z_0 initial central coherent state [WHOLE/SPLIT]. Split Z_0 is reflected in the q=0 line
 wfn_init WHOLE
 
-# allows for the use of the miller-inspired amplitudes [1/0]. 0=standard initial sampling, 1=miller sampling.
-miller 1
+# allows for the use of the quantum superposition sampling amplitudes [1/0]. 0=standard initial sampling, 1=quantum superposition sampling.
+qss 0
 
 # allows for symmetric/antisymmetric basis sets to be created. Used with wfn_init=SPLIT [YES/NO/ANTI]
 symm YES
@@ -95,7 +95,7 @@ psizez 26
 
 # frequency flag for using a set of precalculated frequencies with the spin boson model
 # freqflg = 1 enables reading of precalculated frequencies, freqflg = 0 mean they are calculated withing the program
-freqflg 0
+freqflg 1
 
 # Flag for cloning basis functions (yes/no/blind/blind+)
 Cloning no

@@ -642,7 +642,7 @@ contains
     
     if ((basis.ne."TRAIN").and.(basis.ne."SWTRN")) then
       do j=1,size(bs)
-        if (miller==1) then
+        if (qss==1) then
           if ((npes==2).and.(method == "MCEv2")) then
             call random_number(x)
             x = x * 2.0 * pirl
@@ -743,7 +743,7 @@ contains
           C_k(k) = ovrlpij(zpq, zinit)
         end do
         
-        if ((miller==1).and.(npes==2)) then
+        if ((qss==1).and.(npes==2)) then
           do k=1,size(bs)
             C_k(k) = C_k(k) * dconjg(bs(k)%a_pes(in_pes))
           end do

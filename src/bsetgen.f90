@@ -252,8 +252,8 @@ contains
     integer, intent(in)::reps
     type(basisfn), dimension(:), allocatable :: swrmbf, tmpbf
     type(basisfn) :: bf
-    real(kind=8) :: dt, dtdone, dtnext, timeold
-    integer::m, k, j, x, n, ierr, trtype, swrmsize, restart, kcut, kstrt, steps, redo
+    real(kind=8) :: dt, dtdone, dtnext, timeold, q, p, sumamps
+    integer::m, k, j, x, n, r, ierr, trtype, swrmsize, restart, kcut, kstrt, steps, redo
     integer::def_stp2, stepback, genflg
 
     if (errorflag .ne. 0) return
@@ -315,8 +315,39 @@ contains
         if (redo==1) cycle
         if (redo==0) exit
       end do
-      bf%d_pes(in_pes) = (1.0d0,0.0d0)
-      bf%a_pes(in_pes) = (1.0d0,0.0d0)
+      if (qss==1) then
+        if (npes==2) then
+          call random_number(q)
+          q = q * 2.0 * pirl
+          call random_number(p)
+          p = p * 2.0 * pirl
+          do r=1,npes
+            if (r==in_pes) then
+              bf%a_pes(r)=cmplx(dcos(q),0.0d0)
+            else
+              bf%a_pes(r)=cmplx(dsin(q)*dcos(p),dsin(q)*dsin(p))
+            end if
+          end do
+        else
+          sumamps = 0.0d0
+          do r=1,npes
+            call random_number(q)
+            call random_number(p)
+            q = q * 2.0 - 1.0
+            p = p * 2.0 - 1.0
+            bf%a_pes(r) = cmplx(q,p)
+            sumamps = sumamps + dsqrt(dble(cmplx(q,p) * cmplx(q,-1.0*p)))
+          end do
+          do r=1,npes
+            bf%a_pes(r) = bf%a_pes(r) / sumamps
+          end do
+        end if
+      else
+        bf%a_pes(in_pes) = (1.0d0,0.0d0)
+      end if
+      do r=1,npes
+        bf%d_pes(r) = bf%a_pes(r)
+      end do
       swrmbf(k)=bf
     end do
 
@@ -643,7 +674,7 @@ contains
     if ((basis.ne."TRAIN").and.(basis.ne."SWTRN")) then
       do j=1,size(bs)
         if (qss==1) then
-          if ((npes==2).and.(method == "MCEv2")) then
+          if (npes==2) then
             call random_number(x)
             x = x * 2.0 * pirl
             call random_number(y)
@@ -743,11 +774,9 @@ contains
           C_k(k) = ovrlpij(zpq, zinit)
         end do
         
-        if ((qss==1).and.(npes==2)) then
-          do k=1,size(bs)
+        do k=1,size(bs)
             C_k(k) = C_k(k) * dconjg(bs(k)%a_pes(in_pes))
-          end do
-        end if
+        end do
 
       end if  
    

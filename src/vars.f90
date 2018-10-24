@@ -42,7 +42,7 @@ MODULE globvars
   integer:: def_stp    ! default number of basis functions in a train for swarms of trains
   integer:: clonemax   ! maximum number of cloning events allowed per basis function
   integer:: clonefreq  ! minimum number of timesteps between concurrent coloning events
-  integer:: miller     ! miller-inspired change to initial amplitudes
+  integer:: qss        ! quantum superposition sampling change to initial amplitudes
 
   real(kind=8),external :: ZBQLNOR ! The normally distributed random number external function
 

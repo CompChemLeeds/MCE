@@ -672,11 +672,11 @@ contains
           return
         end if
         n = n+1
-      else if (LINE=="miller") then
+      else if (LINE=="qss") then
         backspace(127)
-        read(127,*,iostat=ierr)LINE,miller
+        read(127,*,iostat=ierr)LINE,qss
         if(ierr.ne.0) then
-          write(0,"(a)")  "Error reading Miller amplitudes"
+          write(0,"(a)")  "Error reading qss amplitudes"
           errorflag = 1
           return
         end if
@@ -724,17 +724,17 @@ contains
       return
     end if
     
-    if (miller==1) then
+    if (qss==1) then
       if (npes.ne.2) then
-        write(0,"(a)") "Miller amplitudes are only valid with npes = 2."
+        write(0,"(a)") "qss amplitudes are only valid with npes = 2."
         write(0,"(a,i0)") "Npes was read as ", npes
         ierr=-1
         errorflag=1
         return
       end if
-    else if (miller.ne.0) then
-      write(0,"(a)") "Only allowed values for the miller flag are 1 or 0"
-      write(0,"(a,i0)") "Value read was ", miller
+    else if (qss.ne.0) then
+      write(0,"(a)") "Only allowed values for the qss flag are 1 or 0"
+      write(0,"(a,i0)") "Value read was ", qss
       ierr=-1
       errorflag = 1
       return

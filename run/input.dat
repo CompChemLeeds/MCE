@@ -13,7 +13,7 @@ SpecDen UBO
 
 #Name of running folder [Default : <method>-<system>-<random number> ie CCS-HP-31254 (input "default", case insensitive)
 #                       Otherwise:  <method>-<system>-<runfolder string> ie CCS-HP-withgrids]
-Runfolder millertest_miller1_UBO
+Runfolder miller0_UBO_60dim_400bf
 
 #Debug flag [ 0: no debug outputs, 1: debug outputs. Does not really work for dynamic basis set sizes]
 debug 0
@@ -40,10 +40,10 @@ Repeats 100
 Conjugate_Repeats NO
 
 # Number of basis functions 
-in_nbf 200
+in_nbf 400
 
 # Number of dimensions
-ndim 100
+ndim 60
 
 #determine which PES you are on initially
 in_PES 1
@@ -57,8 +57,8 @@ basis SWARM
 # determines the structure of the Z_0 initial central coherent state [WHOLE/SPLIT]. Split Z_0 is reflected in the q=0 line
 wfn_init WHOLE
 
-# allows for the use of the miller-inspired amplitudes [1/0]. 0=standard initial sampling, 1=miller sampling.
-miller 1
+# allows for the use of the quantum superposition sampling amplitudes [1/0]. 0=standard initial sampling, 1=quantum superposition sampling.
+qss 0
 
 # allows for symmetric/antisymmetric basis sets to be created. Used with wfn_init=SPLIT [YES/NO/ANTI]
 symm YES

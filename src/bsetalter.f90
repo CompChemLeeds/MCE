@@ -853,7 +853,7 @@ contains
             
           else if (clonetype==3) then
           
-            
+            write (0,*) "Not yet implemented."
             
           end if
           

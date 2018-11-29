@@ -46,8 +46,12 @@ contains
 
     allocate (ovrlp(size(bs),size(bs)))   
     ovrlp=ovrlpmat(bs)
+    
+    if (errorflag .ne. 0) return
 
     normtemp = norm(bs, ovrlp)
+    
+    if (errorflag .ne. 0) errorflag = 0  ! just in case the initial norm is >1.2
 
     absnorm = abs(normtemp)
 

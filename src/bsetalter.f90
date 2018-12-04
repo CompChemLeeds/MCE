@@ -650,7 +650,7 @@ contains
     integer, intent (in) :: x, reps
     complex(kind=8), dimension (:), allocatable :: dz
     real(kind=8), dimension (:), allocatable :: dummy_arr
-    real(kind=8) :: brforce, normar
+    real(kind=8) :: brforce, normar, sumamps
     integer, dimension(:), allocatable :: clonehere, clonecopy, clonecopy2 
     integer :: k, m, j, n, nbfnew, ierr, r, clonetype
     character(LEN=3)::rep
@@ -796,7 +796,7 @@ contains
             end do
             
             ! Second child trajectory
-            bsnew(nbf+j)%D_big = bs(k)%D_big
+            bsnew(nbf+j)%D_big = bs(k)%D_big * sqrt(1.-(dconjg(bs(k)%a_pes(in_pes))*bs(k)%a_pes(in_pes)))
             bsnew(nbf+j)%d_pes(in_pes) = (0.0d0,0.0d0)
             do r=1,npes
               if (r.ne.in_pes) then
@@ -804,7 +804,7 @@ contains
                   bsnew(nbf+j)%d_pes(r) = (1.0d0,0.0d0)
                 else
                   bsnew(nbf+j)%d_pes(r) = bs(k)%d_pes(r)/&
-                                  sqrt(1.-(dconjg(bs(k)%a_pes(1))*bs(k)%a_pes(1)))            
+                                  sqrt(1.-(dconjg(bs(k)%a_pes(in_pes))*bs(k)%a_pes(in_pes)))            
                 end if
               end if
               bsnew(nbf+j)%s_pes(r) = bs(k)%s_pes(r)
@@ -813,7 +813,7 @@ contains
             do m=1,ndim
               bsnew(nbf+j)%z(m) = bs(k)%z(m)
             end do
-          
+                    
           else if (clonetype==2) then
 
             ! First child trajectory
@@ -853,7 +853,53 @@ contains
             
           else if (clonetype==3) then
           
-            write (0,*) "Not yet implemented."
+            !First child trajectory
+            sumamps = 0.0d0
+            do r=1,npes
+              call random_number(q)
+              call random_number(p)
+              q = q * 2.0 - 1.0     ! possibly try modifying the range to enforce close to pes amplitudes
+              p = p * 2.0 - 1.0
+              bsnew%d_pes(r) = cmplx(q,p,kind=8)
+              sumamps = sumamps + dsqrt(dble(cmplx(q,p,kind=8) * cmplx(q,-1.0*p,kind=8)))
+            end do
+            do r=1,npes
+              bsnew(k)%d_pes(r) = bsnew(k)%d_pes(r) / sumamps
+              bsnew(k)%s_pes(r) = bs(k)%s_pes(r)
+              bsnew(k)%a_pes(r) = bsnew(k)%d_pes(r) * cdexp(i*bsnew(k)%s_pes(r))
+            end do
+            do m=1,ndim
+              bsnew(k)%z(m) = bs(k)%z(m)
+            end do
+            
+            !Second child trajectory
+            sumamps = 0.0d0
+            do r=1,npes
+              call random_number(q)
+              call random_number(p)
+              q = q * 2.0 - 1.0     ! possibly try modifying the range to enforce close to pes amplitudes
+              p = p * 2.0 - 1.0
+              bsnew%d_pes(r) = cmplx(q,p,kind=8)
+              sumamps = sumamps + dsqrt(dble(cmplx(q,p,kind=8) * cmplx(q,-1.0*p,kind=8)))
+            end do
+            do r=1,npes
+              bsnew(k)%d_pes(r) = bsnew(k)%d_pes(r) / sumamps
+              bsnew(k)%s_pes(r) = bs(k)%s_pes(r)
+              bsnew(k)%a_pes(r) = bsnew(k)%d_pes(r) * cdexp(i*bsnew(k)%s_pes(r))
+            end do
+            do m=1,ndim
+              bsnew(k)%z(m) = bs(k)%z(m)
+            end do
+            
+            !Modifications to capital D amplitudes
+
+            bsnew(k)%D_big = bs(k)%D_big * (bsnew(nbf+j)%a_pes(2)*bs(k)%a_pes(1)-bsnew(nbf+j)%a_pes(1)*bs(k)%a_pes(2))
+            bsnew(nbf+j)%D_big = bs(k)%D_big * (bsnew(k)%a_pes(1)*bs(k)%a_pes(2)-bsnew(k)%a_pes(2)*bs(k)%a_pes(1))
+            
+            bsnew(k)%D_big = bsnew(k)%D_big/&
+                    (bsnew(k)%a_pes(1)*bsnew(nbf+j)%a_pes(2)-bsnew(k)%a_pes(2)*bsnew(nbf+j)%a_pes(1))
+            bsnew(nbf+j)%D_big = bsnew(nbf+j)%D_big/&
+                    (bsnew(k)%a_pes(1)*bsnew(nbf+j)%a_pes(2)-bsnew(k)%a_pes(2)*bsnew(nbf+j)%a_pes(1))
             
           end if
           

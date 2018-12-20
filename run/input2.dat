@@ -9,7 +9,7 @@ System: SB
 
 # Spectral Density (only valid for Spin Boson, with values EXP [exponential cutoff], DL [Drude Lorentz/Debye],
 #                                or UBO [Underdamped Brownian Oscillator]. LHC [Light-Harvesting complex] to come later)
-SpecDen UBO
+SpecDen EXP
 
 #Name of running folder [Default : <method>-<system>-<random number> ie CCS-HP-31254 (input "default", case insensitive)
 #                       Otherwise:  <method>-<system>-<runfolder string> ie CCS-HP-withgrids]
@@ -34,7 +34,7 @@ cmprss YES
 method MCEv2
 
 #Number of repeats. Do not need to set manually - this is set by the run command.
-Repeats 100
+Repeats 1
 
 #Conjugate repeats flag. Allows even number repeats to start at the complex conjugate of the previous runs initial position [YES/NO]
 Conjugate_Repeats NO

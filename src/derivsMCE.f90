@@ -31,13 +31,12 @@ contains
 
 !***********************************************************************************!
 
-  subroutine deriv(bsin, bsout, rkstp, time, genflg, reps, x, map_bfs)
+  subroutine deriv(bsin, bsout, rkstp, time, genflg, reps, x)
 
     implicit none
     type(basisfn), dimension (:), intent (in) :: bsin
     type(basisfn), dimension (:), intent (inout) :: bsout
     real(kind=8), intent(inout) :: time
-    integer, intent(inout), dimension(:,:) :: map_bfs
     integer, intent(in) :: reps, rkstp, genflg, x
     
     type(basisfn), dimension(:), allocatable :: dummybs
@@ -129,48 +128,7 @@ contains
           end do
           bsout(k)%D_big = dD_big(k)
         end do
-        
-      case ("AIMC1")
-        dz=zdot(bsin,time,reps)
-        ds=sdot(bsin,dz,time,reps)
-        dd=ddotv2(bsin,time,reps)
-        dD_big=(0.0d0,0.0d0)
-        if (errorflag .ne. 0) return     
-        do k = 1,size(bsin)
-          do m = 1,ndim
-            bsout(k)%z(m) = dz(k,m)
-          end do
-          do r = 1,npes
-            bsout(k)%d_pes(r) = dd(k,r)
-            bsout(k)%s_pes(r) = ds(k,r)
-          end do
-          bsout(k)%D_big = dD_big(k)
-        end do
-        call outbs (bsout, reps, dummy_arr, dummy_arr, time, x, rkstp)
-        
-      case ("AIMC2")
-        call constrtrain (dummybs, x, time, reps, dummy_arr, dummy_arr ,rkstp, genflg, size(bsin), map_bfs)
-        if (size(dummybs).ne.(size(bsin))) then
-          write (0,"(a)") "Size of basis set in memory does not match basis set in input file"
-          write (0,"(a)") "This could be caused by an incorrect handling of a cloning event"
-          write (0,"(2(a,i0))") "Expected ", size(bsin), " but got ", size(dummybs)
-          errorflag = 1
-          return
-        end if
-        dD_big=bigDdotv2 (bsin,rkstp,time,x,reps,dz)
-        if (errorflag .ne. 0) return     
-        do k = 1,size(bsin)
-          do m = 1,ndim
-            bsout(k)%z(m) = dummybs(k)%z(m)
-          end do
-          do r = 1,npes
-            bsout(k)%d_pes(r) = dummybs(k)%d_pes(r)
-            bsout(k)%s_pes(r) = dummybs(k)%s_pes(r)
-          end do
-          bsout(k)%D_big = dD_big(k)
-        end do  
-        call deallocbs(dummybs)  
-            
+                    
       case default  
         write(0,"(a)") "Error! Method unrecognised!"
         write(0,"(a)") "How did you even get this far?"
@@ -645,11 +603,7 @@ contains
         end if
       end do
     end do
-    
-    if ((rkstp.eq.1).and.(mod((x-1),100)==0).and.(basis.ne."TRAIN").and.(sys.eq."SB").and.(debug==1)) then
-      call outd2hovrlp(d2H,ovrlp,x,reps)
-    end if
-    
+      
     do k=1,nbf
       do j=1,nbf
         d2H(j,k) = d2H(j,k) * ovrlp(j,k)

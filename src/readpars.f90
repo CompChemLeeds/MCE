@@ -11,7 +11,7 @@ MODULE readpars
 !*           
 !*   Contains subroutines for:
 !*
-!*      1) Reading the run conditions (debug,gen,prop,cmprss,method,reptot,conjflg)
+!*      1) Reading the run conditions (gen,prop,cmprss,method,reptot,conjflg)
 !*      2) Reading the system type (currently only Spin Boson supported)
 !*      3) Reading the energy cutoff parameters (ECheck,Ntries,Ebfmin,Ebfmax)
 !*      4) Reading the basis set parameters (ndim,in_nbf,matfun,npes,in_pes,grid)
@@ -50,22 +50,7 @@ contains
 
     do while (ierr==0)
 
-      if(LINE=='debug') then
-        backspace(140)
-        read(140,*,iostat=ierr)LINE,debug
-        if (ierr.ne.0) then
-          write(0,"(a)") "Error reading debug status"
-          errorflag = 1
-          return
-        end if
-        if ((debug.ne.0).and.(debug.ne.1)) then
-          write(0,"(a)") "Error in debug state. Debug value should be only 0 (for off) or 1 (for on)"
-          write(0,"(a,i3)") "Debug value read was ", debug
-          errorflag = 1
-          return
-        end if
-        n = n+1
-      else if (LINE=='gen') then
+      if (LINE=='gen') then
         backspace(140)
         read(140,*,iostat=ierr)LINE,LINE2
         if (ierr.ne.0) then
@@ -139,13 +124,8 @@ contains
           method = "MCEv2"
         else if ((LINE2(1:3).eq.'ccs').or.(LINE2(1:3).eq.'CCS')) then
           method = "CCS"
-        else if ((LINE2(1:9).eq.'aimc-mce1').or.(LINE2(1:9).eq.'AIMC-MCE1')) then
-          method = "AIMC1"
-        else if ((LINE2(1:9).eq.'aimc-mce2').or.(LINE2(1:9).eq.'AIMC-MCE2')) then
-          method = "AIMC2"
         else
-          write(0,"(a,a,a)") "Error. Method must be MCEv1, MCEv2, AIMC-MCE1, ",&
-                        "AIMC-MCE2 or CCS. Read ", trim(LINE2)
+          write(0,"(a,a,a)") "Error. Method must be MCEv1, MCEv2, or CCS. Read ", trim(LINE2)
         end if
         n=n+1
       else if (LINE=='Repeats') then
@@ -205,7 +185,7 @@ contains
       return
     end if
 
-    if (n.ne.8) then
+    if (n.ne.7) then
       write(0,"(a)") "Not all required variables read in readrunconds subroutine"
       write(0,"(a,i0,a)") "Read a total of ", n, "of an expected 8 parameters"
       errorflag = 1
@@ -275,8 +255,7 @@ contains
 
     close(127)
     
-    if ((sys.ne."SB").and.(sys.ne."HP").and.(sys.ne."FP").and.(sys.ne."MP").and.(sys.ne."IV") &
-          & .and.(sys.ne."CP").and.(sys.ne."HH")) then
+    if ((sys.ne."SB").and.(sys.ne."HP").and.(sys.ne."MP")) then
       write(0,"(2a)") "System not recognised. Please recheck input.dat file. Read value of ", sys
       errorflag = 1
       return
@@ -353,7 +332,6 @@ contains
         else
           write(0,"(a,a)") "Error. Echeck value must be YES/NO. Read ", trim(LINE2)
         end if
-
         n = n+1
       else if(LINE=='Ntries') then
         backspace(128)
@@ -499,87 +477,6 @@ contains
           return
         end if
         n = n+1
-      else if (LINE=="wfn_init") then
-        backspace(127)
-        read(127,*,iostat=ierr)LINE,wfn_init
-        if(ierr.ne.0) then
-          write(0,"(a)")  "Error reading initial wavefunction structure option"
-          errorflag = 1
-          return
-        end if
-        n = n+1
-      else if (LINE=="symm") then
-        backspace(127)
-        read(127,*,iostat=ierr)LINE,symm
-        if(ierr.ne.0) then
-          write(0,"(a)")  "Error reading basis set symmetry option"
-          errorflag = 1
-          return
-        end if
-        n = n+1      
-      else if (LINE=="gridsp") then
-        backspace(127)
-        read(127,*,iostat=ierr)LINE,initsp
-        if(ierr.ne.0) then
-          write(0,"(a)")  "Error reading grid spacing"
-          errorflag = 1
-          return
-        end if
-        n = n+1
-      else if (LINE=="psizex") then
-        backspace(127)
-        read(127,*,iostat=ierr)LINE,psizex
-        if(ierr.ne.0) then
-          write(0,"(a)")  "Error reading grid size in p coordinate"
-          errorflag = 1
-          return
-        end if
-        n = n+1
-      else if (LINE=="qsizex") then
-        backspace(127)
-        read(127,*,iostat=ierr)LINE,qsizex
-        if(ierr.ne.0) then
-          write(0,"(a)")  "Error reading grid size in q coordinate"
-          errorflag = 1
-          return
-        end if
-        n = n+1
-      else if (LINE=="psizey") then
-        backspace(127)
-        read(127,*,iostat=ierr)LINE,psizey
-        if(ierr.ne.0) then
-          write(0,"(a)")  "Error reading grid size in p coordinate"
-          errorflag = 1
-          return
-        end if
-        n = n+1
-      else if (LINE=="qsizey") then
-        backspace(127)
-        read(127,*,iostat=ierr)LINE,qsizey
-        if(ierr.ne.0) then
-          write(0,"(a)")  "Error reading grid size in q coordinate"
-          errorflag = 1
-          return
-        end if
-        n = n+1
-      else if (LINE=="psizez") then
-        backspace(127)
-        read(127,*,iostat=ierr)LINE,psizez
-        if(ierr.ne.0) then
-          write(0,"(a)")  "Error reading grid size in p coordinate"
-          errorflag = 1
-          return
-        end if
-        n = n+1
-      else if (LINE=="qsizez") then
-        backspace(127)
-        read(127,*,iostat=ierr)LINE,qsizez
-        if(ierr.ne.0) then
-          write(0,"(a)")  "Error reading grid size in q coordinate"
-          errorflag = 1
-          return
-        end if
-        n = n+1
       else if (LINE=="trainsp") then
         backspace(127)
         read(127,*,iostat=ierr)LINE,trainsp
@@ -589,36 +486,20 @@ contains
           return
         end if
         n = n+1
-      else if (LINE=="def_stp") then
+      else if (LINE=="train_len") then
         backspace(127)
-        read(127,*,iostat=ierr)LINE,def_stp
+        read(127,*,iostat=ierr)LINE,train_len
         if(ierr.ne.0) then
-          write(0,"(a)")  "Error reading default number of basis functions per train"
+          write(0,"(a)")  "Error reading default number of basis functions per train."
           errorflag = 1
           return
         end if
         n = n+1
-      else if (LINE=="nbfadapt") then
+      else if (LINE=="swtrn_swarm_size") then
         backspace(127)
-        read(127,*,iostat=ierr)LINE,LINE2
+        read(127,*,iostat=ierr)LINE,swtrn_swrm
         if(ierr.ne.0) then
-          write(0,"(a)")  "Error reading bf adapt flag"
-          errorflag = 1
-          return
-        end if
-        if ((LINE2(1:1).eq.'y').or.(LINE2(1:1).eq.'Y')) then
-          nbfadapt = "YES"
-        else if ((LINE2(1:1).eq.'n').or.(LINE2(1:1).eq.'N')) then
-          nbfadapt = "NO"
-        else
-          write(0,"(a,a)") "Error. nbfadapt value must be YES/NO. Read ", trim(LINE2)
-        end if
-        n = n+1
-      else if (LINE=="nbfepsilon") then
-        backspace(127)
-        read(127,*,iostat=ierr)LINE,bfeps
-        if(ierr.ne.0) then
-          write(0,"(a)")  "Error reading bf adapt cutoff parameter"
+          write(0,"(a)")  "Error reading size of central SWTRN swarm."
           errorflag = 1
           return
         end if
@@ -740,46 +621,16 @@ contains
       return
     end if    
     
-    if ((basis.ne.'TRAIN').and.(basis.ne.'train').and.(basis.ne.'SWARM').and.(basis.ne.'swarm').and.(basis.ne.'SWTRN')&
-      .and.(basis.ne.'swtrn').and.(basis.ne.'GRID').and.(basis.ne.'grid').and.(basis.ne.'GRSWM').and.(basis.ne.'grswm')) then
-      write(0,"(a,a)") "Invalid value for basis. Must be TRAIN/SWARM/GRID/SWTRN/GRSWM and all upper/lower case Value is ", basis
+    if ((basis.ne.'SWARM').and.(basis.ne.'swarm').and.(basis.ne.'SWTRN').and.(basis.ne.'swtrn')) then
+      write(0,"(a,a)") "Invalid value for basis. Must be SWARM/SWTRN and all upper/lower case. Value is ", basis
       errorflag = 1
       return
-    else if ((basis.eq.'TRAIN').or.(basis.eq.'train'))then
-      basis = 'TRAIN'
     else if ((basis.eq.'SWARM').or.(basis.eq.'swarm'))then
       basis = 'SWARM'
-    else if ((basis.eq.'GRID').or.(basis.eq.'grid'))then
-      basis = 'GRID'
     else if ((basis.eq.'SWTRN').or.(basis.eq.'swtrn'))then
       basis = 'SWTRN'
-    else if ((basis.eq.'GRSWM').or.(basis.eq.'grswm'))then
-      basis = 'GRSWM'
     end if
     
-    if ((wfn_init.ne."WHOLE").and.(wfn_init.ne."whole").and.(wfn_init.ne."SPLIT").and.(wfn_init.ne."split")) then
-      write(0,"(a,a)") "Invalid value for wfn_init. Must be WHOLE/SPLIT and all upper/lower case. Value is ", wfn_init
-      errorflag = 1
-      return
-    else if (wfn_init.eq."whole") then
-      wfn_init = "WHOLE"
-    else if (wfn_init.eq."split") then
-      wfn_init = "SPLIT"
-    end if
-    
-    if ((symm.ne."YES").and.(symm.ne."yes").and.(symm.ne."Y").and.(symm.ne."y").and.(symm.ne."NO").and.(symm.ne."no")&
-      .and.(symm.ne."N").and.(symm.ne."n").and.(symm.ne."ANTI").and.(symm.ne."anti").and.(symm.ne."A").and.(symm.ne."a")) then
-      write(0,"(a,a)") "Invalid value for symm. Must be YES/NO/ANTI and all upper/lower case. Value is ", symm
-      errorflag = 1
-      return
-    else if ((symm.eq."yes").or.(symm.eq."Y").or.(symm.eq."y")) then
-      symm = "YES"
-    else if ((symm.eq."no").or.(symm.eq."n").or.(symm.eq."N")) then
-      symm = "NO"
-    else if ((symm.eq."anti").or.(symm.eq."A").or.(symm.eq."a")) then
-      symm = "ANTI"
-    end if
-
     if (thresh .lt. 0.05d0) then
       write(0,"(a)") "Cloning threshold too small. Setting to default value of 0.249"
       thresh = 0.249d0
@@ -808,7 +659,7 @@ contains
       randfunc = 'GAUS'
     end if      
     
-    if (n.ne.25) then
+    if (n.ne.15) then
       write(0,"(a,i0)") "Not all required variables read in readbsparams subroutine. n=", n
       errorflag = 1
       return
@@ -828,93 +679,7 @@ contains
     
     !!!!!! Basis specific checks !!!!!!!
     
-    if (basis.eq."GRID") then
-      if (initsp .lt. 0.8d0) then
-        write(0,"(a)") "Error! Grid points are too close together"
-        errorflag=1
-        return
-      else if (initsp .gt. 1.85d0) then
-        write(0,"(a)") "Error! Grid points are too widely spaced"
-      end if
-      if ((ndim.ne.1).and.(ndim.ne.3)) then
-        write(0,"(a)") "ndim is neither 1 nor 3. This is currently invalid."
-        errorflag=1
-        return
-      else if (ndim==1) then
-        if ((qsizex.gt.qsizey).and.(qsizex.gt.qsizez).and.(psizex.gt.psizey).and.(psizex.gt.psizez)) then
-          qsizey=0
-          qsizez=0
-          psizey=0
-          psizez=0
-        else if ((qsizey.gt.qsizex).and.(qsizey.gt.qsizez).and.(psizey.gt.psizex).and.(psizey.gt.psizez)) then
-          qsizex=0
-          qsizez=0
-          psizex=0
-          psizez=0
-        else if ((qsizez.gt.qsizex).and.(qsizez.gt.qsizey).and.(psizez.gt.psizex).and.(psizez.gt.psizey)) then
-          qsizex=0
-          qsizey=0
-          psizex=0
-          psizey=0
-        else 
-          write(0,"(a)") "Error! The largest grid dimensions do not match. Check the values."
-          errorflag = 1
-          return
-        end if
-      end if
-      if ((mod(qsizez,2).ne.mod(psizez,2)).and.(mod(qsizey,2).ne.mod(psizey,2)).and.(mod(qsizex,2).ne.mod(psizex,2))) then
-        write(0,"(a)") "Error! Grid is not symmetrically spaced around initial CS."
-        write(0,"(a)") "There should be equal distance between initial CS and the four closest grid points"
-        write(0,"(a)") "This equates to  all psize and qsize values being either all even or all odd."
-        errorflag=1
-        return
-      end if
-      if ((max(qsizex,1)*max(psizex,1)*max(qsizey,1)*max(psizey,1)*max(qsizez,1)*max(psizez,1)).ne.in_nbf) then
-        write(6,"(a)") "Warning! Grid size does not match in_nbf. in_nbf should be product of all psize and qsize"
-        if (mod(qsizez,2)==1) then
-          in_nbf = (max(qsizex,1)*max(psizex,1)*max(qsizey,1)*max(psizey,1)*max(qsizez,1)*max(psizez,1))
-          write(6,"(a,i0,a)") "Altering in_nbf to ", &
-               (max(qsizex,1)*max(psizex,1)*max(qsizey,1)*max(psizey,1)*max(qsizez,1)*max(psizez,1)), "..."
-        else
-          in_nbf = (max(qsizex,1)*max(psizex,1)*max(qsizey,1)*max(psizey,1)*max(qsizez,1)*max(psizez,1)) + 1
-          write(6,"(a,i0,a)") "Altering in_nbf to ", &
-                  (max(qsizex,1)*max(psizex,1)*max(qsizey,1)*max(psizey,1)*max(qsizez,1)*max(psizez,1)) + 1, "..."
-        end if
-      end if
-    end if
-    
-    if (basis.eq."GRSWM") then
-      if (initsp .lt. 0.8d0) then
-        write(0,"(a)") "Error! Grid points are too close together"
-        errorflag=1
-        return
-      end if
-      if (ndim.ne.3) then
-        write(0,"(a)") "ndim is not 3. This is currently invalid."
-        errorflag=1
-        return
-      end if
-      if (mod(qsizez,2).ne.mod(psizez,2)) then
-        write(0,"(a)") "Error! Grid is not symmetrically spaced around initial CS."
-        write(0,"(a,a)") "There should be equal distance between initial CS and the four",&
-                           " closest grid points in the grid dimension (z)"
-        write(0,"(a)") "This equates to both psizez and qsizez values being even or odd."
-        errorflag=1
-        return
-      end if
-      if ((qsizez*psizez).ne.in_nbf) then
-        write(6,"(a)") "Warning! Grid size does not match in_nbf. in_nbf should be product of psizez and qsizez"
-        if (mod(qsizez,2)==1) then
-          in_nbf = qsizez*psizez
-          write(6,"(a,i0,a)") "Altering in_nbf to ", qsizez*psizez, "..."
-        else
-          in_nbf = qsizez*psizez + 1
-          write(6,"(a,i0,a)") "Altering in_nbf to ", qsizez*psizez+1, "..."
-        end if
-      end if
-    end if
-
-    if ((basis.eq."TRAIN").or.(basis.eq."SWTRN")) then
+    if (basis.eq."SWTRN") then
       if (step.eq."A") then
         write(0,"(a)") "Trains are only valid for static stepsizes."
         errorflag = 1
@@ -925,80 +690,30 @@ contains
         errorflag = 1
         return
       end if
-      if ((method.ne."MCEv2").and.(method.ne."CCS").and.(method.ne."AIMC2")) then
-        write(0,"(a)") "Error! Trains can only work with MCEv2, AIMC-MCE (second pass) or CCS."
-        write(0,"(a)") "MCEv1 and AIMC-MCE (first pass) cannot calculate the amplitudes correctly"
+      in_nbf = swtrn_swrm * train_len
+      if ((method.ne."MCEv2").and.(method.ne."CCS")) then
+        write(0,"(a)") "Error! Trains can only work with MCEv2 or CCS."
+        write(0,"(a)") "MCEv1 cannot calculate the amplitudes correctly"
         errorflag = 1
         return
       end if        
     end if
-    
-    !!!!! Method dependent checks !!!!!!!
-    
-    if (method.eq."AIMC1") then
-      if (basis.ne."SWARM") then
-        write(0,"(a)") "Error! The AIMC-MCE first pass should only be carried out using a swarm basis set"
-        errorflag = 1
-        return
-      end if
-      if (prop == "N") then
-        write (0,"(a)") "Error! The AIMC-MCE first pass should be propagated. Propagation flag set to N"
-        errorflag = 1
-        return
-      end if
-      if (cloneflg == "NO") then
-        write (0,"(a)") "AIMC-MCE first pass requires cloning to be enabled."
-        write (0,"(a)") "Enabling now"
-        cloneflg = "YES"
-      end if
-      if (mod(def_stp,2)==0) then
-        write(0,"(2(a,i0))") "For AIMC-MCE, def_stp should be odd. Changed from ", def_stp, " to ", def_stp+1
-        def_stp = def_stp+1
-      end if
-    end if
-    
-    if (method.eq."AIMC2") then
-      if (basis.ne."SWTRN") then
-        write (0,"(a)") "Error! Basis must be a swarm of trains for AIMC-MCE second pass"
-        errorflag = 1
-        return
-      end if
-      if (prop.eq."N") then
-        write (0,"(a)") "Error! The AIMC-MCE second pass should be propagated. Propagation flag set to N"
-        errorflag = 1
-        return
-      end if
-      if (mod(def_stp,2)==0) then
-        write(0,"(2(a,i0))") "For AIMC-MCE, def_stp should be odd. Changed from ", def_stp, " to ", def_stp+1
-        def_stp = def_stp+1
-      end if
-      if (gen.eq."Y") then
-        write (0,"(a,a)") "Error! The AIMC-MCE second pass relies on precalculated basis functions, but",&
-                        " generation flag set to Y"
-        errorflag = 1
-        return
-      end if
-    end if
-    
+       
     !!!!!! Basis set change parameter check!!!!!!
 
     if (cloneflg.ne.'NO') then
-      if ((method.ne."MCEv2").and.(method.ne."AIMC1").and.(method.ne."MCEv1")) then
-        write (0,"(a)") "Cloning can only work with MCEv2, MCEv1 or AIMC-MCE (first pass)"
+      if ((method.ne."MCEv2").and.(method.ne."MCEv1")) then
+        write (0,"(a)") "Cloning can only work with MCEv2 or MCEv1"
         errorflag = 1
         return
-      else if ((method.eq."MCEv2").or.(method.eq."MCEv1")) then
-        if ((basis.ne."SWARM").and.(basis.ne."SWTRN").and.(basis.ne."TRAIN")) then
-          write (0,"(a)") "Cloning with MCEv2 can only work on a swarm, a train or a swarm of trains"
-          errorflag = 1
-          return
-        end if
-      else
-        if (basis.ne."SWARM") then
-          write(0,"(a)") "AIMC-MCE (first pass) should be done only with a swarm of train centres."
-          errorflag = 1
-          return
-        end if
+      else if ((method.eq."MCEv2").and.(basis.ne."SWARM").and.(basis.ne."SWTRN")) then
+        write (0,"(a)") "Cloning with MCEv2 can only work on a swarm or a swarm of trains"
+        errorflag = 1
+        return
+      else if ((method.eq."MCEv2").and.(basis.ne."SWARM")) then
+        write (0,"(a)") "Cloning with MCEv1 can only work on a swarm"
+        errorflag = 1
+        return        
       end if
       if (clonemax.lt.1) then
         write(0,"(a)") "Maximum number of clones allowed is less than 1 but cloning is enabled!"
@@ -1012,7 +727,7 @@ contains
         errorflag = 1
         return
       end if
-      if ((sys.ne."SB").and.(sys.ne."VP")) then
+      if (sys.ne."SB") then
         write(0,"(a)") "Cloning can only be performed on multi-PES systems, currently SB, or VP"
         errorflag = 1
         return
@@ -1028,57 +743,23 @@ contains
       end if
     end if 
         
-    if (nbfadapt.eq."YES") then
-      if ((basis.ne."GRID").and.(basis.ne."GRSWM")) then
-        write(0,"(a)") "Adaptive basis set chosen but gridding disabled. This is currently an invalid combination."
-        write(0,"(a,a)") "basis should be GRID or GRSWM. Value was ", basis 
-        errorflag=1
-        return
-      end if
-      if (bfeps.lt.0.0d0) then
-        write(0,"(a)") "Basis set adaptive cutoff parameter less than zero. This is not valid"
-        errorflag=1
-        return
-      end if
-    end if  
-    
+   
     !!!!!!!! Check the System!!!!!!  
     
     select case (sys)
-      case ("VP")
-        if (npes.lt.2) then
-          write(0,"(a)") "Spin Boson model must have at least 2 pes'"
-          errorflag = 1
-          return
-        end if
-        if ((method.ne."MCEv1").and.(method.ne."MCEv2").and.(method.ne."AIMC1").and.(method.ne."AIMC2")) then
-          write(0,"(a)") "Spin Boson model can only be simulated by MCEv1 or MCEv2, or through AIMC-MCE"
-          errorflag = 1
-          return
-        end if
-        if (basis.eq."GRID") then
-          write(0,"(a)") "This method must not use a static grid."
-          errorflag = 1
-          return
-        end if 
-        if (ndim.ne.1) then
-          write(0,"(a)") "This is currently only set up to deal with a single degree of freedom. Please set ndim to 1"
-          errorflag = 1
-          return
-        end if                  
       case ("SB")
         if (npes.lt.2) then
           write(0,"(a)") "Spin Boson model must have at least 2 pes'"
           errorflag = 1
           return
         end if
-        if ((method.ne."MCEv1").and.(method.ne."MCEv2").and.(method.ne."AIMC1").and.(method.ne."AIMC2")) then
-          write(0,"(a)") "Spin Boson model can only be simulated by MCEv1 or MCEv2, or through AIMC-MCE"
+        if ((method.ne."MCEv1").and.(method.ne."MCEv2")) then
+          write(0,"(a)") "Spin Boson model can only be simulated by MCEv1 or MCEv2"
           errorflag = 1
           return
         end if
-        if (basis.eq."GRID") then
-          write(0,"(a)") "This method must not use a static grid."
+        if ((basis.ne."SWARM").and.(basis.ne."SWTRN")) then
+          write(0,"(a)") "This method must be used with Swarms or Swarm-Trains."
           errorflag = 1
           return
         end if 
@@ -1093,17 +774,6 @@ contains
           errorflag = 1
           return  
         end if
-      case ("FP")
-        if (npes.ne.1) then
-          write(0,"(a)") "Free Particle only valid for 1 PES"
-          errorflag = 1
-          return
-        end if
-        if (trim(method).ne."CCS") then
-          write(0,"(a)") "Free Particle can only be simulated by CCS"
-          errorflag = 1
-          return  
-        end if
       case ("MP")
         if (npes.ne.1) then
           write(0,"(a)") "Morse Potential only valid for 1 PES"
@@ -1115,88 +785,11 @@ contains
           errorflag = 1
           return  
         end if 
-      case ("IV")
-        if (npes.ne.1) then
-          write(0,"(a)") "Inverted Gaussian only valid for 1 PES"
-          errorflag = 1
-          return
-        end if
-        if ((ndim.ne.1).and.(ndim.ne.3)) then
-          write(0,"(a)") "Inverted Gaussian is only valid for 1 or 3 dimensional"
-          errorflag = 1
-          return 
-        end if
-        if (trim(method).ne."CCS") then
-          write(0,"(a)") "Inverted Gaussian can only be simulated by CCS"
-          errorflag = 1
-          return  
-        end if 
-        if ((basis.ne."GRID").and.(basis.ne."GRSWM")) then
-          write(0,"(a)") "This method must use a static grid."
-          errorflag = 1
-          return
-        end if
-      case ("CP")
-        if (npes.ne.1) then
-          write(0,"(a)") "Coulomb Potential only valid for 1 PES"
-          errorflag = 1
-          return
-        end if
-        if (mod(qsizez,2)==1) then
-          write(0,"(a)") "Odd parity for the grid parameters will result in a point on the singularity"
-          write(0,"(a)") "This would make reprojection impossible, as well as seriously affecting results"
-          write(0,"(a)") "Change the grid parameters and restart."
-          errorflag=1
-          return
-        end if
-        if (in_nbf.eq.(qsizez*psizez+1)) then
-          write(6,"(a)") "The in_nbf value has been reset so that there is a point on the singularity."
-          write(6,"(a)") "This will make reprojection impossible. Resetting to even parity."
-          in_nbf = qsizez*psizez
-        end if
-        if (ndim.ne.3) then
-          write(0,"(a)") "Coulomb Potential is only valid in 3 dimensions"
-          errorflag = 1
-          return 
-        end if
-        if (trim(method).ne."CCS") then
-          write(0,"(a)") "Coulomb Potential can only be simulated by CCS"
-          errorflag = 1
-          return  
-        end if 
-        if ((basis.ne."GRID").and.(basis.ne."GRSWM")) then
-          write(0,"(a)") "This method must use a static grid."
-          errorflag = 1
-          return
-        end if
-      case ("HH")
-        if (npes.ne.1) then
-          write(0,"(a)") "Inverted Gaussian only valid for 1 PES"
-          errorflag = 1
-          return
-        end if
-        if (trim(method).ne."CCS") then
-          write(0,"(a)") "Henon-Heiles Potential can only be simulated by CCS"
-          errorflag = 1
-          return  
-        end if 
-        if ((ndim.ne.2).and.(ndim.ne.6).and.(ndim.ne.10)) then
-          write(0,"(a)") "Henon-Heiles potential is only valid currently for the 2,6,or 10 dimensional systems"
-          errorflag = 1
-          return 
-        end if
-        if (basis.eq."GRID") then
-          write(0,"(a)") "This method must not use a static grid."
-          errorflag = 1
-          return
-        end if 
       case default
         write(0,"(a)") "System is not recognised. Value is ", sys
         errorflag = 1
         return
-    end select 
-    
-    initsp=initsp*dsqrt(2.0d0) 
+    end select  
     
   end subroutine checkparams
 
@@ -1261,6 +854,7 @@ contains
         else if (hbar.ne.1.0d0) then 
           write(6,"(a,es12.5)") "hbar changed from default to ", hbar
         end if
+        n = n+1
       end if
 
       read(127,*,iostat=ierr) LINE
@@ -1272,7 +866,7 @@ contains
     sigp = sqrt(1.0d0/(2.0d0*gam))
     sigq = sqrt(gam/2.0d0)
 
-    if (n.ne.3) then
+    if (n.ne.4) then
       write(0,"(a,i0)") "Not all required variables read in readzparams subroutine. n = ", n
       errorflag = 1
       return
@@ -1618,456 +1212,6 @@ contains
     
   end subroutine restartnum  
   
-!--------------------------------------------------------------------------------------------------
-
-  subroutine constrtrain(bs, x, time, reps, mup, muq, rkstp, genflg,nbf,map_bfs)
-  
-    implicit none
-    type(basisfn), intent(inout), dimension (:), allocatable :: bs
-    real(kind=8),  intent(inout), dimension (:), allocatable :: mup, muq
-    real(kind=8),  intent(inout) :: time
-    integer, intent(inout), dimension (:,:) :: map_bfs
-    integer, intent(in) :: x, reps,rkstp, genflg, nbf
-    
-    real(kind=8) :: t, rl, im
-    integer, dimension (:), allocatable :: bfs
-    integer :: carriage, stpback, bsunit, j, k, l, m, n, r, p, q, ierr, nbftrk, nbftrk2, temppar, maxbf
-    character(LEN=255) :: LINE
-    character(LEN=21) filename
-    character(LEN=3) :: rep
-    character(LEN=5) :: step, tempchar
-    character(LEN=1) :: rkstp_char
-    
-    if (errorflag.ne.0) return
-
-    stpback = ((def_stp-1)/2)*trainsp
-    
-    carriage = x+stpback
-    write(rep,"(i3.3)") reps
-    write(rkstp_char,"(i1.1)") rkstp
-    
-    if (allocated(bs)) then
-      write (0,"(a)") "The basis set in the train construction subroutine should be unallocated at call time"
-      write (0,"(a)") "This means either a dummy basis set variable or the unallocated initial basis should "
-      write (0,"(a)") "be sent to the subroutine, as it will be allocated based on the input file sizes"
-      errorflag = 1
-      return
-    end if
-    
-    do j=1,def_stp
-      bsunit=(7065+carriage)*reps
-      if (carriage.lt.0) then
-        write(step,"(i5.4)") carriage
-      else
-        write(step,"(i5.5)") carriage
-      end if
-      filename="Outbs-"//trim(rep)//"-"//trim(step)//"-"//trim(rkstp_char)//".out"
-      open(unit=bsunit,file=trim(filename),status="old",iostat=ierr)
-      if (ierr/=0) then
-        write(0,"(a,a,a,i0)") "Error opening file ", trim(filename), " in step ", x
-        write(0,"(a,i0)") "ierr was ", ierr 
-        errorflag = 1
-        return
-      end if
-      carriage = carriage - trainsp
-    end do
-
-    if ((x==1).and.(rkstp==0).and.(genflg==1)) then 
-    
-      bsunit = 7065*reps+1
-      n=0
-      
-      read(bsunit,*,iostat=ierr)LINE
-
-      do while ((LINE.ne."zinit").and.(ierr==0))
-        if (LINE=="ndof") then
-          backspace(bsunit)
-          read(bsunit,*,iostat=ierr)LINE,ndim
-          if(ierr.ne.0) then
-            write(0,"(a)")  "Error reading ndim"
-            errorflag = 1
-            return
-          end if
-          write(6,"(a,i0)") "ndim   = ", ndim
-          n = n+1
-        else if (LINE=="nconf") then
-          backspace(bsunit)
-          read(bsunit,*,iostat=ierr)LINE,npes
-          if(ierr.ne.0) then
-            write(0,"(a)")  "Error reading npes"
-            errorflag = 1
-            return
-          end if
-          write(6,"(a,i0)") "npes   = ", npes
-          n = n+1
-        else if (LINE=="initial_PES") then
-          backspace(bsunit)
-          read(bsunit,*,iostat=ierr)LINE,in_pes
-          if(ierr.ne.0) then
-            write(0,"(a)")  "Error reading in_PES"
-            errorflag = 1
-            return
-          end if
-          write(6,"(a,i0)") "in_pes = ", in_pes
-          n = n+1
-        else if (LINE=="nbasisfns") then
-          backspace(bsunit)
-          read(bsunit,*,iostat=ierr)LINE,in_nbf
-          if(ierr.ne.0) then
-            write(0,"(a)")  "Error reading in_nbf"
-            errorflag = 1
-            return
-          end if
-          write(6,"(a,i0)") "in_nbf = ", in_nbf
-          n = n+1
-        else if (LINE=="matfun") then
-          backspace(bsunit)
-          read(bsunit,*,iostat=ierr)LINE,matfun
-          if(ierr.ne.0) then
-            write(0,"(a)")  "Error reading matrix function"
-            errorflag = 1
-            return
-          end if
-          write(6,"(a,a)") "matfun = ", matfun
-          n = n+1
-        else if (LINE=="time") then
-          backspace(bsunit)
-          read(bsunit,*,iostat=ierr)LINE,time
-          if(ierr.ne.0) then
-            write(0,"(a)")  "Error reading time"
-            errorflag = 1
-            return
-          end if
-          write(6,"(a,es16.8e3)") "time   = ", time
-          n = n+1
-        end if
-        read(bsunit,*,iostat=ierr)LINE
-      end do 
-
-      if (n.ne.6) then
-        write(0,"(a,i0,a)") "Error in reading parameters from initial point. ", n, " of 6 parameters read."
-        errorflag = 1
-        return
-      end if 
-      
-      do j=1,def_stp
-        do k=1,in_nbf
-          map_bfs(j,k) = ((j-1)*in_nbf)+k
-        end do
-      end do
-      
-      allocate (mup(ndim), stat=ierr)
-      if (ierr == 0) allocate (muq(ndim), stat=ierr)
-      if (ierr/=0) then
-        write(0,"(a)") "Error in allocation of mup and muq"
-        errorflag=1
-      end if
-      
-      backspace(bsunit)
-      
-      do m=1,ndim
-        read(bsunit,*,iostat=ierr)LINE, j, muq(j), mup(j)
-        if(ierr.ne.0) then
-          write(0,"(a,i0)")  "Error reading zinit value ", m
-          errorflag = 1
-          return
-        end if
-        if(m.ne.j) then
-          write(0,"(2(a,i0))")  "Error! Count mismatch in zinit. Expected ", m, " but read ", j
-          errorflag = 1
-          return
-        end if
-      end do
-      
-      rewind (bsunit)    
-      
-    end if          !!!!!! End of initial reading of basis set parameters
-    
-    carriage = x+stpback
-    nbftrk = 0
-    allocate(bfs(def_stp), stat = ierr)
-    if (ierr/=0) then
-      write (0,"(a,i0)") "Error allocating the basis functions. ierr was ", ierr
-      errorflag = 1
-      return
-    end if
-    
-    do j=1,def_stp
-
-      bsunit=(7065+carriage)*reps
-      n=0
-     
-      read(bsunit,*,iostat=ierr)LINE
-
-      do while ((LINE.ne."basis").and.(ierr==0))
-        if (LINE=="ndof") then
-          backspace(bsunit)
-          read(bsunit,*,iostat=ierr)LINE,temppar
-          if(ierr.ne.0) then
-            write(0,"(a,i0)")  "Error reading ndim for carriage ", carriage
-            errorflag = 1
-            return
-          end if
-          if (temppar.ne.ndim) then
-            write(0,"(2(a,i0))") "Mismatch in ndim values! Expected ", ndim, " but got ", temppar
-            errorflag = 1
-            return
-          end if
-          n = n+1
-        else if (LINE=="nconf") then
-          backspace(bsunit)
-          read(bsunit,*,iostat=ierr)LINE,temppar
-          if(ierr.ne.0) then
-            write(0,"(a,i0)")  "Error reading npes for carriage ", carriage
-            errorflag = 1
-            return
-          end if
-          if (temppar.ne.npes) then
-            write(0,"(2(a,i0))") "Mismatch in npes values! Expected ", npes, " but got ", temppar
-            errorflag = 1
-            return
-          end if
-          n = n+1
-        else if (LINE=="nbasisfns") then
-          backspace(bsunit)
-          read(bsunit,*,iostat=ierr)LINE,temppar
-          if(ierr.ne.0) then
-            write(0,"(a,i0)")  "Error reading swarm nbf for carriage ", carriage
-            errorflag = 1
-            return
-          end if
-          nbftrk = nbftrk + temppar
-          bfs(j) = temppar
-          n = n+1
-        else if (LINE=="initial_PES") then
-          backspace(bsunit)
-          read(bsunit,*,iostat=ierr)LINE,temppar
-          if(ierr.ne.0) then
-            write(0,"(a)")  "Error reading in_pes for carriage ", carriage
-            errorflag = 1
-            return
-          end if
-          if (temppar.ne.in_pes) then
-            write(0,"(a)") "Mismatch in in_pes values! Expected ", in_pes, " but got ", temppar
-            errorflag = 1
-            return
-          end if
-          n = n+1
-        else if (LINE=="matfun") then
-          backspace(bsunit)
-          read(bsunit,*,iostat=ierr)LINE,tempchar
-          if(ierr.ne.0) then
-            write(0,"(a,i0)")  "Error reading matrix function for carriage ", carriage
-            errorflag = 1
-            return
-          end if
-          if (tempchar.ne.matfun) then
-            write(0,"(4a)") "Mismatch in matfun values! Expected ", matfun, " but got ", tempchar
-            errorflag = 1
-            return
-          end if
-          n = n+1
-        else if ((LINE=="time").and.(carriage.eq.x)) then
-          backspace(bsunit)
-          read(bsunit,*,iostat=ierr)LINE,t
-          if(ierr.ne.0) then
-            write(0,"(a,i0)")  "Error reading time in carriage ", carriage
-            errorflag = 1
-            return
-          end if
-          if (t-time.gt.dtinit/1.0d3) then
-            write(0,"(2(a,es16.8e3))") "Mismatch in time values! Expected ", time, " but got ", t
-            write(0,"(3(a,i0))") "This happened in rep ", reps, " at step ", x, " and rkstp ", rkstp
-            errorflag = 1
-            return
-          end if
-          n = n+1
-        end if
-        read(bsunit,*,iostat=ierr)LINE
-      end do
-
-      if ((n.ne.5).and.(carriage.ne.x)) then
-        write(0,"(a,i0,a)") "Error in reading parameters. Only ", n, " of 5 parameters read."
-        errorflag = 1
-        return
-      else if ((n.ne.6).and.(carriage.eq.x)) then
-        write(0,"(a,i0,a)") "Error in reading parameters. Only ", n, " of 6 parameters read."
-        errorflag = 1
-        return
-      end if 
-      backspace (bsunit)
-      carriage = carriage - trainsp
-    end do      
-
-    call allocbs(bs,nbftrk)
-    
-    nbftrk2 = 0
-    carriage = x+stpback
-    p=0
-    n=0
-    maxbf = maxval(map_bfs)
- 
-    do l=1,def_stp
-      bsunit=(7065+carriage)*reps
-      do j=1,bfs(l)
-        n=n+1
-        if (map_bfs(l,j)==0) then
-          p=p+1
-          q=maxbf+p
-          map_bfs(l,j) = q
-        else
-          q=map_bfs(l,j)
-        end if  
-        read(bsunit,*,iostat=ierr)LINE,k
-        if (ierr/=0) then
-          write(0,"(a,i0,a,i0)") "Error reading Outbs file ", carriage, " at basis number ", j
-          write(0,"(a)") "Was trying to read basis number line" 
-          write (0,"(a,i0)") "ierr was ", ierr
-          errorflag = 1
-          return
-        end if
-        if(k.ne.j) then
-          write(0,"(a,i0,a,i0)") "Error. Expected basis function ", j, " but got ", k
-          errorflag = 1
-          return
-        end if
-        if (LINE.ne."basis") then
-          write(0,"(a,a)") 'Error. Expected to read "basis ', j, '" but read ',trim(LINE), ' ', k 
-          errorflag = 1
-          return
-        end if
-        read (bsunit,*,iostat=ierr)LINE
-        if (ierr/=0) then
-          write(0,"(a,i0,a,i0)") "Error reading Outbs file ", carriage, " at basis number ", j
-          write(0,"(a)") "Was trying to D line" 
-          write (0,"(a,i0)") "ierr was ", ierr
-          errorflag = 1
-          return
-        end if
-        if (LINE.ne."D") then
-          write(0,"(a,a)") "Error! Expected D but read ", trim(LINE)
-        end if
-        do r=1,npes
-          read(bsunit,*,iostat=ierr)LINE
-          if (ierr/=0) then
-            write(0,"(a,i0,a,i0)") "Error reading Outbs file ", carriage, " at basis number ", j
-            write(0,"(a,i0)") "Was trying to read a_pes identifier for pes ", r 
-            write (0,"(a,i0)") "ierr was ", ierr
-            errorflag = 1
-            return
-          end if
-          if (LINE.ne."a") then
-            write(0,"(a,a)") "Error! Expected a but read ", trim(LINE)
-          end if
-          backspace(bsunit)
-          read(bsunit,*,iostat=ierr)LINE,k,rl, im
-          if (ierr/=0) then
-            write(0,"(a,i0,a,i0)") "Error reading Outbs file ", carriage, " at basis number ", j
-            write(0,"(a,i0)") "Was trying to read a_pes line for pes ", r 
-            write (0,"(a,i0)") "ierr was ", ierr
-            errorflag = 1
-            return
-          end if
-          if (k.ne.r) then
-            write (0,"(a,i2,a,i2)") "Error. Expected a from pes ", r, "but got ", k
-          end if
-          bs(q)%a_pes(r)=cmplx(rl,im,kind=8)
-        end do
-        do r=1,npes
-          read(bsunit,*,iostat=ierr)LINE
-          if (ierr/=0) then
-            write(0,"(a,i0,a,i0)") "Error reading Outbs file ", carriage, " at basis number ", j
-            write(0,"(a,i0)") "Was trying to read d_pes identifier for pes ", r 
-            write (0,"(a,i0)") "ierr was ", ierr
-            errorflag = 1
-            return
-          end if
-          if (LINE.ne."d") then
-            write(0,"(a,a)") "Error! Expected d but read ", trim(LINE)
-          end if
-          backspace(bsunit)
-          read(bsunit,*,iostat=ierr)LINE,k,rl, im
-          if (ierr/=0) then
-            write(0,"(a,i0,a,i0)") "Error reading Outbs file ", carriage, " at basis number ", j
-            write(0,"(a,i0)") "Was trying to read d_pes line for pes ", r 
-            write (0,"(a,i0)") "ierr was ", ierr
-            errorflag = 1
-            return
-          end if
-          if (k.ne.r) then
-            write(0,"(a,i2,a,i2)") "Error. Expected d from pes ", r, "but got ", k
-          end if
-          bs(q)%d_pes(r)=cmplx(rl,im,kind=8)
-        end do
-        do r=1,npes
-          read(bsunit,*,iostat=ierr)LINE
-          if (ierr/=0) then
-            write(0,"(a,i0,a,i0)") "Error reading Outbs file ", carriage, " at basis number ", j
-            write(0,"(a,i0)") "Was trying to read s_pes identifier for pes ", r 
-            write (0,"(a,i0)") "ierr was ", ierr
-            errorflag = 1
-            return
-          end if
-          if (LINE.ne."s") then
-            write(0,"(a,a)") "Error! Expected s but read ", trim(LINE)
-          end if
-          backspace(bsunit)
-          read(bsunit,*,iostat=ierr)LINE,k,rl
-          if (ierr/=0) then
-            write(0,"(a,i0,a,i0)") "Error reading Outbs file ", carriage, " at basis number ", j
-            write(0,"(a,i0)") "Was trying to read s_pes line for pes ", r 
-            write (0,"(a,i0)") "ierr was ", ierr
-            errorflag = 1
-            return
-          end if
-          if (k.ne.r) then
-            write(0,"(a,i2,a,i2)") "Error. Expected s from pes ", r, "but got ", k
-          end if
-          bs(q)%s_pes(r)=rl
-        end do
-        do m=1,ndim
-          read(bsunit,*,iostat=ierr)LINE
-          if (ierr/=0) then
-            write(0,"(a,i0,a,i0)") "Error reading Outbs file ", carriage, " at basis number ", j
-            write(0,"(a,i0)") "Was trying to read z identifier for dof ", m 
-            write (0,"(a,i0)") "ierr was ", ierr
-            errorflag = 1
-            return
-          end if
-          if (LINE.ne."z") then
-            write(0,"(a,a)") "Error! Expected z, but read ", trim(LINE)
-          end if
-          backspace(bsunit)
-          read(bsunit,*,iostat=ierr)LINE,k,rl, im
-          if (ierr/=0) then
-            write(0,"(a,i0,a,i0)") "Error reading Outbs file ", carriage, " at basis number ", j
-            write(0,"(a,i0)") "Was trying to read z line for dof ", m 
-            write (0,"(a,i0)") "ierr was ", ierr
-            errorflag = 1
-            return
-          end if
-          if (k.ne.m) then
-            write(0,"(a,i2,a,i2)") "Error. Expected z dimension ", m, "but got ", k
-          end if
-          bs(q)%z(m)=cmplx(rl,im,kind=8)
-        end do
-      end do
-
-      carriage = carriage-trainsp
-      close(bsunit)
-    end do 
-    
-    if (maxval(map_bfs).ne.maxbf+p) then
-      write(0,"(a)") "The two nbf trackers do not agree. Problem with cloning indices!"
-      write(0,"(2(a,i0))") "maxval(map_bfs) was ", maxval(map_bfs), " and maxbf+p was ", maxbf+p 
-      errorflag = 1
-      return
-    end if  
-
-    return
-    
-  end subroutine constrtrain
-
 !--------------------------------------------------------------------------------------------------
 
   subroutine readtimepar   !   Level 1 Subroutine

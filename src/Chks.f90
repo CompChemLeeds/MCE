@@ -24,14 +24,15 @@ contains
 
 !***********************************************************************************!
 
-  subroutine initnormchk(bs,recalcs,restart, alcmprss, gridsp, absnorm, popsum)
+  subroutine initnormchk(bs,recalcs,restart,alcmprss,absnorm,popsum,trspace)
 
     implicit none
 
     type(basisfn), dimension (:), intent (in) :: bs
     complex(kind=8), dimension(:,:), allocatable :: ovrlp
     integer, intent (inout) :: recalcs, restart
-    real(kind=8), intent(inout) :: alcmprss, gridsp, absnorm, popsum
+    real(kind=8), intent(inout) :: alcmprss, absnorm, popsum
+    integer, intent(inout) :: trspace
     complex(kind=8)::normtemp
     integer :: r, k, m, fields, fileun, ierr
     character(LEN=21) :: filenm, filenm2, myfmt
@@ -82,11 +83,11 @@ contains
       else
         if (absnorm.lt.lowlimnorm) then
           write(6,'(a,es16.8e3)'), "Initial Norm too low with a value of ", absnorm
-          if (basis.eq."GRID") then
-            write(6,"(a,es16.8e3)") "Reducing grid spacing to ", (gridsp * 0.95d0)/sqrt(2.)
+          if (basis.eq."SWTRN") then
+            write(6,"(a,es16.8e3)") "Reducing train spacing spacing to ", (trspace - 1)
             write(6,"(a)") ""
-            gridsp = gridsp * 0.95d0
-          else if ((basis.eq."SWARM").or.(basis.eq."SWTRN").or.(basis.eq."GRSWM")) then
+            trspace = trspace * 0.95d0
+          else if (basis.eq."SWARM") then
             write(6,"(a,es16.8e3)") "Increasing compression parameter to", 1/(alcmprss * 0.95d0)
             write(6,"(a)") ""
             alcmprss = alcmprss * 0.95d0
@@ -95,10 +96,10 @@ contains
         else if (absnorm.gt.uplimnorm) then
           write(6,'(a,es16.8e3)'), "Initial Norm too high with a value of ", absnorm
           if (basis.eq."GRID") then
-            write(6,"(a,es16.8e3)") "Increasing grid spacing to ", (gridsp * 1.05d0)/sqrt(2.)
+            write(6,"(a,es16.8e3)") "Increasing train spacing to ", (trspace + 1)
             write(6,"(a)") ""
-            gridsp = gridsp * 1.05d0
-          else if ((basis.eq."SWARM").or.(basis.eq."SWTRN").or.(basis.eq."GRSWM")) then
+            trspace = trspace * 1.05d0
+          else if (basis.eq."SWARM") then
             write(6,"(a,es16.8e3)") "Reducing compression parameter to", 1/(alcmprss * 1.05d0)
             write(6,"(a)") ""
             alcmprss = alcmprss * 1.05d0
@@ -115,42 +116,6 @@ contains
         write(6,"(a)") ""
         
         write(timestr,"(i3.3)") recalcs
-        
-!        filenm = "map-"//trim(timestr)//".out"  
-!        fileun = 53690+recalcs
-
-!        open(unit=fileun,file=filenm,status="new",iostat=ierr)
-!        if (ierr.ne.0) then
-!          write(0,"(a,a)") "Error opening ", filenm
-!          errorflag = 1
-!          return
-!        end if
-!        write(fileun,"(a)") "  k  m  q  p"
-!        do k = 1,size(bs)
-!!          do m = 1,ndim
-!            write (fileun,"(2(i4,2x),2(e16.8e3,2x))") k,m,dble(bs(k)%z(m)),dimag(bs(k)%z(m))
-!          end do
-!        end do  
-!        close (fileun)
-!        
-!        filenm2 = "plotmap-"//trim(timestr)//".out"
-!        
-!        open(unit=fileun,file=filenm2,status="new",iostat=ierr)
-!        if (ierr.ne.0) then
-!          write(0,"(a,a)") "Error opening ", filenm2
-!          errorflag = 1
-!          return
-!        end if
-!        write(fileun,"(a)") 'set terminal png'
-!        write(fileun,"(a,a,a)") 'set output "CSmap-',trim(timestr),'.png"'
-!        write(fileun,"(a,es16.8e3,a)") 'set title "Scatter plot of coherent state centres at alcmprss = ', 1./alcmprss ,'"'
-!        write(fileun,"(a)") 'set nokey'
-!        write(fileun,"(a)") 'unset key'
-!        write(fileun,"(a)") 'set xlabel "q"'
-!        write(fileun,"(a)") 'set ylabel "p"'
-!        write(fileun,"(a,a,a)") 'p "',trim(filenm),'" u 3:4 w p'
-!        
-!        close (fileun)
         
         return
       else

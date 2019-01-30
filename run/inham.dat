@@ -47,38 +47,10 @@ SBw0_5 30.0d0
 SBw0_6 35.0d0
 SBw0_7 40.0d0
 
-# Drude Lorentz Parameters
-
-DLDelta 1.0d0
-DLEps 1.5d0
-DLw 0.5d0
-DLwmax 25.0d0
-DLlambda 1.0d0
-DLBeta 0.5d0
-DLupnorm 0.9999d0
-DLdownnorm 0.9998d0
-
-# Pseudo-Tortion Parameters
-
-VP_y_00 0.162d0
-VP_A_0 0.34d0
-VP_b_0 0.0105d0
-VPwidth 1.804d0
-VP_A_NAC 0.36d0
-VP_y_10 0.173d0       
-VP_b_1 0.018d0        
-VPupnorm 1.001d0
-VPdownnorm 0.998d0
-
 # Harmonic Potential Parameters
 HPw 1.0d0
 HPupnorm 0.999d0
 HPdownnorm 0.998d0
-
-# Free Particle Parameters
-FPmass 1.0d0
-FPupnorm 0.999d0
-FPdownnorm 0.998d0
 
 # Morse Potential Parameters
 MPw 1.0d0
@@ -87,27 +59,6 @@ MPDissEn 10.25d0
 MPWellParam 0.2209d0
 MPupnorm 0.999d0
 MPdownnorm 0.998d0
-
-# Inverted Gaussian Parameters
-IVm 1.0d0
-IVw 0.05d0
-IVlambda 0.5d0
-IVIntensity 0.1d0
-IVupnorm 0.999999d0
-IVdownnorm 0.999998d0
-
-# Coulomb Potential Parameters
-CPm 1.0d0
-CPfrequency 0.05d0
-CPRc 0.0d0
-CPIntensity 0.1d0
-CPupnorm 0.999d0
-CPdownnorm 0.998d0
-
-# Henon-Heiles Parameters
-HHCoupling 0.111803d0
-HHupnorm 0.999d0
-HHdownnorm 0.998d0
 
 #Energy limit parameters
 ECheck No

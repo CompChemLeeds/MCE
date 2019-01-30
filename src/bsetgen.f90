@@ -32,13 +32,13 @@ contains
 !              Populate/Generate array Subroutines
 !***********************************************************************************!
 
-  subroutine genbasis(bs, mup, muq, alcmprss, t, reps) 
+  subroutine genbasis(bs, mup, muq, alcmprss, t, reps, trspace) 
 
     implicit none
     type(basisfn), dimension(:), intent(inout) :: bs
     real(kind=8), dimension(:), intent(in) :: mup, muq
     real(kind=8), intent(inout) :: alcmprss, t
-    integer, intent(in)::reps
+    integer, intent(in)::reps, trspace
 
     if (errorflag .ne. 0) return
 
@@ -46,7 +46,7 @@ contains
       case ("SWARM")
         call gen_swarm(bs,mup,muq,alcmprss,t,reps)
       case ("SWTRN")
-        call gen_swtrn(bs,mup,muq,alcmprss,t,reps)
+        call gen_swtrn(bs,mup,muq,alcmprss,t,reps, trspace)
       case default
         write(0,"(a)") "Error! Initial basis calculation method not recognised!"
         write(0,"(a)") "This should have been caught at the read stage!"
@@ -101,13 +101,13 @@ contains
 
 !------------------------------------------------------------------------------------
 
-  subroutine gen_swtrn(bs,mup,muq,alcmprss,t,reps)
+  subroutine gen_swtrn(bs,mup,muq,alcmprss,t,reps, trspace)
 
     implicit none
     type(basisfn), dimension(:), intent(inout) :: bs
     real(kind=8), dimension(:), intent(in) :: mup, muq
     real(kind=8), intent(inout) :: alcmprss, t
-    integer, intent(in)::reps
+    integer, intent(in)::reps, trspace
     type(basisfn), dimension(:), allocatable :: swrmbf, tmpbf
     type(basisfn) :: bf
     real(kind=8) :: dt, dtdone, dtnext, timeold, q, p, sumamps
@@ -122,8 +122,15 @@ contains
     def_stp2 = train_len
     genflg = 1
 
+    ! <<<<<<<<<<<<<<<<< start of possible useless code section >>>>>>>>>>>>>>>>>>>>>>>
+    
+    ! The code below is probably not needed. It is a leftover from the time when input arguments were 
+    ! train_len (then called def_stp) and in_nbf. Now the size of the central swarm is chosen explicitly
+    ! (in swtrn_swrm) and on reading the parameters, in_nbf is set explicitly to be the product of these two values.
+    ! This means that to get a single long train, you must set the size of the central swarm as 1
+ 
     if (mod(def_stp2,2)==0) def_stp2 = def_stp2 + 1
-
+ 
     if (mod(in_nbf,def_stp2)==0) then
       steps = def_stp2
     else if (mod(in_nbf,def_stp2 - 1)==0) then
@@ -137,6 +144,8 @@ contains
       return
     end if
 
+    !  <<<<<<<<<<<<<<<<< end of possible useless code section >>>>>>>>>>>>>>>>>>>>>>>>>>
+    
     swrmsize = swtrn_swrm    
 
     write(6,"(a,i0,a,i0,a)")"Making ",swrmsize," trains each ",steps," carriages long."
@@ -209,85 +218,35 @@ contains
       swrmbf(k)=bf
     end do
 
-    if (trtype == 1) then
-
-      do k=1,size(swrmbf)
-        swrmbf%D_big = (1.0d0,0.0d0)
-      end do
+    do k=1,size(swrmbf)
+      swrmbf%D_big = (1.0d0,0.0d0)
+    end do
     
-      if (mod(steps,2)==1) stepback = ((steps-1)/2)*trainsp
-      if (mod(steps,2)==0) stepback = ((steps/2)*trainsp)-(trainsp/2)
-      dt = -1.0d0*dtinit
+    if (mod(steps,2)==1) stepback = ((steps-1)/2)*trspace
+    if (mod(steps,2)==0) stepback = ((steps/2)*trspace)-(trspace/2)
+    dt = -1.0d0*dtinit
 
-      do x=1,stepback
-        call propstep(swrmbf,dt,dtnext,dtdone,t,genflg,timestrt,x-stepback,reps)
-        t = t + dt
-      end do
+    do x=1,stepback
+      call propstep(swrmbf,dt,dtnext,dtdone,t,genflg,timestrt,x-stepback,reps)
+      t = t + dt
+    end do
 
-      dt = dtinit
+    dt = dtinit
 
-      kcut = steps*trainsp     
+    kcut = steps*trainsp     
 
-      do x=1,kcut
-        if (mod(x-1,trainsp)==0) then
-          do j=1,swrmsize
-            bs((((x-1)*swrmsize)/trainsp)+j)%z = swrmbf(j)%z
-            bs((((x-1)*swrmsize)/trainsp)+j)%a_pes = swrmbf(j)%a_pes
-            bs((((x-1)*swrmsize)/trainsp)+j)%d_pes = swrmbf(j)%d_pes
-            bs((((x-1)*swrmsize)/trainsp)+j)%s_pes = swrmbf(j)%s_pes
-          end do
-        end if
-        call propstep(swrmbf,dt,dtnext,dtdone,t,genflg,timestrt,x,reps)
-        t = t + dt
-      end do
-
-    else if (trtype==2) then
-
-      call allocbs(tmpbf,1)
-
-      do j=1,swrmsize
-
-        tmpbf(1) = swrmbf(j)
-
-        tmpbf%D_big = (1.0d0,0.0d0)
-    
-        if (mod(steps,2)==1) stepback = ((steps-1)/2)*trainsp
-        if (mod(steps,2)==0) stepback = ((steps/2)*trainsp)-(trainsp/2)
-        dt = -1.0d0*dtinit
-
-        do x=1,stepback
-          call propstep(tmpbf,dt,dtnext,dtdone,t,genflg,timestrt,x,reps)
-          t = t + dt
+    do x=1,kcut
+      if (mod(x-1,trainsp)==0) then
+        do j=1,swrmsize
+          bs((((x-1)*swrmsize)/trainsp)+j)%z = swrmbf(j)%z
+          bs((((x-1)*swrmsize)/trainsp)+j)%a_pes = swrmbf(j)%a_pes
+          bs((((x-1)*swrmsize)/trainsp)+j)%d_pes = swrmbf(j)%d_pes
+          bs((((x-1)*swrmsize)/trainsp)+j)%s_pes = swrmbf(j)%s_pes
         end do
-
-        dt = dtinit
-
-        kstrt = (steps*(j-1)*trainsp)+1
-        kcut = steps * j * trainsp   
-
-        do x=kstrt,kcut
-          if (mod(x-1,trainsp)==0) then
-            bs(((x-1)/trainsp)+1)%z = tmpbf(1)%z
-            bs(((x-1)/trainsp)+1)%a_pes = tmpbf(1)%a_pes
-            bs(((x-1)/trainsp)+1)%d_pes = tmpbf(1)%d_pes
-            bs(((x-1)/trainsp)+1)%s_pes = tmpbf(1)%s_pes
-          end if
-          call propstep(tmpbf,dt,dtnext,dtdone,t,genflg,timestrt,x,reps)
-          t = t + dt
-        end do
-
-      end do
-
-      call deallocbs(tmpbf)
-
-    else
-
-      write(0,'(a,a,i0)'), "Error! Train swarm/swarm train identifier is wrong. ",&
-                 "Should be 1 or 2 but got ", trtype
-      errorflag = 1
-      return
-
-    end if       
+      end if
+      call propstep(swrmbf,dt,dtnext,dtdone,t,genflg,timestrt,x,reps)
+      t = t + dt
+    end do      
 
     call deallocbs(swrmbf)
     call deallocbf(bf)

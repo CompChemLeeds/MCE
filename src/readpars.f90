@@ -691,6 +691,7 @@ contains
         return
       end if
       in_nbf = swtrn_swrm * train_len
+      write(6,"(a,i0)") "Setting the total initial size of the basis set to ", in_nbf
       if ((method.ne."MCEv2").and.(method.ne."CCS")) then
         write(0,"(a)") "Error! Trains can only work with MCEv2 or CCS."
         write(0,"(a)") "MCEv1 cannot calculate the amplitudes correctly"

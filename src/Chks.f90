@@ -40,9 +40,6 @@ contains
 
     if (errorflag .ne. 0) return
 
-    if (((basis.eq."GRID").and.(mod(in_nbf,2)==1)).or.(basis.eq."GRSWM").or.(basis.eq."TRAIN")) then
-      uplimnorm = 1.000001d0
-    end if
     popsum = 0.0d0
 
     allocate (ovrlp(size(bs),size(bs)))   
@@ -84,9 +81,9 @@ contains
         if (absnorm.lt.lowlimnorm) then
           write(6,'(a,es16.8e3)'), "Initial Norm too low with a value of ", absnorm
           if (basis.eq."SWTRN") then
-            write(6,"(a,es16.8e3)") "Reducing train spacing spacing to ", (trspace - 1)
+            write(6,"(a,i0)") "Reducing train spacing spacing to ", int(real(trspace) * 0.95)
             write(6,"(a)") ""
-            trspace = trspace * 0.95d0
+            trspace = int(real(trspace) * 0.95)
           else if (basis.eq."SWARM") then
             write(6,"(a,es16.8e3)") "Increasing compression parameter to", 1/(alcmprss * 0.95d0)
             write(6,"(a)") ""
@@ -96,9 +93,9 @@ contains
         else if (absnorm.gt.uplimnorm) then
           write(6,'(a,es16.8e3)'), "Initial Norm too high with a value of ", absnorm
           if (basis.eq."GRID") then
-            write(6,"(a,es16.8e3)") "Increasing train spacing to ", (trspace + 1)
+            write(6,"(a,i0)") "Increasing train spacing to ", int(real(trspace) * 1.05)
             write(6,"(a)") ""
-            trspace = trspace * 1.05d0
+            trspace = int(real(trspace) * 1.05)
           else if (basis.eq."SWARM") then
             write(6,"(a,es16.8e3)") "Reducing compression parameter to", 1/(alcmprss * 1.05d0)
             write(6,"(a)") ""

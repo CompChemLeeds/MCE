@@ -341,7 +341,7 @@ Program MainMCE
           call allocbs(bset, nbf)
 
           !$omp critical             ! Critical block needed for random number gen. 
-          call genbasis(bset, mup, muq, alcmprss, time, reps)      
+          call genbasis(bset, mup, muq, alcmprss, time, reps, trspace)      
 
           call genD_big(bset, mup, muq, restart) !Generates the multi config D  
                                       !prefactor and single config a & d prefactors
@@ -429,7 +429,7 @@ Program MainMCE
           write(6,"(a,e15.8)") "Abs(Norm) = ", initnorm
           if (npes.ne.1) write(6,"(a,e15.8)") "Popsum    = ", initnorm2
           if ((cmprss.eq."Y").and.((basis.eq."SWARM").or.(basis.eq."SWTRN"))) write(6,"(a,e15.8)") "Alcmprss  = ", 1.0d0/alcmprss
-          if ((cmprss.eq."Y").and.(basis.eq."GRID")) write(6,"(a,e15.8)") "Grid Spacing  = ", gridsp/dsqrt(2.0d0)
+          if ((cmprss.eq."Y").and.(basis.eq."SWTRN")) write(6,"(a,i0)") "Train Spacing  = ", trspace
         else
           write(6,"(a)") "Errors found in basis set generation"
           call outbs(bset, reps, mup, muq, time,0)
@@ -669,12 +669,6 @@ Program MainMCE
 
     end do !conjugate repeat
   
-    deallocate (initgrid, stat=ierr)
-    if (ierr/=0) then
-      write(0,"(a)") "Error deallocating the initial grid array in main"
-      errorflag=1
-    end if
-
     if (allocated(mup)) deallocate (mup, stat=ierr)
     if ((allocated(muq)).and.(ierr==0)) deallocate (muq, stat=ierr)
     if ((allocated(popt)).and.(ierr==0)) deallocate (popt, stat=ierr)

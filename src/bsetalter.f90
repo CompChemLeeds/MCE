@@ -110,15 +110,7 @@ contains
     end if    
 
     do r=1,npes
-      if (matfun.eq.'zgesv') then
-        call lineq(ovrlp_mat, cnew, dnew)
-      else if (matfun.eq.'zheev') then
-        call matinv2(ovrlp_mat, cnew, dnew)
-      else
-        write(0,"(a)") "Error! Matrix function not recognised! Value is ", matfun
-        errorflag = 1
-        return
-      end if
+      call lineq(ovrlp_mat, cnew, dnew)
     end do
 
     deallocate(ovrlp_mat, stat=ierr)

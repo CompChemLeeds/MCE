@@ -140,7 +140,6 @@ contains
     write(bsunit,"(a,1x,i4)"       ) 'nconf'      , npes
     write(bsunit,"(a,1x,i4)"       ) 'nbasisfns'  , size(bs)
     write(bsunit,"(a,1x,i4)"       ) 'initial_PES', in_pes
-    write(bsunit,"(a,1x,a)"        ) 'matfun'     , matfun
     write(bsunit,"(a,1x,es25.17e3)") 'time'       , t
     write(bsunit,*),""
     do m=1,ndim

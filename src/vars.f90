@@ -85,7 +85,6 @@ MODULE globvars
   character(LEN=5) :: ECheck       ! Flag to determine if the energy of basis functions should be checked
   character(LEN=5) :: basis        ! Initial basis set structure option
   character(LEN=6) :: cloneflg     ! Flag for cloning
-  character(LEN=5) :: matfun       ! Which matrix calcualtion function (zgesv/zheev) used for linear algebra
   character(LEN=5) :: method       ! MCEv1, MCEv2 or CCS used. Later versions to have other methods available
   character(LEN=4) :: randfunc     ! Random number generation function identifier (zbql/gaus)
   character(LEN=3) :: specden      ! the spectral density type (EXP,DL or UBO ---- LHC to come)

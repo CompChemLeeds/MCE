@@ -324,15 +324,7 @@ contains
         end do                         !!!! so must be redefined for each pes
       end do
 
-      if (matfun.eq.'zgesv') then
-        call lineq (ovrlpin, ddot_in, ddot_out)
-      else if (matfun.eq.'zheev') then
-        call matinv2(ovrlpin, ddot_in, ddot_out)
-      else
-        write(0,"(a)") "Error! Matrix function not recognised! Value is ", matfun
-        errorflag = 1
-        return
-      end if 
+      call lineq (ovrlpin, ddot_in, ddot_out)
 
       do k=1,nbf
         ddotv1(k,r)=-1.0d0*i*ddot_out(k)*cdexp(-1.0d0*i*(bsin(k)%s_pes(r)))
@@ -628,15 +620,7 @@ contains
 
     d2hD = tempD
 
-    if (matfun.eq.'zgesv') then
-      call lineq (ovrlpphi, tempD, Ddot)
-    else if (matfun.eq.'zheev') then
-      call matinv2(ovrlpphi, tempD, Ddot)
-    else
-      write(0,"(a)") "Error! Matrix function not recognised! Value is ", matfun
-      errorflag = 1
-      return
-    end if
+    call lineq (ovrlpphi, tempD, Ddot)
 
     do k=1,nbf
       bigDdotv2(k)=Ddot(k)

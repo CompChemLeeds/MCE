@@ -54,8 +54,8 @@ basis SWTRN
 # allows for the use of the quantum superposition sampling amplitudes [1/0]. 0=standard initial sampling, 1=quantum superposition sampling.
 qss 0
 
-# Compression parameter (can be tweaked to allow better norm value, or altered automatically)   Used for swarms/swarm-trains/grid-swarms
-ALCMP 100.0d0
+# Compression parameter (can be tweaked to allow better norm value, or altered automatically)   Used for swarms/swarm-trains
+ALCMP 1.0d0
 
 # frequency flag for using a set of precalculated frequencies with the spin boson model
 # freqflg = 1 enables reading of precalculated frequencies, freqflg = 0 mean they are calculated withing the program
@@ -73,17 +73,14 @@ max_cloning 4
 # Minimum cloning frequency (ie how many timesteps since last cloning is new cloning event allowed)
 clon_freq 200
 
-# spacing between trajectories for train type basis set. Used for trains/swarm-trains
-trainsp 300 
+# spacing between trajectories for train type basis set. Used for swarm-trains
+trainsp 300
 
-# length of train in carriages. Used for swarm-trains only. This is sometimes increased/decreased by 1.
+# length of train in carriages. Used for swarm-trains only
 train_len 10
 
-# Size of the central swarm for swtrn basis. Used for swarm-trains only. This is sometimes increased/decreased by 1.
+# Size of the central swarm for swtrn basis. Used for swarm-trains only
 swtrn_swarm_size 10
-
-# Matrix function (zgesv - linear algebra, zheev - matrix inversion)
-matfun zgesv
 
 # Random Number generation function (ZBQL - using ZBQLNOR subroutine, GAUS - using function based on numerical recipes)
 randfunc ZBQL

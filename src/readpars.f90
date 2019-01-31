@@ -14,7 +14,7 @@ MODULE readpars
 !*      1) Reading the run conditions (gen,prop,cmprss,method,reptot,conjflg)
 !*      2) Reading the system type (currently only Spin Boson supported)
 !*      3) Reading the energy cutoff parameters (ECheck,Ntries,Ebfmin,Ebfmax)
-!*      4) Reading the basis set parameters (ndim,in_nbf,matfun,npes,in_pes,grid)
+!*      4) Reading the basis set parameters (ndim,in_nbf,npes,in_pes,grid)
 !*      5) Reading initial wavefunction parameters (initialcmprss,gam,mu,hbar and calculation of sigp & sigq)
 !*      6) Reading a pre-calculated basis set (inc. bs params and all bs values)
 !*      7) Reading time propagation parameters (dtmin,dtmax,dtinit,timeend,timestrt,step)
@@ -430,15 +430,6 @@ contains
           return
         end if
         n = n+1
-      else if (LINE=="matfun") then
-        backspace(127)
-        read(127,*,iostat=ierr)LINE,matfun
-        if(ierr.ne.0) then
-          write(0,"(a)")  "Error reading matrix function"
-          errorflag = 1
-          return
-        end if
-        n = n+1
       else if (LINE=="randfunc") then
         backspace(127)
         read(127,*,iostat=ierr)LINE,randfunc
@@ -638,17 +629,7 @@ contains
       write(0,"(a)") "Cloning threshold larger than allowed limits. Setting to default value of 0.249"
       thresh = 0.249d0
     end if
-
-    if ((matfun.ne.'zgesv').and.(matfun.ne.'ZGESV').and.(matfun.ne.'zheev').and.(matfun.ne.'ZHEEV')) then
-      write(0,"(a,a)") "Invalid value for matrix function. Must be ZGESV/zgesv or ZHEEV/zheev. Value is ", matfun
-      errorflag = 1
-      return
-    else if ((matfun.eq.'zgesv').or.(matfun.eq.'ZGESV')) then
-      matfun = 'zgesv'
-    else
-      matfun = 'zheev'
-    end if
-    
+   
     if ((randfunc.ne.'ZBQL').and.(randfunc.ne.'zbql').and.(randfunc.ne.'gaus').and.(randfunc.ne.'GAUS')) then
       write(0,"(a,a)") "Invalid value for random number function. Must be ZBQL/zbql or GAUS/gaus. Value is ", randfunc
       errorflag = 1
@@ -659,7 +640,7 @@ contains
       randfunc = 'GAUS'
     end if      
     
-    if (n.ne.15) then
+    if (n.ne.14) then
       write(0,"(a,i0)") "Not all required variables read in readbsparams subroutine. n=", n
       errorflag = 1
       return
@@ -972,18 +953,6 @@ contains
         write(6,"(a,i0)") "in_pes  = ", in_pes
         call flush(6)
         n = n+1
-      else if (LINE=="matfun") then
-        backspace(bsunit)
-        read(bsunit,*,iostat=ierr)LINE,matfun
-        if(ierr.ne.0) then
-          write(0,"(a)")  "Error reading matrix function"
-          call flush(0)
-          errorflag = 1
-          return
-        end if
-        write(6,"(a,a)") "matfun  = ", matfun
-        call flush(6)
-        n = n+1
       else if (LINE=="time") then
         backspace(bsunit)
         read(bsunit,*,iostat=ierr)LINE,t
@@ -1003,7 +972,7 @@ contains
     call flush(6)
     call flush(0)
 
-    if (n.ne.6) then
+    if (n.ne.5) then
       write(0,"(a,i0,a)") "Error in reading parameters. Only ", n, " of 6 parameters read."
       errorflag = 1
       return

@@ -75,12 +75,18 @@ contains
     if (errorflag .ne. 0) return
     ierr = 0
     n=0
-
+   
     call allocbf(bf)
 
     if (size(bs).eq.1) then
     
-      bf%z(m)=cmplx(muq(m),mup(m),kind=8)
+      uplimnorm = 1.000001d0
+    
+      bf=bs(1)
+      do m=1,ndim
+        bf%z(m)=cmplx(muq(m),mup(m), kind=8)
+      end do
+      bs(1)=bf
       
     else
     
@@ -118,8 +124,9 @@ contains
     real(kind=8), intent(inout) :: alcmprss, t
     integer, intent(inout) :: trspace
     integer, intent(in):: reps
+    
     type(basisfn), dimension(:), allocatable :: swrmbf
-    type(basisfn) :: bf
+!    type(basisfn) :: bf
     real(kind=8) :: dt, dtdone, dtnext, timeold, q, p, sumamps, norm1, norm2
     integer::m, k, j, x, n, r, ierr, trtype, swrmsize, flag, kcut, kstrt, steps, redo
     integer::stepback, genflg, recalcs, dummy, restart
@@ -140,7 +147,7 @@ contains
     restart = 1
     flag = 3
     
-    do while ((restart.eq.1).and.(recalcs.lt.Ntries).and.(alcmprss.gt.1.0d-5))
+    do while ((restart.eq.1).and.(alcmprss.gt.1.0d-5))
     
       restart = 0    ! if restart stays as 0, the central swarm is not recalculated
 
@@ -159,16 +166,15 @@ contains
       recalcs = -1
           
       call initnormchk(swrmbf,recalcs,restart,alcmprss,norm1,norm2,trspace)
-
+      
       if ((restart.eq.1).and.(recalcs.lt.Ntries)) then
         call deallocbs(swrmbf)                            !Before recalculation, the basis must be deallocated
-        write(6,"(a,i0,a,i0,a)") "Attempt ", recalcs, " of ", Ntries, " for calculating converged central swarm"
       end if
 
     end do   !End of central swarm recalculation loop.
-             
+   
     do k=1,size(swrmbf)
-      swrmbf%D_big = (1.0d0,0.0d0)
+      swrmbf(k)%D_big = (1.0d0,0.0d0)
     end do
 
     if (mod(steps,2)==1) stepback = ((steps-1)/2)*trspace
@@ -183,12 +189,9 @@ contains
     dt = dtinit
     kcut = steps*trainsp     
       
-    call flush(6)
-    call flush(0)
-      
     do x=1,kcut
       if (mod(x-1,trainsp)==0) then
-        do j=1,swrmsize
+        do j=1,swrmsize   
           bs((((x-1)*swrmsize)/trainsp)+j)%z = swrmbf(j)%z
           bs((((x-1)*swrmsize)/trainsp)+j)%a_pes = swrmbf(j)%a_pes
           bs((((x-1)*swrmsize)/trainsp)+j)%d_pes = swrmbf(j)%d_pes

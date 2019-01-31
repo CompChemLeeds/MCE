@@ -38,13 +38,14 @@ contains
     type(basisfn), dimension(:), intent(inout) :: bs
     real(kind=8), dimension(:), intent(in) :: mup, muq
     real(kind=8), intent(inout) :: alcmprss, t
-    integer, intent(in)::reps, trspace
+    integer, intent(inout) :: trspace
+    integer, intent(in) :: reps
 
     if (errorflag .ne. 0) return
-
+    
     select case (basis)
       case ("SWARM")
-        call gen_swarm(bs,mup,muq,alcmprss,t,reps)
+        call gen_swarm(bs,mup,muq,alcmprss,t,reps,0)
       case ("SWTRN")
         call gen_swtrn(bs,mup,muq,alcmprss,t,reps, trspace)
       case default
@@ -60,13 +61,13 @@ contains
 
 !------------------------------------------------------------------------------------
 
-  subroutine gen_swarm(bs,mup,muq,alcmprss,t,reps)
+  subroutine gen_swarm(bs,mup,muq,alcmprss,t,reps, flag)
 
     implicit none
     type(basisfn), dimension(:), intent(inout) :: bs
     real(kind=8), dimension(:), intent(in) :: mup, muq
     real(kind=8), intent(in) :: alcmprss, t
-    integer, intent(in) :: reps
+    integer, intent(in) :: reps, flag
     
     type (basisfn) :: bf
     integer::m, k, n, h, ierr, redo
@@ -76,24 +77,32 @@ contains
     n=0
 
     call allocbf(bf)
+
+    if (size(bs).eq.1) then
+    
+      bf%z(m)=cmplx(muq(m),mup(m),kind=8)
       
-    do k=1,size(bs)
-      bf=bs(k)
-      do
-        do m=1,ndim
-          if (randfunc.eq."GAUS") then
-            bf%z(m)=gauss_random(alcmprss,muq(m),mup(m))
-          else
-            bf%z(m)=cmplx((ZBQLNOR(muq(m),sigq*alcmprss)) &
-           ,((1.0d0/hbar)*(ZBQLNOR(mup(m),sigp*alcmprss))),kind=8)
-          end if
+    else
+    
+      do k=1,size(bs)
+        bf=bs(k)
+        do
+          do m=1,ndim
+            if (randfunc.eq."GAUS") then
+              bf%z(m)=gauss_random(alcmprss,muq(m),mup(m))
+            else
+              bf%z(m)=cmplx((ZBQLNOR(muq(m),sigq*alcmprss)) &
+              ,((1.0d0/hbar)*(ZBQLNOR(mup(m),sigp*alcmprss))),kind=8)
+            end if
+          end do
+          call enchk(bf,t,n,redo,k,reps)
+          if (redo==1) cycle
+          if (redo==0) exit
         end do
-        call enchk(bf,t,n,redo,k,reps)
-        if (redo==1) cycle
-        if (redo==0) exit
+        bs(k)=bf
       end do
-      bs(k)=bf
-    end do
+      
+    end if
 
     call deallocbf(bf)
 
@@ -107,134 +116,76 @@ contains
     type(basisfn), dimension(:), intent(inout) :: bs
     real(kind=8), dimension(:), intent(in) :: mup, muq
     real(kind=8), intent(inout) :: alcmprss, t
-    integer, intent(in)::reps, trspace
-    type(basisfn), dimension(:), allocatable :: swrmbf, tmpbf
+    integer, intent(inout) :: trspace
+    integer, intent(in):: reps
+    type(basisfn), dimension(:), allocatable :: swrmbf
     type(basisfn) :: bf
-    real(kind=8) :: dt, dtdone, dtnext, timeold, q, p, sumamps
-    integer::m, k, j, x, n, r, ierr, trtype, swrmsize, restart, kcut, kstrt, steps, redo
-    integer::def_stp2, stepback, genflg
+    real(kind=8) :: dt, dtdone, dtnext, timeold, q, p, sumamps, norm1, norm2
+    integer::m, k, j, x, n, r, ierr, trtype, swrmsize, flag, kcut, kstrt, steps, redo
+    integer::stepback, genflg, recalcs, dummy, restart
 
     if (errorflag .ne. 0) return
     ierr=0
     n=0
     restart = 0
-    trtype = 1 
-    def_stp2 = train_len
     genflg = 1
 
-    ! <<<<<<<<<<<<<<<<< start of possible useless code section >>>>>>>>>>>>>>>>>>>>>>>
-    
-    ! The code below is probably not needed. It is a leftover from the time when input arguments were 
-    ! train_len (then called def_stp) and in_nbf. Now the size of the central swarm is chosen explicitly
-    ! (in swtrn_swrm) and on reading the parameters, in_nbf is set explicitly to be the product of these two values.
-    ! This means that to get a single long train, you must set the size of the central swarm as 1
- 
-    if (mod(def_stp2,2)==0) def_stp2 = def_stp2 + 1
- 
-    if (mod(in_nbf,def_stp2)==0) then
-      steps = def_stp2
-    else if (mod(in_nbf,def_stp2 - 1)==0) then
-      steps = def_stp2 - 1
-    else
-      write(0,'(a,i0,a,i0)'), "In_nbf is not an integer multiple of ", def_stp2, &
-                 " or ", def_stp2 - 1, ", which are the default number of steps."
-      write(0,'(a,a)'), "To have a different number of steps in a swarm train or ",&
-                    "train swarm, modify value of def_stp in the input file" 
-      errorflag = 1
-      return
-    end if
-
-    !  <<<<<<<<<<<<<<<<< end of possible useless code section >>>>>>>>>>>>>>>>>>>>>>>>>>
-    
+    steps = train_len  
     swrmsize = swtrn_swrm    
 
     write(6,"(a,i0,a,i0,a)")"Making ",swrmsize," trains each ",steps," carriages long."
     
-    if ((mod(swrmsize,2)==1).and.(mod(steps,2)==1)) uplimnorm = 1.0000001d0
-
     timeold = t
 
-    call allocbs(swrmbf,swrmsize)
-    call allocbf(bf)
+    restart = 1
+    flag = 3
+    
+    do while ((restart.eq.1).and.(recalcs.lt.Ntries).and.(alcmprss.gt.1.0d-5))
+    
+      restart = 0    ! if restart stays as 0, the central swarm is not recalculated
 
-    if (mod(swrmsize,2)==0) then
-      kcut = 1
-    else
-      do m=1,ndim
-        swrmbf(1)%z(m) = cmplx(muq(m),mup(m),kind=8)
-      end do
-      swrmbf(1)%d_pes(in_pes) = (1.0d0,0.0d0)
-      swrmbf(1)%a_pes(in_pes) = (1.0d0,0.0d0)
-      kcut = 2
-    end if
+      call allocbs(swrmbf,swrmsize)
 
-    do k=kcut,size(swrmbf)
-      do
-        do m=1,ndim
-          if (randfunc.eq."GAUS") then
-            bf%z(m)=gauss_random(alcmprss,muq(m),mup(m))
-          else
-            bf%z(m)=cmplx((ZBQLNOR(muq(m),sigq*alcmprss)) &
-            ,((1.0d0/hbar)*(ZBQLNOR(mup(m),sigp*alcmprss))),kind=8)
-          end if
-        end do
-        call enchk(bf,t,n,redo,k,reps)
-        if (redo==1) cycle
-        if (redo==0) exit
-      end do
-      if (qss==1) then
-        if (npes==2) then
-          call random_number(q)
-          q = q * 2.0 * pirl
-          call random_number(p)
-          p = p * 2.0 * pirl
-          do r=1,npes
-            if (r==in_pes) then
-              bf%a_pes(r)=cmplx(dcos(q),0.0d0)
-            else
-              bf%a_pes(r)=cmplx(dsin(q)*dcos(p),dsin(q)*dsin(p))
-            end if
-          end do
-        else
-          sumamps = 0.0d0
-          do r=1,npes
-            call random_number(q)
-            call random_number(p)
-            q = q * 2.0 - 1.0
-            p = p * 2.0 - 1.0
-            bf%a_pes(r) = cmplx(q,p)
-            sumamps = sumamps + dsqrt(dble(cmplx(q,p) * cmplx(q,-1.0*p)))
-          end do
-          do r=1,npes
-            bf%a_pes(r) = bf%a_pes(r) / sumamps
-          end do
-        end if
-      else
-        bf%a_pes(in_pes) = (1.0d0,0.0d0)
+      call gen_swarm(swrmbf, mup, muq, alcmprss, t, reps, flag)  
+      
+      call genD_big(swrmbf, mup, muq, flag) !Generates the multi config D  
+                                      !prefactor and single config a & d prefactors
+                                      
+      ! Checks norms and population sum to ensure basis set is calculated
+      ! properly. If not, restart is set to 1 so basis is recalculated
+      
+      norm1 = 0.0d0
+      norm2 = 0.0d0
+      recalcs = -1
+          
+      call initnormchk(swrmbf,recalcs,restart,alcmprss,norm1,norm2,trspace)
+
+      if ((restart.eq.1).and.(recalcs.lt.Ntries)) then
+        call deallocbs(swrmbf)                            !Before recalculation, the basis must be deallocated
+        write(6,"(a,i0,a,i0,a)") "Attempt ", recalcs, " of ", Ntries, " for calculating converged central swarm"
       end if
-      do r=1,npes
-        bf%d_pes(r) = bf%a_pes(r)
-      end do
-      swrmbf(k)=bf
-    end do
 
+    end do   !End of central swarm recalculation loop.
+             
     do k=1,size(swrmbf)
       swrmbf%D_big = (1.0d0,0.0d0)
     end do
-    
+
     if (mod(steps,2)==1) stepback = ((steps-1)/2)*trspace
     if (mod(steps,2)==0) stepback = ((steps/2)*trspace)-(trspace/2)
     dt = -1.0d0*dtinit
-
+      
     do x=1,stepback
       call propstep(swrmbf,dt,dtnext,dtdone,t,genflg,timestrt,x-stepback,reps)
       t = t + dt
     end do
 
     dt = dtinit
-
     kcut = steps*trainsp     
-
+      
+    call flush(6)
+    call flush(0)
+      
     do x=1,kcut
       if (mod(x-1,trainsp)==0) then
         do j=1,swrmsize
@@ -246,10 +197,9 @@ contains
       end if
       call propstep(swrmbf,dt,dtnext,dtdone,t,genflg,timestrt,x,reps)
       t = t + dt
-    end do      
-
+    end do                            
+    
     call deallocbs(swrmbf)
-    call deallocbf(bf)
 
     t = timeold
 
@@ -257,7 +207,7 @@ contains
 
 !------------------------------------------------------------------------------------
 
-  subroutine genD_big(bs, mup, muq, restart)   !   Level 1 Subroutine
+  subroutine genD_big(bs, mup, muq, flag)   !   Level 1 Subroutine
 
     implicit none
     type(basisfn),dimension(:),intent(inout)::bs
@@ -266,7 +216,7 @@ contains
     complex(kind=8),dimension(:), allocatable::zinit, zinit2, zpq
     complex(kind=8),dimension(:), allocatable:: C_k, D
     real(kind=8) :: x,y,sumamps
-    integer, intent(inout) :: restart
+    integer, intent(in) :: flag
     integer::k, j, r, ierr
 
     if (errorflag .ne. 0) return
@@ -278,8 +228,8 @@ contains
       errorflag=1
       return
     end if 
-    
-    if ((basis.ne."SWTRN")) then
+       
+    if ((basis.ne."SWTRN").or.(flag.eq.3)) then
       do j=1,size(bs)
         if (qss==1) then
           if (npes==2) then
@@ -363,15 +313,7 @@ contains
     end if
     ovrlp_mat=ovrlpphimat(bs)
 
-    if (matfun.eq.'zgesv') then
-      call lineq(ovrlp_mat, C_k, D)
-    else if (matfun.eq.'zheev') then
-      call matinv(ovrlp_mat, C_k, D, restart)
-    else
-      write(0,"(a)") "Error! Matrix function not recognised! Value is ", matfun
-      errorflag = 1
-      return
-    end if
+    call lineq(ovrlp_mat, C_k, D)   !!! Carry out linear equations
 
     deallocate(C_k, stat = ierr)
     if (ierr==0) deallocate(ovrlp_mat, stat = ierr)

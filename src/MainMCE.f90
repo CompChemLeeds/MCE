@@ -345,6 +345,7 @@ Program MainMCE
 
           call genD_big(bset, mup, muq, restart) !Generates the multi config D  
                                       !prefactor and single config a & d prefactors
+                                      ! Moved to inside the genbasis sunbbroutines
           !$omp end critical
                                       
           initnorm = 0.0d0

@@ -35,6 +35,7 @@ contains
     integer, intent(inout) :: trspace
     complex(kind=8)::normtemp
     integer :: r, k, m, fields, fileun, ierr
+    character(len=5) :: loc_basis
     character(LEN=21) :: filenm, filenm2, myfmt
     character(LEN=10):: timestr
 
@@ -57,6 +58,14 @@ contains
       popsum = popsum + pop(bs, r, ovrlp)
     end do
     deallocate(ovrlp)
+    
+    if (recalcs.eq.-1) then
+      loc_basis = "SWARM"
+    else
+      loc_basis = basis
+    end if
+    
+    recalcs = 0
  
     if(size(bs).ne.1) then
        
@@ -75,16 +84,16 @@ contains
           write(6,"(a,a,e13.5e3)") "Warning. Initial Norm outside established ",&
                        "parameters, with a value of ", absnorm
           write(6,"(a)") ""
-          if ((basis.eq."SWARM").or.(basis.eq."SWTRN")) restart = 1
+          if ((loc_basis.eq."SWARM").or.(loc_basis.eq."SWTRN")) restart = 1
         end if
       else
         if (absnorm.lt.lowlimnorm) then
           write(6,'(a,es16.8e3)'), "Initial Norm too low with a value of ", absnorm
-          if (basis.eq."SWTRN") then
+          if (loc_basis.eq."SWTRN") then
             write(6,"(a,i0)") "Reducing train spacing spacing to ", int(real(trspace) * 0.95)
             write(6,"(a)") ""
             trspace = int(real(trspace) * 0.95)
-          else if (basis.eq."SWARM") then
+          else if (loc_basis.eq."SWARM") then
             write(6,"(a,es16.8e3)") "Increasing compression parameter to", 1/(alcmprss * 0.95d0)
             write(6,"(a)") ""
             alcmprss = alcmprss * 0.95d0
@@ -92,11 +101,11 @@ contains
           restart = 1
         else if (absnorm.gt.uplimnorm) then
           write(6,'(a,es16.8e3)'), "Initial Norm too high with a value of ", absnorm
-          if (basis.eq."GRID") then
+          if (loc_basis.eq."GRID") then
             write(6,"(a,i0)") "Increasing train spacing to ", int(real(trspace) * 1.05)
             write(6,"(a)") ""
             trspace = int(real(trspace) * 1.05)
-          else if (basis.eq."SWARM") then
+          else if (loc_basis.eq."SWARM") then
             write(6,"(a,es16.8e3)") "Reducing compression parameter to", 1/(alcmprss * 1.05d0)
             write(6,"(a)") ""
             alcmprss = alcmprss * 1.05d0

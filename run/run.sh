@@ -196,7 +196,7 @@ if [[ $freqflg != 0 && $freqflg != 1 ]]; then
   exit 1
 fi
 
-if [[ $freqflg -eq 1 ]]; then ./integrator.exe; fi
+if [[ $freqflg -eq 1 && ! -f freq.dat ]]; then ./integrator.exe; fi
 
 sed -i "s/^Repeats.*/Repeats $REPS/g" input2.dat   # Writes number of repeats per
 grep "^Repeats $REPS" input2.dat > /dev/null       # folder to input.dat file
@@ -377,7 +377,8 @@ for a in "${methseq[@]}"; do
       cd $SUBDIR/
       echo "Program Executing in $EXDIR"
       if [[ $CORES -ne 1 ]]; then export OMP_NUM_THREADS=$CORES; fi
-      ./MCE.exe #&> $FILE.o1 &
+#      valgrind --leak-check=yes --track-origins=yes ./MCE.exe &> valgrindout.o1 &
+	./MCE.exe
       cd $RUNF
     fi
   done

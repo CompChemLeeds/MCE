@@ -11,23 +11,24 @@
 
 # Inputs are the same as those desired FOR A SINGLE FOLDER
 
-ndim_min=150
-ndim_max=1500
-nbf_min=150
-nbf_max=1500
+ndim_min=20
+ndim_max=40
+nbf_min=100
+nbf_max=500
 k=0
 
 if [ ! -d calibinputs ]; then mkdir calibinputs; else cd calibinputs; rm *; cd ..; fi
 if [ ! -f input2.dat ]; then cp input.dat input2.dat; fi
 
-j=10
-sed -i "s/^in_nbf.*/in_nbf $j/g" input2.dat
-for ((i=ndim_min; i<=ndim_max; i=i+50)); do
- sed -i "s/^ndim.*/ndim $i/g" input2.dat   # Change the dimensionality
- sed -i "s/^Runfolder.*/Runfolder scaletst_${i}dim_${j}bf/g" input2.dat
- k=$[$k+1]
- cp input2.dat ./calibinputs/input.$k
-done 
+for i in 0 1; do
+ sed -i "s/^qss.*/qss $i/g" input2.dat   # Change the qss flag
+ for j in 100 200 400; do
+  sed -i "s/^in_nbf.*/in_nbf $j/g" input2.dat
+  sed -i "s/^Runfolder.*/Runfolder UBO_qss${i}_60dim_${j}bf/g" input2.dat
+   k=$[$k+1]
+  cp input2.dat ./calibinputs/input.$k
+ done
+done
 
 i=10
 sed -i "s/^ndim.*/ndim $i/g" input2.dat   # Change the dimensionality
@@ -42,7 +43,8 @@ rm input2.dat
 
 echo "$k files created. Starting execution...."
 
-for ((i=1; i<=$k; i++)); do 
+for ((i=1; i<=$k; i++)); do
   cp ./calibinputs/input.$i ./input.dat
   ./run.sh $1 $2 $3
+  mv ./result.sh result_${i}.sh
 done

@@ -369,11 +369,12 @@ Program MainMCE
           call allocbs(bset, nbf)
 
           !$omp critical             ! Critical block needed for random number gen. 
-          call genbasis(bset,mup,muq,alcmprss,gridsp,time,initgrid,reps,map_bfs) 
-          !$omp end critical         
+          call genbasis(bset,mup,muq,alcmprss,gridsp,time,initgrid,reps,map_bfs)      
 
           call genD_big(bset, mup, muq, restart) !Generates the multi config D  
                                       !prefactor and single config a & d prefactors
+          !$omp end critical
+                                      
           initnorm = 0.0d0
           initnorm2 = 0.0d0
 

@@ -407,95 +407,133 @@ contains
 
 !--------------------------------------------------------------------------------------------------
 
-  subroutine reloc_basis2(bsnew, bsold, x) ! Relocation for MCEv1 or MCEv2 after cloning
+  subroutine reloc_basis2(bsnew, bsold, x)
 
     implicit none
 
     type(basisfn), dimension(:), allocatable, intent(inout) :: bsnew   ! This is the new basis set
-    type(basisfn), dimension(:), allocatable, intent(inout) :: bsold   ! This is the previous basis set.
+    type(basisfn), dimension(:), allocatable, intent(in) :: bsold   ! This is the previous basis set.
     integer, intent(in) :: x
  
-    complex(kind=8), dimension (:,:), allocatable :: ovrlp_mat
-    complex(kind=8), dimension (:), allocatable :: cnew, dnew
-    complex(kind=8) :: sumamps
-    integer :: j, k, r, ierr, nbfnew, nbfold
-
-    if (errorflag .ne. 0) return
-       
+    type(basisfn) :: bf
+    complex(kind=8), dimension (:,:), allocatable :: ovrlp_mat, zt, bigA, cnew, C_k, dnew
+    real(kind=8), dimension (:), allocatable :: DC, qstrt, pstrt
+    real(kind=8) :: realz, imagz, sumamps
+    integer, dimension (:,:), allocatable :: coordinates
+    integer, dimension (:), allocatable :: qsize,psize,columnsize,columnrep,remove
+    integer :: j, k, l, m, n, p, q, r, y, z, ierr, nbfnew, nbfold
+    
     nbfnew = size(bsnew)
     nbfold = size(bsold)
-       
+    
     if (method=="MCEv1") then
       do j=1,nbfold
-        sumamps = (0.0d0, 0.0d0)
         do r=1,npes
-          sumamps = sumamps + dconjg(bsold(j)%a_pes(r))*bsold(j)%a_pes(r)
-        end do
-        bsold(j)%D_big = cdsqrt(sumamps)
-        do r=1,npes
-          bsold(j)%d_pes(r) = bsold(j)%d_pes(r)/bsold(j)%D_big
-          bsold(j)%a_pes(r) = bsold(j)%d_pes(r) * cdexp (i*bsold(j)%s_pes(r))
-        end do
-      end do
-      do j=1,nbfnew
-        sumamps = (0.0d0, 0.0d0)
-        do r=1,npes
-          sumamps = sumamps + dconjg(bsnew(j)%a_pes(r))*bsnew(j)%a_pes(r)
-        end do
-        bsnew(j)%D_big = cdsqrt(sumamps)
-        do r=1,npes
-          bsnew(j)%d_pes(r) = bsnew(j)%d_pes(r)/bsnew(j)%D_big
-          bsnew(j)%a_pes(r) = bsnew(j)%d_pes(r) * cdexp (i*bsnew(j)%s_pes(r))
-        end do
-      end do
-    end if
-    
-    allocate (cnew(nbfnew), stat=ierr)
-    if (ierr==0) allocate (ovrlp_mat(nbfnew,nbfold), stat=ierr)
+          sumamps = dconjg(bsold(j)%a_pes
+        bsold(j)%
+
+    allocate (zt(nbfnew,ndim), stat=ierr)
+    if (ierr==0) allocate (bigA(nbf,npes), stat=ierr)
+    if (ierr==0) allocate (cnew(nbfold,npes), stat=ierr)
+    if (ierr==0) allocate (ovrlp_mat(nbfold,nbfnew), stat=ierr)
     if (ierr/=0) then
       write (0,"(a)") "Error in allocating temporary z values for reprojection subroutine"
       errorflag=1
       return
     end if 
-        
+    
+    
+
+    ! Build the arrays containing all needed basis set information
+    do j=1,size(zt,1)
+      zt(j,1:ndim)=bs(j)%z(1:ndim)
+      do r = 1,npes
+        bigA(j,r) = bs(j)%D_big * bs(j)%d_pes(r) * exp(i*bs(j)%s_pes(r))
+      end do
+    end do
+
+!    call deallocbs(bs)
+
     ! Ovrlp_mat is the overlap with the initial wavepacket
-    do j=1,nbfold
-      do k=1,nbfnew
-        cnew(k) = (0.0d0, 0.0d0)
-        sumamps = (0.0d0, 0.0d0)
-        do r=1,npes
-          sumamps = sumamps + dconjg(bsnew(k)%a_pes(r))*bsold(j)%a_pes(r)
-        end do
-        ovrlp_mat(k,j) = ovrlpij(bsnew(k)%z(:), bsold(j)%z(:)) * sumamps
+    do j=1,size(zt,1)
+      do k=1,size(z0,1)
+        cnew(k,:) = (0.0d0, 0.0d0)
+        ovrlp_mat(k,j) = ovrlpij(z0(k,:), zt(j,:)) 
       end do
     end do
 
     do r=1,npes
-      cnew(:) = matmul(ovrlp_mat,bsold(:)%D_big)
+      cnew(:,r) = matmul(ovrlp_mat,bigA(:,r))
     end do
 
     deallocate(ovrlp_mat, stat=ierr)
-    if (ierr==0) allocate (ovrlp_mat(nbfnew,nbfnew), stat=ierr)
+    if (ierr==0) deallocate(bigA, stat=ierr)
+    if (ierr==0) deallocate(zt, stat=ierr)
+    if (ierr==0) allocate(remove(size(z0,1)), stat=ierr)
     if (ierr/=0) then
-      write (0,"(a,a)") "Error in de- and re-allocation of first overlap matrix in reprojection subroutine"
+      write (0,"(a,a)") "Error in allocation of remove array or deallocation of first", &
+               " overlap matrix in reprojection subroutine"
       errorflag = 1
       return
     end if
+ 
+    remove=0   ! Array of flags to say whether or not a grid point needs removing
 
-    ovrlp_mat = ovrlpphimat(bsnew)
+    if ((nbfadapt.eq."YES").and.(npes.eq.1)) then 
+      do k=1,size(remove)
+        if (abs(cnew(k,1)).lt.bfeps) then
+          remove(k) = 1
+        else
+          remove(k) = 0
+        end if
+      end do
+      nbf = in_nbf - sum(remove(1:in_nbf))
+      write (6,"(i0,a,i0,a,i0)") sum(remove(1:in_nbf)), " of ", in_nbf, &
+                " bfs were removed. nbf now = ", nbf
+    end if
 
-    allocate (dnew(nbfnew), stat=ierr)
+    allocate (C_k(nbf,npes), stat = ierr)  
+    if (ierr==0) allocate (ovrlp_mat(nbf,nbf), stat=ierr)
     if (ierr/=0) then
-      write (0,"(a,a)") "Error in allocation of dnew in reprojection subroutine"
+      write (0,"(a)") "Error in allocation of overlap matrix or C_k in reprojection sub"
+      errorflag=1
+      return
+    end if
+
+    p=1
+    do k=1,size(remove)
+      if (remove(k)==0) then
+        do r=1,npes
+          C_k(p,r) = cnew(k,r)
+        end do
+        q=1
+        do j=1,size(remove)
+          if (remove(j)==0) then
+            ovrlp_mat(q,p) = ovrlpij(z0(j,:), z0(k,:))
+            q=q+1
+          end if
+        end do           
+        p=p+1
+      end if
+    end do
+
+    deallocate (cnew, stat = ierr)
+    if (ierr==0) allocate (cnew(nbf,npes), stat=ierr)
+    if (ierr==0) allocate (dnew(nbf,npes), stat=ierr)
+    if (ierr/=0) then
+      write (0,"(a,a)") "Error in de- and re-allocation of cnew or in allocation of dnew", &
+                   " in reprojection subroutine"
       errorflag=1
       return
     end if    
 
+    cnew = C_k
+
     do r=1,npes
       if (matfun.eq.'zgesv') then
-        call lineq(ovrlp_mat, cnew, dnew)
+        call lineq(ovrlp_mat, cnew(:,r), dnew(:,r))
       else if (matfun.eq.'zheev') then
-        call matinv2(ovrlp_mat, cnew, dnew)
+        call matinv2(ovrlp_mat, cnew(:,r), dnew(:,r))
       else
         write(0,"(a)") "Error! Matrix function not recognised! Value is ", matfun
         errorflag = 1
@@ -505,37 +543,93 @@ contains
 
     deallocate(ovrlp_mat, stat=ierr)
     if (ierr/=0) then
-      write (0,"(a,a)") "Error in deallocation of input overlap"
+      write (0,"(a,a)") "Error in allocation of Linear Algebra check array or deallocation",&
+                  " of input overlap"
       errorflag=1
       return
     end if
 
-    do k=1,nbfnew
-      bsnew(k)%D_big = dnew(k)
-    end do
-   
-    if (method=="MCEv1") then
-      do j=1,nbfnew
+    call allocbs(bs, nbf)
+    deallocate (cnew, stat=ierr)
+    if (ierr/=0) then
+      write (0,"(a,a)") "Error deallocating cnew ",& 
+                    "in relocation subroutine"
+      errorflag = 1
+      return
+    end if
+
+    j=1
+    if (method.eq."MCEv1") then
+      do k=1,nbf
+        bs(k)%D_big = (1.0d0,0.0d0)
+        bs(k)%z(1:ndim) = z0(k,1:ndim)
         do r=1,npes
-          bsnew(j)%d_pes(r) = bsnew(j)%d_pes(r)*bsnew(j)%D_big
-          bsnew(j)%a_pes(r) = bsnew(j)%d_pes(r) * cdexp (i*bsnew(j)%s_pes(r))
+          bs(k)%s_pes(r) = 0.0d0
+          bs(k)%a_pes(r) = dnew(k,r)
+          bs(k)%d_pes(r) = dnew(k,r)
         end do
-        bsnew(j)%D_big = (1.0d0,0.0d0)
+        j=j+1
       end do
-      do j=1,nbfold
-        do r=1,npes
-          bsold(j)%d_pes(r) = bsold(j)%d_pes(r)*bsold(j)%D_big
-          bsold(j)%a_pes(r) = bsold(j)%d_pes(r) * cdexp (i*bsold(j)%s_pes(r))
-        end do
-        bsold(j)%D_big = (1.0d0,0.0d0)
+    else if (method.eq."CCS") then         
+      do k=1,in_nbf
+        if (remove(k)==0) then
+          bs(j)%D_big = dnew(j,1)
+          bs(j)%s_pes(1) = 0.0d0
+          bs(j)%z(1:ndim) = z0(k,1:ndim)
+          bs(j)%a_pes(1) = (1.0d0,0.0d0)
+          bs(j)%d_pes(1) = (1.0d0,0.0d0)
+          j=j+1
+        end if
       end do
     end if
 
-    deallocate(dnew, stat=ierr)
-    if (ierr/=0) then
-      write (0,"(a)"),"Error deallocating dnew arrays in reloc"
+    if (j-1/=nbf) then
+      write (0,"(a)") "Error! Mismatch in (new) basis set size!"
       errorflag = 1
       return
+    end if
+
+    if ((debug==1).and.(method.eq."CCS")) then
+      allocate (DC(in_nbf), stat=ierr)
+      if (ierr/=0) then
+        write (0,"(a,a)") "Error allocating DC array ",& 
+                      "in relocation subroutine"
+        errorflag = 1
+        return
+      end if      
+      do j=1,in_nbf
+        DC(j) = -1.0d0
+      end do
+      j=1
+      do k=1,in_nbf
+        if (remove(k)==0) then
+          DC(k) = abs(dble(dconjg(dnew(j,1))*C_k(j,1)))
+          j=j+1
+        end if
+      end do
+      call graphwavefn(DC, x-1, z0)
+    end if
+
+    deallocate(remove, stat=ierr)
+    if (ierr==0) deallocate(dnew, stat=ierr)
+    if (ierr==0) deallocate(C_k, stat=ierr)
+    if (ierr==0) deallocate(DC, stat=ierr)
+    if (ierr/=0) then
+      write (0,"(a)"),"Error deallocating remove, dnew, C_k or DC arrays in reloc"
+      errorflag = 1
+      return
+    end if
+
+    if (nbfadapt=="YES") then
+      open(unit=4532,file="nbf.dat",status="old",access="append",iostat=ierr)
+      if (ierr/=0) then
+        write (0,"(a)"),"Error opening nbf file in reloc"
+        errorflag = 1
+        return
+      end if
+      write(4532,'(e12.5,i5)') time, nbf
+      close(4532)
+
     end if
 
     return
@@ -648,9 +742,10 @@ contains
     integer, dimension(:), allocatable, intent(inout) :: clone, clonenum
     integer, intent (inout) :: nbf
     integer, intent (in) :: x, reps
+    complex(kind=8), dimension (:,:), allocatable :: zold
     complex(kind=8), dimension (:), allocatable :: dz
     real(kind=8), dimension (:), allocatable :: dummy_arr
-    real(kind=8) :: brforce, normar, sumamps
+    real(kind=8) :: brforce, normar
     integer, dimension(:), allocatable :: clonehere, clonecopy, clonecopy2 
     integer :: k, m, j, n, nbfnew, ierr, r, clonetype
     character(LEN=3)::rep
@@ -796,7 +891,7 @@ contains
             end do
             
             ! Second child trajectory
-            bsnew(nbf+j)%D_big = bs(k)%D_big * sqrt(1.-(dconjg(bs(k)%a_pes(in_pes))*bs(k)%a_pes(in_pes)))
+            bsnew(nbf+j)%D_big = bs(k)%D_big
             bsnew(nbf+j)%d_pes(in_pes) = (0.0d0,0.0d0)
             do r=1,npes
               if (r.ne.in_pes) then
@@ -804,7 +899,7 @@ contains
                   bsnew(nbf+j)%d_pes(r) = (1.0d0,0.0d0)
                 else
                   bsnew(nbf+j)%d_pes(r) = bs(k)%d_pes(r)/&
-                                  sqrt(1.-(dconjg(bs(k)%a_pes(in_pes))*bs(k)%a_pes(in_pes)))            
+                                  sqrt(1.-(dconjg(bs(k)%a_pes(1))*bs(k)%a_pes(1)))            
                 end if
               end if
               bsnew(nbf+j)%s_pes(r) = bs(k)%s_pes(r)
@@ -813,7 +908,7 @@ contains
             do m=1,ndim
               bsnew(nbf+j)%z(m) = bs(k)%z(m)
             end do
-                    
+          
           else if (clonetype==2) then
 
             ! First child trajectory
@@ -850,56 +945,6 @@ contains
             do m=1,ndim
               bsnew(nbf+j)%z(m) = bs(k)%z(m) + dz(m)
             end do
-            
-          else if (clonetype==3) then
-          
-            !First child trajectory
-            sumamps = 0.0d0
-            do r=1,npes
-              call random_number(q)
-              call random_number(p)
-              q = q * 2.0 - 1.0     ! possibly try modifying the range to enforce close to pes amplitudes
-              p = p * 2.0 - 1.0
-              bsnew%d_pes(r) = cmplx(q,p,kind=8)
-              sumamps = sumamps + dsqrt(dble(cmplx(q,p,kind=8) * cmplx(q,-1.0*p,kind=8)))
-            end do
-            do r=1,npes
-              bsnew(k)%d_pes(r) = bsnew(k)%d_pes(r) / sumamps
-              bsnew(k)%s_pes(r) = bs(k)%s_pes(r)
-              bsnew(k)%a_pes(r) = bsnew(k)%d_pes(r) * cdexp(i*bsnew(k)%s_pes(r))
-            end do
-            do m=1,ndim
-              bsnew(k)%z(m) = bs(k)%z(m)
-            end do
-            
-            !Second child trajectory
-            sumamps = 0.0d0
-            do r=1,npes
-              call random_number(q)
-              call random_number(p)
-              q = q * 2.0 - 1.0     ! possibly try modifying the range to enforce close to pes amplitudes
-              p = p * 2.0 - 1.0
-              bsnew%d_pes(r) = cmplx(q,p,kind=8)
-              sumamps = sumamps + dsqrt(dble(cmplx(q,p,kind=8) * cmplx(q,-1.0*p,kind=8)))
-            end do
-            do r=1,npes
-              bsnew(k)%d_pes(r) = bsnew(k)%d_pes(r) / sumamps
-              bsnew(k)%s_pes(r) = bs(k)%s_pes(r)
-              bsnew(k)%a_pes(r) = bsnew(k)%d_pes(r) * cdexp(i*bsnew(k)%s_pes(r))
-            end do
-            do m=1,ndim
-              bsnew(k)%z(m) = bs(k)%z(m)
-            end do
-            
-            !Modifications to capital D amplitudes
-
-            bsnew(k)%D_big = bs(k)%D_big * (bsnew(nbf+j)%a_pes(2)*bs(k)%a_pes(1)-bsnew(nbf+j)%a_pes(1)*bs(k)%a_pes(2))
-            bsnew(nbf+j)%D_big = bs(k)%D_big * (bsnew(k)%a_pes(1)*bs(k)%a_pes(2)-bsnew(k)%a_pes(2)*bs(k)%a_pes(1))
-            
-            bsnew(k)%D_big = bsnew(k)%D_big/&
-                    (bsnew(k)%a_pes(1)*bsnew(nbf+j)%a_pes(2)-bsnew(k)%a_pes(2)*bsnew(nbf+j)%a_pes(1))
-            bsnew(nbf+j)%D_big = bsnew(nbf+j)%D_big/&
-                    (bsnew(k)%a_pes(1)*bsnew(nbf+j)%a_pes(2)-bsnew(k)%a_pes(2)*bsnew(nbf+j)%a_pes(1))
             
           end if
           

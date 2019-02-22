@@ -675,29 +675,39 @@ contains
       do j=1,size(bs)
         if (qss==1) then
           if (npes==2) then
-            call random_number(x)
-            x = x * 2.0 * pirl
-            call random_number(y)
-            y = y * 2.0 * pirl
+!            if (randfunc.eq."GAUS") then
+              call random_number(x)
+              call random_number(y)
+              x = x * 2.0d0 * pirl
+              y = y * 2.0d0 * pirl
+!            else
+!              x = ZBQLUAB(0.0d0,2.0d0*pirl)
+!              y = ZBQLUAB(0.0d0,2.0d0*pirl)
+!            end if
             do r=1,npes
               if (r==in_pes) then
-                bs(j)%a_pes(r)=cmplx(dcos(x),0.0d0)
+                bs(j)%a_pes(r)=cmplx(dcos(x),0.0d0,kind=8)
               else
-                bs(j)%a_pes(r)=cmplx(dsin(x)*dcos(y),dsin(x)*dsin(y))
+                bs(j)%a_pes(r)=cmplx(dsin(x)*dcos(y),dsin(x)*dsin(y),kind=8)
               end if
             end do
           else
             sumamps = 0.0d0
             do r=1,npes
-              call random_number(x)
-              call random_number(y)
-              x = x * 2.0 - 1.0
-              y = y * 2.0 - 1.0
-              bs(j)%a_pes(r) = cmplx(x,y)
-              sumamps = sumamps + dsqrt(dble(cmplx(x,y) * cmplx(x,-1.0*y)))
+!              if (randfunc.eq."GAUS") then
+                call random_number(x)
+                call random_number(y)
+                x = x * 2.0d0 - 1.0d0
+                y = y * 2.0d0 - 1.0d0
+!              else
+!                x = ZBQLUAB(-1.0d0,1.0d0)
+!                y = ZBQLUAB(-1.0d0,1.0d0)
+!              end if
+              bs(j)%a_pes(r) = cmplx(x,y,kind=8)
+              sumamps = sumamps + dble(bs(j)%a_pes(r) * dconjg(bs(j)%a_pes(r)))
             end do
             do r=1,npes
-              bs(j)%a_pes(r) = bs(j)%a_pes(r) / sumamps
+              bs(j)%a_pes(r) = bs(j)%a_pes(r) / dsqrt(sumamps)
             end do
           end if
         else
@@ -833,38 +843,6 @@ contains
     return
 
   end subroutine genD_big
-
-!------------------------------------------------------------------------------------
-
-  subroutine gend_small(bs)   !   Level 1 Subroutine
-
-    implicit none
-    type(basisfn), dimension(:), intent(inout) :: bs
-    integer :: j
-
-    if (errorflag .ne. 0) return
-
-    if (method == "MCEv1") then
-      do j=1,size(bs)
-        bs(j)%a_pes(in_pes) = bs(j)%D_big
-        bs(j)%d_pes(in_pes) = bs(j)%D_big
-        bs(j)%D_big = (1.0d0,0.0d0)
-      end do
-    else if ((method == "MCEv2").or.(method == "CCS")) then
-      do j=1,size(bs)
-        bs(j)%a_pes(in_pes) = (1.0d0,0.0d0)
-        bs(j)%d_pes(in_pes) = (1.0d0,0.0d0)
-      end do
-    else
-      write(0,"(a)") "Error! The method is wrong"
-      write(0,"(a)") "I don't even know how you got this far"
-      errorflag = 1
-      return
-    end if
-
-    return
-
-  end subroutine gend_small 
 
 !*************************************************************************************************!
 

@@ -27,4 +27,7 @@ The run.sh script creates a second script, called result.sh which when run calls
 which combines the results from all the completed runs. This script deletes the original output files
 so use with care!
 
-Any problems, contact me.
+Except as represented in this agreement, all work in this repository is provided “AS IS”. Other than as
+provided in this agreement, the developer makes no other warranties, express or implied, and hereby 
+disclaims all implied warranties, including any warranty of merchantability and warranty of fitness 
+for a particular purpose.

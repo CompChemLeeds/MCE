@@ -19,7 +19,7 @@ Runfolder testforMWE
 gen YES
 
 #Basis Set Propagation flag [YES/NO for propagating the basis set]
-prop NO
+prop YES
 
 #Restart flag [1/0 for restarting a previously timed out simulation. This should be automatically set by the restart script]
 restart 0

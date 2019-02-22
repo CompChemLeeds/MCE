@@ -13,7 +13,7 @@ SpecDen UBO
 
 #Name of running folder [Default : <method>-<system>-<random number> ie CCS-HP-31254 (input "default", case insensitive)
 #                       Otherwise:  <method>-<system>-<runfolder string> ie CCS-HP-withgrids]
-Runfolder miller0_UBO_60dim_400bf
+Runfolder UBO_qss1_60dim_400bf
 
 #Debug flag [ 0: no debug outputs, 1: debug outputs. Does not really work for dynamic basis set sizes]
 debug 0
@@ -58,7 +58,7 @@ basis SWARM
 wfn_init WHOLE
 
 # allows for the use of the quantum superposition sampling amplitudes [1/0]. 0=standard initial sampling, 1=quantum superposition sampling.
-qss 0
+qss 1
 
 # allows for symmetric/antisymmetric basis sets to be created. Used with wfn_init=SPLIT [YES/NO/ANTI]
 symm YES

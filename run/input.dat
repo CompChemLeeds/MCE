@@ -52,7 +52,7 @@ npes 2
 basis SWTRN
 
 # allows for the use of the quantum superposition sampling amplitudes [1/0]. 0=standard initial sampling, 1=quantum superposition sampling.
-qss 0
+qss 1
 
 # Compression parameter (can be tweaked to allow better norm value, or altered automatically)   Used for swarms/swarm-trains
 ALCMP 1.0d0

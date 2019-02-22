@@ -2,9 +2,9 @@
 #					Input File								!!!
 #!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-# System (Currently can be SB [Spin Boson],        HP [Harmonic Potential], FP [Free Particle], MP [Morse Potential], 
-#                          IV [Inverted Gaussian], CP [Coulomb Potential],  HH [Henon-Heiles]. 
-#  SB works only with MCE, all others with CCS. 
+# System (Currently can be SB [Spin Boson],        HP [Harmonic Potential], FP [Free Particle], MP [Morse Potential],
+#                          IV [Inverted Gaussian], CP [Coulomb Potential],  HH [Henon-Heiles].
+#  SB works only with MCE, all others with CCS.
 System: SB
 
 # Spectral Density (only valid for Spin Boson, with values EXP [exponential cutoff], DL [Drude Lorentz/Debye],
@@ -13,14 +13,7 @@ SpecDen EXP
 
 #Name of running folder [Default : <method>-<system>-<random number> ie CCS-HP-31254 (input "default", case insensitive)
 #                       Otherwise:  <method>-<system>-<runfolder string> ie CCS-HP-withgrids]
-<<<<<<< HEAD
-Runfolder UBO_qss1_60dim_400bf
-=======
-Runfolder testofamplitudes
->>>>>>> oliver2
-
-#Debug flag [ 0: no debug outputs, 1: debug outputs. Does not really work for dynamic basis set sizes]
-debug 0
+Runfolder testforMWE
 
 #Basis Set Generation flag [YES/NO for generating the basis set]
 gen YES
@@ -34,8 +27,8 @@ restart 0
 #Flag for adaptive altering of the compression parameter in swarms/grid-swarms/train-swarms or the grid spacing for grids. [YES/NO]
 cmprss YES
 
-#Propagation method [can be CCS, MCEv1, MCEv2, AIMC-MCE1 (first pass), AIMC-MCE2 (Second pass) or MCE12 (uses both MCE methods). No support for vMCG, F-CCS or 2L-CCS yet.]
-method MCEv1
+#Propagation method [can be CCS, MCEv1, MCEv2, or MCE12 (uses both MCE methods)]
+method MCEv2
 
 #Number of repeats. Do not need to set manually - this is set by the run command.
 Repeats 100
@@ -43,8 +36,8 @@ Repeats 100
 #Conjugate repeats flag. Allows even number repeats to start at the complex conjugate of the previous runs initial position [YES/NO]
 Conjugate_Repeats NO
 
-# Number of basis functions 
-in_nbf 50
+# Number of basis functions
+in_nbf 10
 
 # Number of dimensions
 ndim 50
@@ -55,54 +48,21 @@ in_PES 1
 #determine n.o of configurations for MCE
 npes 2
 
-# determines shape of the initial basis [SWARM/SWTRN/TRAIN/GRID/GRSWM]
-basis SWARM
-
-# determines the structure of the Z_0 initial central coherent state [WHOLE/SPLIT]. Split Z_0 is reflected in the q=0 line
-wfn_init WHOLE
+# determines shape of the initial basis [SWARM/SWTRN]
+basis SWTRN
 
 # allows for the use of the quantum superposition sampling amplitudes [1/0]. 0=standard initial sampling, 1=quantum superposition sampling.
 qss 1
 
-# allows for symmetric/antisymmetric basis sets to be created. Used with wfn_init=SPLIT [YES/NO/ANTI]
-symm YES
-
-# Compression parameter (can be tweaked to allow better norm value, or altered automatically)   Used for swarms/swarm-trains/grid-swarms
-ALCMP 0.10911607E+02
-
-# Flag for adaptive basis set size (yes/no) [Selecting No will give a constant basis set size. This is default behaviour] Used for Grids/grid-swarms
-nbfadapt no
-
-# Basis set trimming parameter. If overlap is less than this value, basis function is removed. Used when nbfadapt = yes
-nbfepsilon 1.0d-06
-
-# gives grid spacing. If grid is not selected (previous parameter) this parameter will be read, but not used. Used for grids/grid-swarms
-gridsp 1.40
-
-# the size of the grid in the q,x coordinate. Used for 3d grids
-qsizex 0
-
-# the size of the grid in the p,x coordinate. Used for 3d grids
-psizex 0
-
-# the size of the grid in the q,y coordinate. Used for 3d grids
-qsizey 0
-
-# the size of the grid in the p,y coordinate. Used for 3d grids
-psizey 0
-
-# the size of the grid in the q,z coordinate. Used for grids/grid-swarms
-qsizez 100
-
-# the size of the grid in the p,z coordinate. Used for grids/grid-swarms
-psizez 26
+# Compression parameter (can be tweaked to allow better norm value, or altered automatically)   Used for swarms/swarm-trains
+ALCMP 1.0d0
 
 # frequency flag for using a set of precalculated frequencies with the spin boson model
 # freqflg = 1 enables reading of precalculated frequencies, freqflg = 0 mean they are calculated withing the program
-freqflg 1
+freqflg 0
 
 # Flag for cloning basis functions (yes/no/blind/blind+)
-Cloning yes
+Cloning no
 
 # Cloning threshold (value of |sum_r(a_{r,k})|) - must be >= 0.05 and < 0.25, default 0.249
 Threshold 0.249d0
@@ -113,14 +73,14 @@ max_cloning 4
 # Minimum cloning frequency (ie how many timesteps since last cloning is new cloning event allowed)
 clon_freq 200
 
-# spacing between trajectories for train type basis set. Used for trains/swarm-trains
-trainsp 60 
+# spacing between trajectories for train type basis set. Used for swarm-trains
+trainsp 300
 
-# default steps per train. Used for swarm-trains only. This is sometimes increased/decreased by 1.
-def_stp 20
+# length of train in carriages. Used for swarm-trains only
+train_len 10
 
-# Matrix function (zgesv - linear algebra, zheev - matrix inversion)
-matfun zgesv
+# Size of the central swarm for swtrn basis. Used for swarm-trains only
+swtrn_swarm_size 10
 
 # Random Number generation function (ZBQL - using ZBQLNOR subroutine, GAUS - using function based on numerical recipes)
 randfunc ZBQL

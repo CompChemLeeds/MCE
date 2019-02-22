@@ -2,7 +2,7 @@ Program MainMCE
 
 !***********************************************************************************!
 !                                                                                   !
-!  MCE program - by Chris Symonds     Version 0.985              Date : 04/03/15    !
+!  MCE program - by Chris Symonds     Version 1.01               Date : 04/03/15    !
 !                                                                                   !
 !  This Program performs simulations using the Multi-Configurational Ehrenfest      !
 !  method with the formulations given in D. Shalashilin's 2010 (MCEv2) and          !
@@ -39,9 +39,6 @@ Program MainMCE
 !         histogram is generatedwith which an appropriate static stepsize is        !
 !         generated.                                                                !
 !                                                                                   !
-!  To do list as of 08/04/2015:                                                     !
-!      1) Include multilayer CCS and possible Fermionic CCS capability              !
-!      2) Clean and fully comment code to bring it up to a version 1.0 level        !
 !                                                                                   !
 !  Changelog :                                                                      !
 !      25/09/13 - Added Comments and large preamble section to Main and preamble to !
@@ -52,7 +49,7 @@ Program MainMCE
 !                 sets between theformat needed for this code and the format needed !
 !                 for JKs code                                                      !
 !      09/01/14 - Found and remedied errors in the MCEv1 time derivative            !
-!                 subroutines, meaning thatnow both MCE methods normalise and       !
+!                 subroutines, meaning that now both MCE methods normalise and       !
 !                 conserve norms.                                                   !
 !      17/01/14 - Rearranged variables so that the spin boson specific arrays wm,   !
 !                 Cm and sig are now local rather than global. The 6 parameters     !
@@ -116,12 +113,6 @@ Program MainMCE
 !                 calculated                                                        !
 !               - Changed the running scripts to allow for use of make to compile   !
 !               - Ensured that the program works properly for all model potentials  !
-!      08/04/15 - Implemented the AIMC-MCE propagation system which allows the      !
-!                 propagation of the single configurations separately from the      !
-!                 multi-configurational part. This is not really vital for the      !
-!                 simulation of models, as the single configuration equations are   !
-!                 not very expensive, however if the program were to be extended to !
-!                 QMD with real molecules it would be useful.                       !
 !                                                                                   !
 !      Further changelog can be found in the commit statements from the git repo    !
 !                                                                                   !
@@ -145,12 +136,11 @@ Program MainMCE
   complex(kind=8), dimension (:,:), allocatable :: initgrid, ovrlp
   complex(kind=8)::normtemp, norm2temp, ehren, acft, extmp
   real(kind=8), dimension(:), allocatable :: mup, muq, popt
-  real(kind=8) :: nrmtmp, nrm2tmp, ehrtmp, gridsp, timestrt_loc 
+  real(kind=8) :: nrmtmp, nrm2tmp, ehrtmp, gridsp, timestrt_loc
   real(kind=8) :: timeend_loc, timeold, time, dt, dtnext, dtdone, initehr
   real(kind=8) :: initnorm, initnorm2, alcmprss, dum_re1, dum_re2
-  integer, dimension(:,:), allocatable :: map_bfs
   integer, dimension(:), allocatable :: clone, clonenum
-  integer :: j, k, r, y, x, m, nbf, recalcs, conjrep, restart, reps
+  integer :: j, k, r, y, x, m, nbf, recalcs, conjrep, restart, reps, trspace
   integer :: ierr, timestpunit, stepback, dum_in1, dum_in2, dum_in3, finbf
   character(LEN=3):: rep
   
@@ -173,7 +163,7 @@ Program MainMCE
   write(6,"(a)") " ________________________________________________________________ "
   write(6,"(a)") "|                                                                |"
   write(6,"(a)") "|                                                                |"
-  write(6,"(a)") "|                  MCE Simulation Program v0.985                 |"
+  write(6,"(a)") "|                  MCE Simulation Program v1.02                  |"
   write(6,"(a)") "|                                                                |"
   write(6,"(a)") "|________________________________________________________________|"
   write(6,"(a)") ""
@@ -245,10 +235,10 @@ Program MainMCE
 
   !$omp parallel private (bset, dummybs, initgrid, ovrlp, normtemp,&
   !$omp                    norm2temp, ehren, acft, extmp, muq, mup, popt,  &
-  !$omp                    nrmtmp, nrm2tmp, ehrtmp, gridsp, timestrt_loc,           &
+  !$omp                    nrmtmp, nrm2tmp, ehrtmp, gridsp, timestrt_loc, trspace,  &
   !$omp                    timeend_loc, timeold, time, dt, dtnext, dtdone, initehr, &
-  !$omp                    initnorm, initnorm2, alcmprss, clone, clonenum, map_bfs, &
-  !$omp                    j, k, r, y, x, m, nbf, recalcs, conjrep, restart,     &
+  !$omp                    initnorm, initnorm2, alcmprss, clone, clonenum,          &
+  !$omp                    j, k, r, y, x, m, nbf, recalcs, conjrep, restart,        &
   !$omp                    reps, ierr, timestpunit, stepback, dum_in1, dum_in2,     &
   !$omp                    finbf, dum_in3, dum_re1, dum_re2, rep, genloc            )
   
@@ -270,6 +260,7 @@ Program MainMCE
     conjrep = 1
     genloc = gen
     restart=0
+    trspace = trainsp
     
     if (restrtflg==1) then
       call restartnum(k,genloc,restart)
@@ -277,24 +268,7 @@ Program MainMCE
         cycle
       end if
     end if
-    
-    if ((basis=="GRID").or.(basis=="GRSWM")) then
-      allocate (initgrid(in_nbf,ndim), stat=ierr)
-    else
-      allocate (initgrid(1,1), stat=ierr)   !allocated to prevent memory errors
-    end if
-    if (ierr/=0) then
-      write(0,"(a)") "Error allocating the initial grid array in main"
-      errorflag=1
-    end if
-    initgrid = (0.0d0,0.0d0)
-    
-    allocate(map_bfs(1,1), stat=ierr) ! allocated to prevent memory errors
-      if (ierr/=0) then
-        write (0,"(a,i0)") "Error allocating map_bfs array. ierr was ", ierr
-        errorflag = 1
-    end if
-      
+         
     allocate (popt(npes), stat=ierr)
     if (ierr/=0) then
       write(0,"(a)") "Error in allocating the temporary population array in Main"
@@ -340,8 +314,6 @@ Program MainMCE
 
       !**********Basis Set Generation Section Begins**************************!
       
-      if ((method=="AIMC2").and.(genloc.eq."Y")) genloc="N"
-
       if (genloc.eq."Y") then     ! begin the basis set generation section.
  
         restart = 1            ! a flag for if the basis set needs recalculating
@@ -362,17 +334,18 @@ Program MainMCE
           !$omp end critical
         end if
 
-        do while ((restart.eq.1).and.(recalcs.lt.Ntries).and.(alcmprss.gt.1.0d-7))
+        do while ((restart.eq.1).and.(recalcs.lt.Ntries).and.(alcmprss.gt.1.0d-5))
 
           restart = 0    ! if restart stays as 0, the basis set is not recalculated
 
           call allocbs(bset, nbf)
 
           !$omp critical             ! Critical block needed for random number gen. 
-          call genbasis(bset,mup,muq,alcmprss,gridsp,time,initgrid,reps,map_bfs)      
+          call genbasis(bset, mup, muq, alcmprss, time, reps, trspace)      
 
           call genD_big(bset, mup, muq, restart) !Generates the multi config D  
                                       !prefactor and single config a & d prefactors
+                                      ! Moved to inside the genbasis sunbbroutines
           !$omp end critical
                                       
           initnorm = 0.0d0
@@ -380,27 +353,31 @@ Program MainMCE
 
           ! Checks norms and population sum to ensure basis set is calculated
           ! properly. If not, restart is set to 1 so basis is recalculated
-          call initnormchk(bset,recalcs,restart,alcmprss,gridsp,initnorm,initnorm2)
+          
+          call initnormchk(bset,recalcs,restart,alcmprss,initnorm,initnorm2,trspace)
 
-          if ((basis.eq."TRAIN").and.(restart.eq.1)) then
-            if ((((conjflg==1).and.(conjrep.eq.2)).or.(conjflg/=1)).and.(recalcs.lt.Ntries)) then
-              !$omp critical 
-              call genzinit(mup, muq,reps)
-              !$omp end critical
-            else
-              do j=1,size(bset)
-                bset(j)%D_big = bset(j)%D_big/sqrt(initnorm)
-              end do
-              write(6,"(a,e16.8e3)") "Renormalising! Old norm was ", initnorm
-              call initnormchk(bset, recalcs, restart,alcmprss, gridsp, initnorm, initnorm2)
-              write(6,"(a,e16.8e3)") "               New norm is  ", initnorm
-              recalcs = recalcs - 1
-              restart = 0
-            end if
-          end if 
+!!!!!!! Block to force renormalisation. Use with caution !!!!!!!!!!!!!!
+
+!          if (restart.eq.1) then
+!            if ((((conjflg==1).and.(conjrep.eq.2)).or.(conjflg/=1)).and.(recalcs.lt.Ntries)) then
+!              !$omp critical 
+!              call genzinit(mup, muq,reps)
+!              !$omp end critical
+!            else
+!              do j=1,size(bset)
+!                bset(j)%D_big = bset(j)%D_big/sqrt(initnorm)
+!              end do
+!              write(6,"(a,e16.8e3)") "Renormalising! Old norm was ", initnorm
+!              call initnormchk(bset, recalcs, restart,alcmprss, gridsp, initnorm, initnorm2)
+!              write(6,"(a,e16.8e3)") "               New norm is  ", initnorm
+!              recalcs = recalcs - 1
+!              restart = 0
+!            end if
+!          end if
+
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
           if ((restart.eq.1).and.(recalcs.lt.Ntries)) then
-            if ((errorflag==1).and.(basis=="GRID").and.(cmprss=="N")) call outbs(bset, reps, mup, muq, time,x,0)
             call deallocbs(bset)                            !Before recalculation, the basis must be deallocated
             write(6,"(a,i0,a,i0)") "Attempt ", recalcs, " of ", Ntries
           end if
@@ -412,16 +389,15 @@ Program MainMCE
 
         if ((restart.eq.1).and.(recalcs.ge.Ntries)) then   ! Fatal error
           write(0,"(a,i0,a)") "Initial Basis Set Error. Not resolved after ", recalcs, " repeat calculations."
-          
           write(6,"(a)")"TERMINATING PROGRAM"
           stop
         end if
 
-        if ((restart.eq.1).and.(alcmprss.le.1.0d-7).and.(cmprss.eq."Y")) then   ! Fatal error
-          write(0,"(a)") "Initial Basis Set Error. Not resolved after reducing compression parameter to 1.0d-7."
+        if ((restart.eq.1).and.(alcmprss.le.1.0d-5).and.(cmprss.eq."Y")) then   ! Fatal error
+          write(0,"(a)") "Initial Basis Set Error. Not resolved after reducing compression parameter to 1.0d-5."
           write(0,"(a)") "Probable Error in Code"
-          write(0,"(a)")" "
-          write(6,"(a)")"TERMINATING PROGRAM"
+          write(0,"(a)") " "
+          write(6,"(a)") "TERMINATING PROGRAM"
           stop
         end if
         
@@ -435,7 +411,7 @@ Program MainMCE
             write(0,"(a)") "Error in allocating clone arrays"
             errorflag = 1
           end if
-         if (genloc=="N") then
+          if (genloc=="N") then
             call readclone(clonenum, reps, clone)
           else
             do j=1,nbf
@@ -449,45 +425,15 @@ Program MainMCE
           call flush(6)
         end if
         
-        if (method.eq."AIMC1") then
-
-          timeold = time
-
-          stepback = ((def_stp-1)/2)*trainsp
-          dt = -1.0d0*dtinit
-
-          do x=1,stepback
-            call propstep(bset,dt,dtnext,dtdone,time,1,timestrt_loc,x-stepback,reps,map_bfs)
-            time = time + dt
-          end do  
-          
-          dt = dtinit
-          
-          call outbs(bset, reps, mup, muq, time,-1*stepback,0)
-
-          do x=1,stepback
-            call outbs(bset, reps, mup, muq, time,x-stepback,0)
-            call propstep(bset,dt,dtnext,dtdone,time,1,timestrt_loc, x-stepback, reps, map_bfs)
-            time = time + dt    
-          end do
-          
-          time = timeold
-          
-        end if
-
-        if ((errorflag==0).and.(method.ne."AIMC1")) then      ! The basis set is output to a file
-          call outbs(bset, reps, mup, muq, time,0,0)
-        end if    
-
         if (errorflag.eq.0) then  ! Only executes if generation is successful
           write(6,"(a)") "Basis Set Generated Successfully"
           write(6,"(a,e15.8)") "Abs(Norm) = ", initnorm
           if (npes.ne.1) write(6,"(a,e15.8)") "Popsum    = ", initnorm2
           if ((cmprss.eq."Y").and.((basis.eq."SWARM").or.(basis.eq."SWTRN"))) write(6,"(a,e15.8)") "Alcmprss  = ", 1.0d0/alcmprss
-          if ((cmprss.eq."Y").and.(basis.eq."GRID")) write(6,"(a,e15.8)") "Grid Spacing  = ", gridsp/dsqrt(2.0d0)
+          if ((cmprss.eq."Y").and.(basis.eq."SWTRN")) write(6,"(a,i0)") "Train Spacing  = ", trspace
         else
           write(6,"(a)") "Errors found in basis set generation"
-          call outbs(bset, reps, mup, muq, time,0,0)
+          call outbs(bset, reps, mup, muq, time,0)
           call flush(6)
           stop
         end if
@@ -496,58 +442,24 @@ Program MainMCE
 
       !*************Basis Set Propagation Section Begins*************************!
 
-      if (prop.eq."Y") then     ! Propagation of basis set         
+      if (prop.eq."Y") then     ! Propagation of basis set       
+        
         x=0       
-        if (method.eq."AIMC1") then
-          if (mod(def_stp,2)==1) timeend_loc = timeend + ((def_stp-1)/2)*trainsp*dt
-          if (mod(def_stp,2)==0) timeend_loc = timeend + (((def_stp/2)*trainsp)-(trainsp/2))*dt
-        else
-          timeend_loc = timeend
-        end if
+        timeend_loc = timeend
+
         if (genloc.eq."N") then
-          !$omp critical          !Critical block to stop inputs getting confused
+          !$omp critical                       !Critical block to stop inputs getting confused
           if (conjrep == 2) then               ! Stops it looking for a basis set file if conjugate repetition selected 
             write(0,"(a)") "Propagation only selected with conjugate repeats enabled."
             write(0,"(a)") "This error message should not ever be seen, and means something's corrupted"
             errorflag=1                       ! as these two conditions are incompatible and should be disallowed at 
-          else if (method.ne."AIMC2") then    ! the run conditions input stage.
+          else                                ! the run conditions input stage.
             call allocbs(bset,nbf)
             call readbasis(bset, mup, muq, reps, time, nbf) ! reads and assigns the basis set parameters and values, ready for propagation.     
             timestrt_loc=time
             write(6,"(a,i0,a)") "Starting from previous file. ", &
-                        int(real(abs((timeend_loc-timestrt_loc)/dtinit))), " steps remaining."           
-          else
-            restart = 0
-            finbf = 0
-            write(rep,"(i3.3)") reps
-            open (unit=354+reps, file="Clonetrack-"//rep//".out", status = "old", iostat = ierr)
-            if (ierr/=0) then
-              write (0,"(a,i0,a)") "Error opening the Clone tracking file in rep ", reps, " to find max cloning size"
-              write (0,"(a,i0)") "ierr was ", ierr
-              errorflag = 1
-            end if
-            do while (ierr==0)
-              read (354+reps,"(3i5,2es25.17e3)", iostat=ierr) dum_in1, dum_in2, dum_in3, dum_re1, dum_re2
-              if (dum_in3.gt.finbf) finbf = dum_in3
-            end do
-            close(354+reps)
-            if (allocated(map_bfs)) deallocate(map_bfs, stat=ierr)
-            if (ierr==0) allocate(map_bfs(def_stp,finbf), stat=ierr)
-            if (ierr/=0) then
-              write (0,"(a,i0)") "Error de- and re-allocating map_bfs array. ierr was ", ierr
-              errorflag = 1
-            end if
-            write(0,"(2(a,i0))") "map_bfs size is ", def_stp, " by ", finbf
-            map_bfs = 0
-            call constrtrain (bset, 1, time, reps, mup, muq,0,1,def_stp*in_nbf, map_bfs)
-            call genD_big(bset, mup, muq, restart)
-            if (restart == 1 ) then
-              write (0,"(a)") "Could not properly generate the D prefactors for the basis set"
-              errorflag = 1
-            end if
-            nbf = def_stp*in_nbf
-            timestrt_loc=time
-          end if
+                        int(real(abs((timeend_loc-timestrt_loc)/dtinit))), " steps remaining."    
+          end if       
           !$omp end critical
         end if
 
@@ -565,9 +477,9 @@ Program MainMCE
           norm2temp = norm2(bset)
           initnorm2 = sqrt(dble(norm2temp*dconjg(norm2temp)))
         end if
-!        do j = 1,nbf
-!          ehren = ehren + HEhr(bset(j), time, reps)
-!        end do            
+        do j = 1,nbf
+          ehren = ehren + HEhr(bset(j), time, reps)
+        end do            
         initehr = abs(ehren)
         acft = acf(bset,mup,muq)
         call extras(extmp, bset)
@@ -583,22 +495,9 @@ Program MainMCE
           if (method=="MCEv2") absnorm2(1) = absnorm2(1) + initnorm2
           acf_t(1) = acf_t(1) + acft
           extra(1) = extra(1) + extmp
-          if ((nbfadapt.eq."NO").and.(debug==1)) then
-            call outtrajheads(reps, nbf)
-            call outtraj(bset,x,reps,time,ovrlp,dt)
-!            call histogram(bset, 50, time, -2.46d0, 1.44d0, nbf)
-            call outvarsheads (reps, nbf)
-            call outvars(bset,x,reps,time)
-          end if
           call outnormpopadapheads(reps)
           call outnormpopadap(initnorm,acft,extmp,initehr,popt,x,reps,time)
         else                         ! For adaptive stepsize the data is output straight away
-          if ((nbfadapt.eq."NO").and.(debug==1)) then
-            call outtrajheads(reps, nbf)
-            call outtraj(bset,x,reps,time,ovrlp,dt)
-            call outvarsheads (reps, nbf)
-            call outvars(bset,x,reps,time)
-          end if
           timestpunit=1710+reps
           write(rep,"(i3.3)") reps
           open (unit=timestpunit,file="timesteps-"//trim(rep)//".out",status="unknown",iostat=istat)
@@ -610,12 +509,7 @@ Program MainMCE
 
         !***********Timesteps***********!
 
-        if (((basis=="GRID").or.(basis=="GRSWM")).and.(nbfadapt=="YES")) then
-          open (unit=4532,file="nbf.dat",status="unknown")
-          close(4532)
-        end if
-
-        if (((method=="MCEv2").or.(method=="MCEv1").or.(method=="AIMC1")).and.(cloneflg=="YES")) then
+        if (((method=="MCEv2").or.(method=="MCEv1")).and.(cloneflg=="YES")) then
           write(rep,"(i3.3)") reps
           open(unit=47756,file="Clonetrack-"//trim(rep)//".out",status="new",iostat=ierr)
           close(47756)
@@ -646,24 +540,13 @@ Program MainMCE
           x = x + 1  ! timestep index
           y = x + 1  ! array index       
 
-          if (sys=="HH") call leaking(bset,nbf,x) ! ensures that high energy trajectories are removed for henon-heiles          
-
-          if (basis.ne."GRID") call trajchk(bset) !ensures that the position component of the coherent states are not too widely spaced   
-
-          if (((basis=="GRID").or.(basis=="GRSWM")).and.(mod((x-1),rprj)==0).and.((sys=="IV").or.(sys=="CP"))) then
-            call reloc_basis(bset, initgrid, nbf, x, time, gridsp, mup, muq)
-          end if      
+          call trajchk(bset) !ensures that the position component of the coherent states are not too widely spaced   
 
           if ((allocated(clone)).and.(cloneflg.ne."BLIND").and.(time.le.timeend)) then
             call cloning (bset, nbf, x, time, clone, clonenum, reps)
           end if
           
-          call outbs(bset, reps, mup, muq, time,x,0)     
-          
-          if (method=="AIMC2") then
-            call constrtrain (dummybs, x, time, reps, mup, muq,0,0,nbf,map_bfs)
-            call retrieveclon (dummybs, bset, reps, x, time, nbf, map_bfs)
-          end if        
+          call outbs(bset, reps, mup, muq, time,x)         
 
           if (timeend_loc.gt.timestrt_loc) then      
             if ((time+dt-timeend_loc).gt.0.0d0) dt = timeend_loc - time
@@ -671,7 +554,7 @@ Program MainMCE
             if ((time+dt-timeend_loc).lt.0.0d0) dt = timeend_loc - time
           end if               
 
-          call propstep (bset, dt, dtnext, dtdone, time, genflg, timestrt_loc,x,reps, map_bfs)     ! This subroutine takes a single timestep
+          call propstep (bset, dt, dtnext, dtdone, time, genflg, timestrt_loc,x,reps)     ! This subroutine takes a single timestep
 
           if (dtdone.eq.dt) then   ! nsame and nchange are used to keep track of changes to the stepsize.
             !$omp atomic           !atomic parameter used to ensure two threads do not write to the same       
@@ -681,7 +564,7 @@ Program MainMCE
             nchange = nchange + 1
           end if
 
-          if (abs(time+dtdone-timeend_loc).le.1.0d-15) then   ! if time is close enough to end time, set as end time
+          if (abs(time+dtdone-timeend_loc).le.1.0d-10) then   ! if time is close enough to end time, set as end time
             time=timeend_loc
           else
             time = time + dtdone                         ! increment time
@@ -689,8 +572,8 @@ Program MainMCE
 
           dt = dtnext      ! dtnext is set by the adaptive step size system. If static, dtnext = dt already
 
-          ! output variables written to arrays. Note - if and when non-fatal error flag is implemented, the outputs 
-          ! will have to be saved over the course of propagation and then added to the main arrays at time==timeend              
+          ! output variables written to arrays. Note - if a non-fatal error flag is implemented (currently only fatal errors implemented),
+          ! the outputs will have to be saved over the course of propagation and then added to the main arrays at time==timeend              
 
           allocate (ovrlp(size(bset),size(bset)))
           ovrlp=ovrlpmat(bset)          
@@ -701,9 +584,9 @@ Program MainMCE
             norm2temp = norm2(bset)
             nrm2tmp=sqrt(dble(norm2temp*dconjg(norm2temp)))
           end if
-!          do j = 1,nbf
-!            ehren = ehren + HEhr(bset(j), time, reps)
-!          end do
+          do j = 1,nbf
+            ehren = ehren + HEhr(bset(j), time, reps)
+          end do
           ehrtmp = abs(ehren)
           acft = acf(bset,mup,muq)
           call extras(extmp, bset)
@@ -720,11 +603,6 @@ Program MainMCE
             if (method=="MCEv2") absnorm2(y) = absnorm2(y) + nrm2tmp
             acf_t(y) = acf_t(y) + acft
             extra(y) = extra(y) + extmp
-            if ((nbfadapt.eq."NO").and.(mod(x,1)==0).and.(debug==1)) then
-              call outtraj(bset,x,reps,time,ovrlp,dt)
-!              call histogram(bset, 50, time, -2.46d0, 1.44d0, nbf)
-              call outvars(bset,x,reps,time)
-            end if
             call outnormpopadap(nrmtmp,acft,extmp,ehrtmp,popt,x,reps,time)
           else if (step == "A") then
             timestpunit=1710+reps
@@ -732,19 +610,13 @@ Program MainMCE
             open (unit=timestpunit,file="timesteps-"//trim(rep)//".out",status="old",access="append",iostat=istat)
             write(timestpunit,"(e12.5)") dtdone
             close (timestpunit)
-            if ((nbfadapt.eq."NO").and.(method.ne."MCEv2").and.(debug==1)) then
-              call outtraj(bset,x,reps,time,ovrlp,dt)
-              call outvars(bset,x,reps,time)
-            end if
             call outnormpopadap(nrmtmp,acft,extmp,ehrtmp,popt,x,reps,time)
           end if
           deallocate(ovrlp)
           
-          if (method/="AIMC1") then
-            call outbs(bset, reps, mup, muq, time,x,0)
-            if ((cloneflg == "YES").or.(cloneflg == "BLIND+")) then
-              call outclones(clonenum, reps, clone)
-            end if
+          call outbs(bset, reps, mup, muq, time,x)
+          if ((cloneflg == "YES").or.(cloneflg == "BLIND+").or.(cloneflg == "QSC")) then
+            call outclones(clonenum, reps, clone)
           end if
 
           !call conservchk(initehr, initnorm, ehrtmp, nrmtmp, reps)  !Checks that all conserved quantites are conserved.
@@ -776,21 +648,13 @@ Program MainMCE
             write(0,"(a)") "Error in deallocating clone arrays"
             errorflag = 1
           end if
-        end if
-        
-        if (allocated(map_bfs)) then
-          deallocate(map_bfs, stat=ierr)
-          if (ierr/=0) then
-            write (0,"(a,i0)") "Error deallocating map_bfs array. ierr was ", ierr
-            errorflag = 1
-          end if 
-        end if         
+        end if      
 
       end if 
 
       if (errorflag==1) then
         write(6,"(a)") "Last basis set outputting...."
-        call outbs(bset, reps, mup, muq, time,x,0)
+        call outbs(bset, reps, mup, muq, time,x)
       end if 
 
       call deallocbs(bset)     ! Deallocates basis set ready for next repeat 
@@ -806,12 +670,6 @@ Program MainMCE
 
     end do !conjugate repeat
   
-    deallocate (initgrid, stat=ierr)
-    if (ierr/=0) then
-      write(0,"(a)") "Error deallocating the initial grid array in main"
-      errorflag=1
-    end if
-
     if (allocated(mup)) deallocate (mup, stat=ierr)
     if ((allocated(muq)).and.(ierr==0)) deallocate (muq, stat=ierr)
     if ((allocated(popt)).and.(ierr==0)) deallocate (popt, stat=ierr)
@@ -874,7 +732,7 @@ Program MainMCE
         write(6,"(a,f15.8)") "minval of timestep array is ", num2
         up=0.0
         down=0.0
-        call histogram2(t,n,"timehist.out",up,down)   
+        call histogram(t,n,"timehist.out",up,down)   
         deallocate(t, stat = istat)
         if (istat/=0) then
           write(0,"(a)") "Error in timestep array deallocation"

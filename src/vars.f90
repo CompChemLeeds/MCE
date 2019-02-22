@@ -28,31 +28,17 @@ MODULE globvars
   integer:: in_pes     ! potential energy surface 1 or 2
   integer:: Ntries     ! Number of recalculations allowed before an error occurs
   integer:: errorflag  ! The global fatal error flag. Stops operation
-  integer:: debug      ! Debug flag. Not currently used.
   integer:: conjflg    ! Flag to determine whether Conjugate repetition will occur
   integer:: restrtflg  ! Flag for restarting a previous run for when time has run out
   integer:: reptot     ! Total number of repeats to be carried out in program
-  integer:: qsizex     ! size of grid in q,x coordinate
-  integer:: psizex     ! size of grid in p,x coordinate
-  integer:: qsizey     ! size of grid in q,y coordinate
-  integer:: psizey     ! size of grid in p,y coordinate
-  integer:: qsizez     ! size of grid in q,z coordinate
-  integer:: psizez     ! size of grid in p,z coordinate
   integer:: trainsp    ! number of time steps between adjacent basis functions in a train
-  integer:: def_stp    ! default number of basis functions in a train for swarms of trains
+  integer:: train_len  ! default number of basis functions in a train for swarms of trains
+  integer:: swtrn_swrm ! size of the centre swarm in the swarm of trains
   integer:: clonemax   ! maximum number of cloning events allowed per basis function
   integer:: clonefreq  ! minimum number of timesteps between concurrent coloning events
   integer:: qss        ! quantum superposition sampling change to initial amplitudes
 
   real(kind=8),external :: ZBQLNOR ! The normally distributed random number external function
-
-  real(kind=8) :: y_00_vp          ! S_0 offset **PSEUDO-TORTION POTENTIAL ONLY**
-  real(kind=8) :: A_0_vp           ! S_0 amplitude **PSEUDO-TORTION POTENTIAL ONLY**
-  real(kind=8) :: b_0_vp           ! S_0 parabolic parameter **PSEUDO-TORTION POTENTIAL ONLY**
-  real(kind=8) :: width_vp         ! S_0 gaussian width **PSEUDO-TORTION POTENTIAL ONLY**
-  real(kind=8) :: A_NAC_vp         ! Non-adiabatic Coupling amplitude **PSEUDO-TORTION POTENTIAL ONLY**
-  real(kind=8) :: y_10_vp          ! S_1 offset **PSEUDO-TORTION POTENTIAL ONLY**
-  real(kind=8) :: b_1_vp           ! S_1 parabolic parameter **PSEUDO-TORTION POTENTIAL ONLY**
 
   real(kind=8) :: wmax_sb          ! Maximum frequency **SPIN BOSON ONLY**
   real(kind=8) :: beta_sb          ! Temperature parameter **SPIN BOSON ONLY**
@@ -68,26 +54,12 @@ MODULE globvars
   real(kind=8) :: lambda_dl        ! Reorganisation Energy parameter **DRUDE LORENTZ ONLY**
   real(kind=8) :: wmax_dl          ! Maximum frequency factor **DRUDE LORENTZ ONLY**
 
-  real(kind=8) :: mass_fp          ! Mass of a particle **FREE PARTICLE ONLY**
-
   real(kind=8) :: freq_hp          ! Frequency of a Harmonic Potential **HARMONIC POTENTIAL ONLY**
 
   real(kind=8) :: dissen_mp        ! Dissasociation Energy **MORSE POTENTIAL ONLY**
   real(kind=8) :: freq_mp          ! frequency of morse potential **MORSE POTENTIAL ONLY**
   real(kind=8) :: mass_mp          ! mass of particle in morse potential **MORSE POTENTIAL ONLY**
   real(kind=8) :: a0_mp            ! Well shape parameter for morse oscillator **MORSE POTENTIAL ONLY**
-
-  real(kind=8) :: mass_iv          ! Particle mass for inverted gaussian **INVERTED GAUSSIAN ONLY**
-  real(kind=8) :: freq_iv          ! Laser frequency for inverted gaussian **INVERTED GAUSSIAN ONLY**
-  real(kind=8) :: lambda_iv        ! Potential parameter for inverted gaussian **INVERTED GAUSSIAN ONLY**
-  real(kind=8) :: inten_iv         ! Laser intensity for inverted gaussian **INVERTED GAUSSIAN ONLY**
-
-  real(kind=8) :: mass_cp          ! Particle mass for Coulomb Potential **COULOMB POTENTIAL ONLY**
-  real(kind=8) :: freq_cp          ! Laser frequency for Coulomb Potential **COULOMB POTENTIAL ONLY**
-  real(kind=8) :: RC_cp            ! Origin potition for Coulomb Potential **COULOMB POTENTIAL ONLY**
-  real(kind=8) :: inten_cp         ! Laser intensity for Coulomb Potential **COULOMB POTENTIAL ONLY**
-
-  real(kind=8) :: lambda_hh        ! Hennon-Heiles Potential Coupling Constant
 
   real(kind=8) :: sigp             ! Width of the distribution of imaginary parts of the initial wavefunction
   real(kind=8) :: sigq             ! Width of the distribution of real parts of the initial wavefunction
@@ -112,15 +84,11 @@ MODULE globvars
 
   character(LEN=5) :: ECheck       ! Flag to determine if the energy of basis functions should be checked
   character(LEN=5) :: basis        ! Initial basis set structure option
-  character(LEN=5) :: wfn_init     ! Initial structure for z_0 (WHOLE/SPLIT)
-  character(LEN=4) :: symm         ! Basis set symmetry parameter (YES/NO/ANTI)
-  character(LEN=5) :: nbfadapt     ! Flag for adaptive basis set size
   character(LEN=6) :: cloneflg     ! Flag for cloning
-  character(LEN=5) :: matfun       ! Which matrix calcualtion function (zgesv/zheev) used for linear algebra
-  character(LEN=5) :: method       ! MCEv1 or MCEv2 used. Later versions to have other methods available
+  character(LEN=5) :: method       ! MCEv1, MCEv2 or CCS used. Later versions to have other methods available
   character(LEN=4) :: randfunc     ! Random number generation function identifier (zbql/gaus)
   character(LEN=3) :: specden      ! the spectral density type (EXP,DL or UBO ---- LHC to come)
-  character(LEN=2) :: sys          ! System to be simulated. Currently only Spin Boson allowed
+  character(LEN=2) :: sys          ! System to be simulated.
   character(LEN=1) :: gen          ! Flag to determine if basis set generation needed (global variant)
   character(LEN=1) :: prop         ! Flag to determine if basis set propagation needed
   character(LEN=1) :: step         ! Flag to determine whether adaptive or static stepsize propagation needed
@@ -144,25 +112,11 @@ contains
     in_pes = 0
     Ntries = 0
     errorflag = 0
-    debug = 0
     conjflg = 0
     reptot = 0
-    qsizex = 0
-    psizex = 0
-    qsizey = 0
-    psizey = 0
-    qsizez = 0
-    psizez = 0
     trainsp = 0
-    def_stp = 0
-    
-    y_00_vp = 0.0d0          ! PSEUDO-TORTION POTENTIAL PARAMETER
-    A_0_vp = 0.0d0           ! PSEUDO-TORTION POTENTIAL PARAMETER
-    b_0_vp = 0.0d0           ! PSEUDO-TORTION POTENTIAL PARAMETER
-    width_vp = 0.0d0         ! PSEUDO-TORTION POTENTIAL PARAMETER
-    A_NAC_vp = 0.0d0         ! PSEUDO-TORTION POTENTIAL PARAMETER
-    y_10_vp = 0.0d0          ! PSEUDO-TORTION POTENTIAL PARAMETER
-    b_1_vp = 0.0d0           ! PSEUDO-TORTION POTENTIAL PARAMETER
+    train_len = 0
+    swtrn_swrm = 0
 
     wmax_sb = 0.0d0          ! SPIN BOSON PARAMETER
     eps_sb = 0.0d0           ! SPIN BOSON PARAMETER
@@ -178,26 +132,12 @@ contains
     lambda_dl = 0.0d0        ! SPIN BOSON [DRUDE LORENTZ CUTOFF] ONLY
     wmax_dl = 0.0d0          ! SPIN BOSON [DRUDE LORENTZ CUTOFF] ONLY
 
-    mass_fp = 0.0d0          ! FREE PARTICLE PARAMETER
-
     freq_hp = 0.0d0          ! HARMONIC OSCILLATOR PARAMETER
 
     freq_mp = 0.0d0          ! MORSE POTENTIAL PARAMETER
     mass_mp = 0.0d0          ! MORSE POTENTIAL PARAMETER
     dissen_mp = 0.0d0        ! MORSE POTENTIAL PARAMETER
     a0_mp = 0.0d0            ! MORSE POTENTIAL PARAMETER
-
-    mass_iv = 0.0d0          ! INVERTED GAUSSIAN PARAMETER
-    freq_iv = 0.0d0          ! INVERTED GAUSSIAN PARAMETER
-    lambda_iv = 0.0d0        ! INVERTED GAUSSIAN PARAMETER
-    inten_iv = 0.0d0         ! INVERTED GAUSSIAN PARAMETER
-
-    mass_cp = 0.0d0          ! COULOMB POTENTIAL PARAMETER
-    freq_cp = 0.0d0          ! COULOMB POTENTIAL PARAMETER
-    Rc_cp = 0.0d0            ! COULOMB POTENTIAL PARAMETER
-    inten_cp = 0.0d0         ! COULOMB POTENTIAL PARAMETER
-
-    lambda_hh = 0.0d0        ! HENNON-HAILES PARAMETER
 
     sigp = 0.0d0
     sigq = 0.0d0

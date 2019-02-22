@@ -377,7 +377,8 @@ for a in "${methseq[@]}"; do
       cd $SUBDIR/
       echo "Program Executing in $EXDIR"
       if [[ $CORES -ne 1 ]]; then export OMP_NUM_THREADS=$CORES; fi
-      ./MCE.exe #&> $FILE.o1 &
+#      valgrind --leak-check=yes --track-origins=yes ./MCE.exe &> valgrindout.o1 &
+	./MCE.exe
       cd $RUNF
     fi
   done

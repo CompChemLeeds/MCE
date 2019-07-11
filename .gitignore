@@ -1,0 +1,7 @@
+./build/*.mod
+./build/*.o
+./build/*.exe
+./run/*.exe
+./build/*~
+./run/*~
+./src/*~

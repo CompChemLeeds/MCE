@@ -1,8 +1,28 @@
 
 # MCE and CCS simulation
-## Chris Symonds
 
-This program allows a wide array of simulations using the MCE and CCS equations
+[![GitHub top language](https://img.shields.io/github/languages/top/C-Symonds/MCE.svg)](https://github.com/C-Symonds/MCE) [![GitHub issues](https://img.shields.io/github/issues/C-Symonds/MCE.svg)](https://github.com/C-Symonds/C-Symonds_generic/MCE) [![GitHub last commit](https://img.shields.io/github/last-commit/C-Symonds/MCE.svg)](https://github.com/C-Symonds/MCE/commits/master)![GitHub](https://img.shields.io/github/license/C-Symonds/MCE.svg)
+
+This repository contains the code and running scripts for the MCE program, a Fortran program designed to calculate the time evolution of a wavefunction through trajectory guided calculations, using the Multiconfigurational Ehrenfest (MCE) method or the related Coupled Coherent States (CCS) method. The program allows a wide array of simulations using the MCE and CCS equations applied to different systems.
+
+# Requirements #
+
+* The program was written assuming execution on one of the machines at the University of Leeds, and so the run scripts would need to be modified if running at a different site.
+* Array execution is carried out using "Son of Grid Engine" commands. Different batch systems such as PBS or slurm could be used, however the run.sh script will need to be modified in this case.
+* Code was written to be compiler agnostic, and has been tested with ifort and gfortran compilers. A known issue exists with ifort 14 that affects the program however so this compiler should not be used. The compiler issue was solved in subsequent versiuons of the ifort compiler.
+
+# Installation #
+
+Run the following commands to clone the repository and open
+
+```bash
+git clone https://github.com/C-Symonds/MCE
+cd MCE
+```
+If you are having trouble accessing the repository, contact me (email : C.C.Symonds@leeds.ac.uk)
+
+# Usage #
+
 To run, use the run.sh file in the run folder, with the following arguments:
 
 ```bash
@@ -20,18 +40,17 @@ you would use the command
 
 which would have a total of 16 parallel threads running simultaneously. This allows openmp
 execution to be carried out over many more cores than would be present on a single node, which
-on arc1 has a maximum of 8, on arc 2 a maximum of 16.
-
-To ensure that you are using the latest version of the code, make sure that you download it from
-github, using the url
-
-            [https://github.com/C-Symonds/MCE](https://github.com/C-Symonds/MCE)
-
-If you are having trouble accessing it, contact me (email : C.C.Symonds@leeds.ac.uk)
+on arc2 has a maximum of 16, on arc3 a maximum of 24.
 
 The run.sh script creates a second script, called result.sh which when run calls the collate.sh script
 which combines the results from all the completed runs. This script deletes the original output files
 so use with care!
+
+# Contributing #
+
+If you wish to make a request for a bug fix or new feature, please see our guide on [contributing](https://github.com/C-Symonds/MCE/blob/master/CONTRIBUTING.md) to the repository.
+
+If however you wish to contribute to the code in a more direct manner, please follow the instructions below.
 
 To make changes to the GitHub repo:
 - If you are a collaborator, you can simply push local changes to the main repo
@@ -53,3 +72,17 @@ To make changes to the GitHub repo:
     `$ git branch -d branchName`
   - You can also push a branch deletion to the main repo for your fork:
     `$ git push origin :branchName`  
+
+# Citing this work #
+
+If you use this code we ask that you kindly cite the original source code using the above DOI.
+
+    <hr>
+
+# Licence information #
+
+This project is licensed under the terms of the MIT license.
+
+# Acknowledgements #
+
+The work contained in this repo was carried out in the DVS group at the University of Leeds School of Chemistry by Christopher Symonds between 2012 and 2018. This work was funded by the EPSRC and Leverhulme Trust.

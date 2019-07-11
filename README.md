@@ -77,7 +77,7 @@ To make changes to the GitHub repo:
 
 If you use this code we ask that you kindly cite the original source code using the above DOI.
 
-    <hr>
+<hr>
 
 # Licence information #
 

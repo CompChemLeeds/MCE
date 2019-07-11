@@ -61,7 +61,7 @@ Program MainMCE
 !                 simultaneously.                                                   !
 !      29/01/14 - Altered the outnormpop subroutine so that it outputs the same as  !
 !                 the other output subroutine in that it is compatible with         !
-!                 multiple PESs. Also made it morecompatible with the adaptive      ! 
+!                 multiple PESs. Also made it morecompatible with the adaptive      !
 !                 stepsize system and changed the names of the outputsubroutines to !
 !                 reflect that one is for static stepsize, one is for adaptive.     !
 !      30/01/14 - Moved allocation of mup and muq to the main program from separate !
@@ -104,7 +104,7 @@ Program MainMCE
 !                 in the spin boson model                                           !
 !               - Extended grids and grid-swarms to 3D, and confirmed that it can   !
 !                 calculate the inverted gaussian in 3D                             !
-!               - Included the 3D Coulomb Potential                                 !  
+!               - Included the 3D Coulomb Potential                                 !
 !               - Set functionality to allow starting at t=/=0 when using an input  !
 !                 set, and also set output of the basis set at each timestep        !
 !      04/03/15 - Repaired the adaptive timestep and openMP systems, which now work !
@@ -131,7 +131,7 @@ Program MainMCE
 
   implicit none
   !Private variables
-  type(basisfn), dimension (:), allocatable :: bset 
+  type(basisfn), dimension (:), allocatable :: bset
   type(basisfn), dimension (:), allocatable :: dummybs
   complex(kind=8), dimension (:,:), allocatable :: initgrid, ovrlp
   complex(kind=8)::normtemp, norm2temp, ehren, acft, extmp
@@ -143,12 +143,12 @@ Program MainMCE
   integer :: j, k, r, y, x, m, nbf, recalcs, conjrep, restart, reps, trspace
   integer :: ierr, timestpunit, stepback, dum_in1, dum_in2, dum_in3, finbf
   character(LEN=3):: rep
-  
+
   !Reduction Variables
   complex(kind=8), dimension (:), allocatable :: acf_t, extra
   real(kind=8), dimension (:,:), allocatable :: pops
   real(kind=8), dimension(:), allocatable :: absnorm, absnorm2, absehr
-  
+
   !Public Variables
   real(kind=8), dimension(:), allocatable :: t
   real(kind=8) :: starttime, stoptime, up, down, runtime
@@ -157,9 +157,9 @@ Program MainMCE
   integer:: tnum, cols, genflg, istat, intvl, rprj, n, nsame, nchange
   character(LEN=100) :: LINE, CWD
   character(LEN=1) :: genloc
-  
+
   call CPU_TIME(starttime) !used to calculate the runtime, which is output at the end
-  
+
   write(6,"(a)") " ________________________________________________________________ "
   write(6,"(a)") "|                                                                |"
   write(6,"(a)") "|                                                                |"
@@ -177,8 +177,8 @@ Program MainMCE
   open(unit=570, file="/dev/urandom", access="stream", &
     form="unformatted", action="read", status="old", iostat=istat)
   if (istat == 0) then
-    read(570) ranseed    ! This takes the random seed from the true-random bin. If 
-    close(570)           ! the urandom bin does not exist the random seed is set 
+    read(570) ranseed    ! This takes the random seed from the true-random bin. If
+    close(570)           ! the urandom bin does not exist the random seed is set
   else                   ! to zero which forces the date to be used
     ranseed=0
   end if
@@ -187,9 +187,9 @@ Program MainMCE
 
   call ZBQLINI(ranseed,0)   ! Generates the seed value using the UCL random library
 
-  call readbsparams         ! These subroutines read the global parameters used for 
-  call readzparams          ! basis set generation and propagation.The subroutines 
-  call readsys              ! are set up to be application independent at this level, 
+  call readbsparams         ! These subroutines read the global parameters used for
+  call readzparams          ! basis set generation and propagation.The subroutines
+  call readsys              ! are set up to be application independent at this level,
   call readecut             ! with application dependent features included at a lower
   call readtimepar          ! levels.
   call checkparams
@@ -200,7 +200,7 @@ Program MainMCE
     tnum = 1            ! The arrays need to be allocated for reduction in omp
   end if
   allocate (pops(tnum,npes), stat=istat)               ! Output arrays are allocated
-  if (istat==0) allocate (absehr(tnum), stat=istat)    ! for the number of steps to 
+  if (istat==0) allocate (absehr(tnum), stat=istat)    ! for the number of steps to
   if (istat==0) allocate (absnorm(tnum), stat=istat)   ! be taken
   if (istat==0) allocate (absnorm2(tnum), stat=istat)
   if (istat==0) allocate (acf_t(tnum), stat=istat)
@@ -218,19 +218,19 @@ Program MainMCE
 
   if (conjflg==1) then    ! This statement ensures that if conjugate repetition
     intvl = 2             ! is selected the outer repetition loop will increase
-  else                    ! by the correct amount without loosing track of the 
+  else                    ! by the correct amount without loosing track of the
     intvl = 1             ! number of repetitions.
-  end if 
+  end if
 
   nchange=0
   nsame=0
   rprj=10
   genflg=0
-  
-  ! The variables set as private in the below statement are duplicated when Open MP 
-  ! is run such that there exists individual copies on each thread. The reduction 
-  ! variables are summed over all threads. The reduction variables are only used in 
-  ! the static stepsize system as the array size must be known beforehand to avoid 
+
+  ! The variables set as private in the below statement are duplicated when Open MP
+  ! is run such that there exists individual copies on each thread. The reduction
+  ! variables are summed over all threads. The reduction variables are only used in
+  ! the static stepsize system as the array size must be known beforehand to avoid
   ! memory leaks.
 
   !$omp parallel private (bset, dummybs, initgrid, ovrlp, normtemp,&
@@ -241,41 +241,41 @@ Program MainMCE
   !$omp                    j, k, r, y, x, m, nbf, recalcs, conjrep, restart,        &
   !$omp                    reps, ierr, timestpunit, stepback, dum_in1, dum_in2,     &
   !$omp                    finbf, dum_in3, dum_re1, dum_re2, rep, genloc            )
-  
-  !$omp do reduction (+:acf_t, extra, pops, absnorm, absnorm2, absehr)
-  
-  ! This leaves the following variables currently shared actross all threads:
-  ! p, q, t, starttime, stoptime, up, down, runtime, num1, num2, ranseed, tnum, 
-  ! cols, genflg, istat, intvl, rprj, n, nsame, nchange, LINE, CWD 
-  
 
-  do k=1,reptot,intvl              ! Loop over all repeats. 
-  
+  !$omp do reduction (+:acf_t, extra, pops, absnorm, absnorm2, absehr)
+
+  ! This leaves the following variables currently shared actross all threads:
+  ! p, q, t, starttime, stoptime, up, down, runtime, num1, num2, ranseed, tnum,
+  ! cols, genflg, istat, intvl, rprj, n, nsame, nchange, LINE, CWD
+
+
+  do k=1,reptot,intvl              ! Loop over all repeats.
+
     call flush(6)
     call flush(0)
-    
+
     if (errorflag .ne. 0) cycle   ! errorflag is the running error catching system
-    
+
     ierr = 0
     conjrep = 1
     genloc = gen
     restart=0
     trspace = trainsp
-    
+
     if (restrtflg==1) then
       call restartnum(k,genloc,restart)
       if (restart==1) then
         cycle
       end if
     end if
-         
+
     allocate (popt(npes), stat=ierr)
     if (ierr/=0) then
       write(0,"(a)") "Error in allocating the temporary population array in Main"
       errorflag=1
-    end if 
+    end if
     popt = 0.0d0
-    
+
     if (genloc.eq."Y") then
       allocate (mup(ndim), stat=ierr)
       if (ierr == 0) allocate (muq(ndim), stat=ierr)
@@ -287,16 +287,16 @@ Program MainMCE
       muq = 0.0d0
     end if
 
-    do while (conjrep .lt. 3) ! conjugate repetitions. If equal to 3 then both 
+    do while (conjrep .lt. 3) ! conjugate repetitions. If equal to 3 then both
                               ! have been completed.
-      alcmprss = 1.0d0/initalcmprss    ! initialcmprss is the value read from the  
-      gridsp=initsp                    ! input file. For automatic adaptation of 
-      nbf=in_nbf                       ! the compression parameter this is used 
-      recalcs=0                        ! as a starting point, otherwise it is used 
+      alcmprss = 1.0d0/initalcmprss    ! initialcmprss is the value read from the
+      gridsp=initsp                    ! input file. For automatic adaptation of
+      nbf=in_nbf                       ! the compression parameter this is used
+      recalcs=0                        ! as a starting point, otherwise it is used
       x=0                              ! as the compression parameter value
 
-      if (conjrep == 2) then         ! this conditional and the subsequent keeps 
-        reps=k+1                     ! track of the repeats with regard to the 
+      if (conjrep == 2) then         ! this conditional and the subsequent keeps
+        reps=k+1                     ! track of the repeats with regard to the
       else if (conjrep == 1) then    ! conjugate repeat system
         reps=k
       else
@@ -313,22 +313,22 @@ Program MainMCE
       timestrt_loc = timestrt ! precalculated basis should be used
 
       !**********Basis Set Generation Section Begins**************************!
-      
+
       if (genloc.eq."Y") then     ! begin the basis set generation section.
- 
+
         restart = 1            ! a flag for if the basis set needs recalculating
 
         if (conjflg==1) then
           if (conjrep == 2) then         ! first/only calculation
-            !$omp critical               ! Critical block stops subroutine running on 
-            call genzinit(mup, muq,reps) ! multiple threads simultaneously, needed as 
+            !$omp critical               ! Critical block stops subroutine running on
+            call genzinit(mup, muq,reps) ! multiple threads simultaneously, needed as
             !$omp end critical           ! the UCL random library is not thread safe
           else
             do m=1,ndim
               mup(m) = -1.0d0*mup(m)  ! second calculation takes the conj. of z_init
             end do
           end if
-        else 
+        else
           !$omp critical
           call genzinit(mup, muq,reps)
           !$omp end critical
@@ -340,27 +340,27 @@ Program MainMCE
 
           call allocbs(bset, nbf)
 
-          !$omp critical             ! Critical block needed for random number gen. 
-          call genbasis(bset, mup, muq, alcmprss, time, reps, trspace)      
+          !$omp critical             ! Critical block needed for random number gen.
+          call genbasis(bset, mup, muq, alcmprss, time, reps, trspace)
 
-          call genD_big(bset, mup, muq, restart) !Generates the multi config D  
+          call genD_big(bset, mup, muq, restart) !Generates the multi config D
                                       !prefactor and single config a & d prefactors
                                       ! Moved to inside the genbasis sunbbroutines
           !$omp end critical
-                                      
+
           initnorm = 0.0d0
           initnorm2 = 0.0d0
 
           ! Checks norms and population sum to ensure basis set is calculated
           ! properly. If not, restart is set to 1 so basis is recalculated
-          
+
           call initnormchk(bset,recalcs,restart,alcmprss,initnorm,initnorm2,trspace)
 
 !!!!!!! Block to force renormalisation. Use with caution !!!!!!!!!!!!!!
 
 !          if (restart.eq.1) then
 !            if ((((conjflg==1).and.(conjrep.eq.2)).or.(conjflg/=1)).and.(recalcs.lt.Ntries)) then
-!              !$omp critical 
+!              !$omp critical
 !              call genzinit(mup, muq,reps)
 !              !$omp end critical
 !            else
@@ -381,7 +381,7 @@ Program MainMCE
             call deallocbs(bset)                            !Before recalculation, the basis must be deallocated
             write(6,"(a,i0,a,i0)") "Attempt ", recalcs, " of ", Ntries
           end if
-          
+
           call flush(6)
           call flush(0)
 
@@ -400,7 +400,7 @@ Program MainMCE
           write(6,"(a)") "TERMINATING PROGRAM"
           stop
         end if
-        
+
         if (((method=="MCEv2").or.(method=="MCEv1")).and.((cloneflg=="BLIND").or.(cloneflg=="BLIND+"))) then
           write(rep,"(i3.3)") reps
           open(unit=47756,file="Clonetrack-"//trim(rep)//".out",status="new",iostat=ierr)
@@ -424,7 +424,7 @@ Program MainMCE
           call cloning (bset, nbf, x, time, clone, clonenum, reps)
           call flush(6)
         end if
-        
+
         if (errorflag.eq.0) then  ! Only executes if generation is successful
           write(6,"(a)") "Basis Set Generated Successfully"
           write(6,"(a,e15.8)") "Abs(Norm) = ", initnorm
@@ -442,29 +442,29 @@ Program MainMCE
 
       !*************Basis Set Propagation Section Begins*************************!
 
-      if (prop.eq."Y") then     ! Propagation of basis set       
-        
-        x=0       
+      if (prop.eq."Y") then     ! Propagation of basis set
+
+        x=0
         timeend_loc = timeend
 
         if (genloc.eq."N") then
           !$omp critical                       !Critical block to stop inputs getting confused
-          if (conjrep == 2) then               ! Stops it looking for a basis set file if conjugate repetition selected 
+          if (conjrep == 2) then               ! Stops it looking for a basis set file if conjugate repetition selected
             write(0,"(a)") "Propagation only selected with conjugate repeats enabled."
             write(0,"(a)") "This error message should not ever be seen, and means something's corrupted"
-            errorflag=1                       ! as these two conditions are incompatible and should be disallowed at 
+            errorflag=1                       ! as these two conditions are incompatible and should be disallowed at
           else                                ! the run conditions input stage.
             call allocbs(bset,nbf)
-            call readbasis(bset, mup, muq, reps, time, nbf) ! reads and assigns the basis set parameters and values, ready for propagation.     
+            call readbasis(bset, mup, muq, reps, time, nbf) ! reads and assigns the basis set parameters and values, ready for propagation.
             timestrt_loc=time
             write(6,"(a,i0,a)") "Starting from previous file. ", &
-                        int(real(abs((timeend_loc-timestrt_loc)/dtinit))), " steps remaining."    
-          end if       
+                        int(real(abs((timeend_loc-timestrt_loc)/dtinit))), " steps remaining."
+          end if
           !$omp end critical
         end if
 
         dt = dtinit                ! The value read from the input stage. In adaptive step theis changes
-        
+
         !The initial values of the output parameters are calculated here.
 
         allocate (ovrlp(size(bset),size(bset)))
@@ -479,17 +479,17 @@ Program MainMCE
         end if
         do j = 1,nbf
           ehren = ehren + HEhr(bset(j), time, reps)
-        end do            
+        end do
         initehr = abs(ehren)
         acft = acf(bset,mup,muq)
         call extras(extmp, bset)
         do r=1,npes
-          popt(r) = pop(bset, r,ovrlp)   
+          popt(r) = pop(bset, r,ovrlp)
         end do
         if (step == "S") then        ! Output parameters only written to arrays if static stepsize
           do r=1,npes
-            pops(1,r) = pops(1,r) + popt(r)   
-          end do 
+            pops(1,r) = pops(1,r) + popt(r)
+          end do
           absehr(1) = absehr(1) + initehr
           absnorm(1) = absnorm(1) + initnorm
           if (method=="MCEv2") absnorm2(1) = absnorm2(1) + initnorm2
@@ -504,12 +504,12 @@ Program MainMCE
           close (timestpunit)
           call outnormpopadapheads(reps)
           call outnormpopadap(initnorm,acft,extmp,initehr,popt,x,reps,time)
-        end if 
-        deallocate(ovrlp)           
+        end if
+        deallocate(ovrlp)
 
         !***********Timesteps***********!
 
-        if (((method=="MCEv2").or.(method=="MCEv1")).and.(cloneflg=="YES")) then
+        if (((method=="MCEv2").or.(method=="MCEv1")).and.((cloneflg=="YES").or.(cloneflg=="QSC"))) then
           write(rep,"(i3.3)") reps
           open(unit=47756,file="Clonetrack-"//trim(rep)//".out",status="new",iostat=ierr)
           close(47756)
@@ -534,30 +534,30 @@ Program MainMCE
         call flush(6)
 
         do while ((time.lt.timeend_loc).and.(x.le.80000))
- 
-          if (errorflag .ne. 0) exit    
+
+          if (errorflag .ne. 0) exit
 
           x = x + 1  ! timestep index
-          y = x + 1  ! array index       
+          y = x + 1  ! array index
 
-          call trajchk(bset) !ensures that the position component of the coherent states are not too widely spaced   
+          call trajchk(bset) !ensures that the position component of the coherent states are not too widely spaced
 
           if ((allocated(clone)).and.(cloneflg.ne."BLIND").and.(time.le.timeend)) then
             call cloning (bset, nbf, x, time, clone, clonenum, reps)
           end if
-          
-          call outbs(bset, reps, mup, muq, time,x)         
 
-          if (timeend_loc.gt.timestrt_loc) then      
+          call outbs(bset, reps, mup, muq, time,x)
+
+          if (timeend_loc.gt.timestrt_loc) then
             if ((time+dt-timeend_loc).gt.0.0d0) dt = timeend_loc - time
           else
             if ((time+dt-timeend_loc).lt.0.0d0) dt = timeend_loc - time
-          end if               
+          end if
 
           call propstep (bset, dt, dtnext, dtdone, time, genflg, timestrt_loc,x,reps)     ! This subroutine takes a single timestep
 
           if (dtdone.eq.dt) then   ! nsame and nchange are used to keep track of changes to the stepsize.
-            !$omp atomic           !atomic parameter used to ensure two threads do not write to the same       
+            !$omp atomic           !atomic parameter used to ensure two threads do not write to the same
             nsame = nsame + 1      !memory address simultaneously as these counts are taken over all repeats.
           else
             !$omp atomic
@@ -573,10 +573,10 @@ Program MainMCE
           dt = dtnext      ! dtnext is set by the adaptive step size system. If static, dtnext = dt already
 
           ! output variables written to arrays. Note - if a non-fatal error flag is implemented (currently only fatal errors implemented),
-          ! the outputs will have to be saved over the course of propagation and then added to the main arrays at time==timeend              
+          ! the outputs will have to be saved over the course of propagation and then added to the main arrays at time==timeend
 
           allocate (ovrlp(size(bset),size(bset)))
-          ovrlp=ovrlpmat(bset)          
+          ovrlp=ovrlpmat(bset)
           normtemp = norm(bset,ovrlp)
           nrmtmp = sqrt(dble(normtemp*dconjg(normtemp)))
           ehren = (0.0d0, 0.0d0)
@@ -591,12 +591,12 @@ Program MainMCE
           acft = acf(bset,mup,muq)
           call extras(extmp, bset)
           do r=1,npes
-            popt(r) = pop(bset, r, ovrlp)  
+            popt(r) = pop(bset, r, ovrlp)
           end do
 
           if ((step == "S").and.(time.le.timeend)) then
             do r=1,npes
-              pops(y,r) = pops(y,r) + popt(r)  
+              pops(y,r) = pops(y,r) + popt(r)
             end do
             absehr(y) = absehr(y) + ehrtmp
             absnorm(y) = absnorm(y) + nrmtmp
@@ -613,7 +613,7 @@ Program MainMCE
             call outnormpopadap(nrmtmp,acft,extmp,ehrtmp,popt,x,reps,time)
           end if
           deallocate(ovrlp)
-          
+
           call outbs(bset, reps, mup, muq, time,x)
           if ((cloneflg == "YES").or.(cloneflg == "BLIND+").or.(cloneflg == "QSC")) then
             call outclones(clonenum, reps, clone)
@@ -630,8 +630,8 @@ Program MainMCE
                   int(real(abs(x*(timeend_loc-timestrt_loc)/(time-timestrt_loc)))), " on rep ", reps, " of ", reptot
             end if
           end if
-          
-          call flush(6) 
+
+          call flush(6)
           call flush(0)
 
         end do   !End of time propagation.
@@ -648,28 +648,28 @@ Program MainMCE
             write(0,"(a)") "Error in deallocating clone arrays"
             errorflag = 1
           end if
-        end if      
+        end if
 
-      end if 
+      end if
 
       if (errorflag==1) then
         write(6,"(a)") "Last basis set outputting...."
         call outbs(bset, reps, mup, muq, time,x)
-      end if 
+      end if
 
-      call deallocbs(bset)     ! Deallocates basis set ready for next repeat 
-      
+      call deallocbs(bset)     ! Deallocates basis set ready for next repeat
+
       if ((conjrep==2).and.(errorflag==0)) then
-        write(6,"(a)") "Starting Conjugate propagation" 
+        write(6,"(a)") "Starting Conjugate propagation"
       else
         exit
-      end if  
-      
-      call flush(6) 
-      call flush(0) 
+      end if
+
+      call flush(6)
+      call flush(0)
 
     end do !conjugate repeat
-  
+
     if (allocated(mup)) deallocate (mup, stat=ierr)
     if ((allocated(muq)).and.(ierr==0)) deallocate (muq, stat=ierr)
     if ((allocated(popt)).and.(ierr==0)) deallocate (popt, stat=ierr)
@@ -677,7 +677,7 @@ Program MainMCE
       write(0,"(a,i0)") "Error deallocating mup, muq or popt in repeat ", reps
       errorflag=1
     end if
-    
+
     call flush(6)
     call flush(0)
 
@@ -707,7 +707,7 @@ Program MainMCE
       if (istat.ne.0) then
         write(0,"(a)") "Error opening the compined timesteps file"
       else
-        istat=0  
+        istat=0
         n=0
         do while (istat==0)
           read (1710,"(a)",iostat=istat) LINE
@@ -732,18 +732,18 @@ Program MainMCE
         write(6,"(a,f15.8)") "minval of timestep array is ", num2
         up=0.0
         down=0.0
-        call histogram(t,n,"timehist.out",up,down)   
+        call histogram(t,n,"timehist.out",up,down)
         deallocate(t, stat = istat)
         if (istat/=0) then
           write(0,"(a)") "Error in timestep array deallocation"
           errorflag=1
-        end if 
+        end if
         if (npes==2) then
           cols=13
         else
           cols=10+npes
         end if
-        call interpolate(cols,errorflag) 
+        call interpolate(cols,errorflag)
       end if
     end if
   end if
@@ -756,26 +756,26 @@ Program MainMCE
   call CPU_TIME(stoptime)
   runtime = stoptime-starttime
   call getcwd(CWD)
-  
+
   if (errorflag.eq.0) write(6,"(a,a)") 'Successfully Executed MCE Program in ', trim(CWD)
   if (errorflag.ne.0) write(6,"(a,a)") 'Unsuccessfully Executed MCE Program in ', trim(CWD)
   if (step == "A") then
     write(6,"(a,i0,a,i0,a)") 'Of ', nsame + nchange, ' steps, ', nchange, ' were changed'
-  end if 
+  end if
   if (runtime/3600.0d0 .gt. 1.0d0)then
     runtime = runtime/3600.0d0
-    write(6,"(a,es12.5,a)") 'Time taken : ', runtime, ' hours' 
+    write(6,"(a,es12.5,a)") 'Time taken : ', runtime, ' hours'
   else if (runtime/60.0d0 .gt. 1.0d0)then
-    runtime = runtime/60.0d0 
+    runtime = runtime/60.0d0
     write(6,"(a,es12.5,a)") 'Time taken : ', runtime , ' mins'
   else
-    write(6,"(a,es12.5,a)") 'Time taken : ', runtime, ' seconds'        
+    write(6,"(a,es12.5,a)") 'Time taken : ', runtime, ' seconds'
   end if
-  
-  
+
+
   call flush(6)
   call flush(0)
- 
+
   stop
 
 end program MainMCE

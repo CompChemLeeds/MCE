@@ -3,11 +3,11 @@ MODULE globvars
 !*************************************************************************************************!
 !*
 !*        Global Variables Module
-!*        
+!*
 !*  Contains declaration of all global variables and subroutines for:
 !*
 !*      1) Initialisation of global variables
-!*      
+!*
 !*************************************************************************************************!
 
   type basisfn                              ! an array of size nbf of this type holds the basis set
@@ -45,11 +45,11 @@ MODULE globvars
   real(kind=8) :: delta_sb         ! Coupling between PESs in Hamiltonian - provides off diagonals **SPIN BOSON ONLY**
   real(kind=8) :: eps_sb           ! Symmetry parameter used in calculation of diagonals in hamiltonian **SPIN BOSON ONLY**
   integer :: freqflg_sb            ! Flag for reading pre-calculated frequencies (1=read, 0=calculate) **SPIN BOSON ONLY**
-  
+
   real(kind=8) :: wc_exp           ! Cutoff frequency **SPIN BOSON ONLY**
   real(kind=8) :: kondo_exp        ! Kondo parameter **SPIN BOSON ONLY**
   real(kind=8) :: wmax_exp         ! Maximum frequency factor **SPIN BOSON ONLY**
-  
+
   real(kind=8) :: wc_dl            ! Cutoff frequency **DRUDE LORENTZ ONLY**
   real(kind=8) :: lambda_dl        ! Reorganisation Energy parameter **DRUDE LORENTZ ONLY**
   real(kind=8) :: wmax_dl          ! Maximum frequency factor **DRUDE LORENTZ ONLY**
@@ -65,7 +65,7 @@ MODULE globvars
   real(kind=8) :: sigq             ! Width of the distribution of real parts of the initial wavefunction
   real(kind=8) :: gam              ! Gamma value, used to calculate the widths sigp and sigq
   real(kind=8) :: initalcmprss     ! Initial compression parameter. Can be automatically tweaked or left static.
-  real(kind=8) :: mu               ! Center value for the real and imaginary parts of the initial wavefunction 
+  real(kind=8) :: mu               ! Center value for the real and imaginary parts of the initial wavefunction
   real(kind=8) :: hbar             ! hbar. Currently redundant as hbar assumed to be 1
   real(kind=8) :: Ebfmin           ! Minimum energy allowed for a single basis function
   real(kind=8) :: Ebfmax           ! Maximum energy allowed for a single basis function
@@ -80,6 +80,7 @@ MODULE globvars
   real(kind=8) :: lowlimnorm       ! lower limit of the norm
   real(kind=8) :: sqrtpi           ! square root of pi
   real(kind=8) :: thresh           ! cloning threshold
+  real(kind=8) :: qsce             ! QSC exclusion paramter 
   real(kind=8) :: pirl             ! pi
 
   character(LEN=5) :: ECheck       ! Flag to determine if the energy of basis functions should be checked
@@ -123,11 +124,11 @@ contains
     delta_sb = 0.0d0         ! SPIN BOSON PARAMETER
     beta_sb = 0.0d0          ! SPIN BOSON PARAMETER
     freqflg_sb = 0           ! SPIN BOSON PARAMETER
-    
+
     wc_exp = 0.0d0           ! SPIN BOSON [EXPONENTIAL CUTOFF] ONLY
     kondo_exp = 0.0d0        ! SPIN BOSON [EXPONENTIAL CUTOFF] ONLY
     wmax_exp = 0.0d0         ! SPIN BOSON [EXPONENTIAL CUTOFF] ONLY
-  
+
     wc_dl = 0.0d0            ! SPIN BOSON [DRUDE LORENTZ CUTOFF] ONLY
     lambda_dl = 0.0d0        ! SPIN BOSON [DRUDE LORENTZ CUTOFF] ONLY
     wmax_dl = 0.0d0          ! SPIN BOSON [DRUDE LORENTZ CUTOFF] ONLY

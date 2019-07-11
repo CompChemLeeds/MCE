@@ -2,8 +2,7 @@
 #					Input File								!!!
 #!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-# System (Currently can be SB [Spin Boson],        HP [Harmonic Potential], FP [Free Particle], MP [Morse Potential],
-#                          IV [Inverted Gaussian], CP [Coulomb Potential],  HH [Henon-Heiles].
+# System (Currently can be SB [Spin Boson], HP [Harmonic Potential], FP [Free Particle], MP [Morse Potential])
 #  SB works only with MCE, all others with CCS.
 System: SB
 
@@ -72,6 +71,9 @@ max_cloning 4
 
 # Minimum cloning frequency (ie how many timesteps since last cloning is new cloning event allowed)
 clon_freq 200
+
+#Quantum Superposition Cloning exclusion paramter between the two child trajectories should >= ??? and < ???
+QSC_epsilon 0.1d0 
 
 # spacing between trajectories for train type basis set. Used for swarm-trains
 trainsp 300

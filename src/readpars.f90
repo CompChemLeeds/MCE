@@ -8,7 +8,7 @@ MODULE readpars
 !*************************************************************************************************!
 !*
 !*         Input File Reading Module
-!*           
+!*
 !*   Contains subroutines for:
 !*
 !*      1) Reading the run conditions (gen,prop,cmprss,method,reptot,conjflg)
@@ -18,7 +18,7 @@ MODULE readpars
 !*      5) Reading initial wavefunction parameters (initialcmprss,gam,mu,hbar and calculation of sigp & sigq)
 !*      6) Reading a pre-calculated basis set (inc. bs params and all bs values)
 !*      7) Reading time propagation parameters (dtmin,dtmax,dtinit,timeend,timestrt,step)
-!*      
+!*
 !*************************************************************************************************!
 
 contains
@@ -81,7 +81,7 @@ contains
         else
           write(0,"(a,a)") "Error. prop value must be YES/NO. Read ", trim(LINE2)
         end if
-        n=n+1   
+        n=n+1
       else if (LINE=='restart') then
         backspace(140)
         read(140,*,iostat=ierr)LINE,restrtflg
@@ -93,7 +93,7 @@ contains
         if ((restrtflg.ne.0).and.(restrtflg.ne.1)) then
           write(0,"(a,a)") "Error. Restart flag must be 1/0. Read ", trim(LINE2)
         end if
-        n=n+1             
+        n=n+1
       else if (LINE=='cmprss') then
         backspace(140)
         read(140,*,iostat=ierr)LINE,LINE2
@@ -109,7 +109,7 @@ contains
         else
           write(0,"(a,a)") "Error. cmprss value must be YES/NO. Read ", trim(LINE2)
         end if
-        n=n+1 
+        n=n+1
       else if (LINE=='method') then
         backspace(140)
         read(140,*,iostat=ierr)LINE,LINE2
@@ -136,7 +136,7 @@ contains
           errorflag = 1
           return
         end if
-        n=n+1                    
+        n=n+1
       else if (LINE=='Conjugate_Repeats') then
         backspace(140)
         read(140,*,iostat=ierr)LINE,LINE2
@@ -152,7 +152,7 @@ contains
         else
           write(0,"(a,a)") "Error. Conjugate repeats flag must be Yes or No. Read ", trim(LINE2)
         end if
-        n=n+1                     
+        n=n+1
       end if
 
       read(140,*,iostat=ierr) LINE
@@ -178,7 +178,7 @@ contains
       errorflag=1
       return
     end if
-    
+
     if ((conjflg==1).and.(restrtflg==1)) then
       write(0,"(a)")"Error! Conjugate repetition is not compatible for restarted simulations"
       errorflag=1
@@ -254,26 +254,26 @@ contains
     end do
 
     close(127)
-    
+
     if ((sys.ne."SB").and.(sys.ne."HP").and.(sys.ne."MP")) then
       write(0,"(2a)") "System not recognised. Please recheck input.dat file. Read value of ", sys
       errorflag = 1
       return
     end if
-    
+
     if ((sys.eq."SB").and.(specden.ne."EXP").and.(specden.ne."DL").and.(specden.ne."UBO").and.(specden.ne."LHC")) then
       write(0,"(2a)") "Spectral Density not recognised. Must be EXP, DL, UBO or LHC, but read ", specden
       errorflag = 1
       return
     end if
-    
+
     if (specden.eq."LHC") then
       write(0,"(a)") "The LHC-II Spectral Density calculation is not full set up yet. Please change the spectral density"
       errorflag = 1
       return
     end if
-      
-    if ((freqflg_sb.eq.0).and.((specden=="UBO").or.(specden=="LHC"))) then 
+
+    if ((freqflg_sb.eq.0).and.((specden=="UBO").or.(specden=="LHC"))) then
       write(0,"(3a)") "Frequency flag set for self calculation. This is not compatible with the ", specden, &
                      & " spectral density, which only works with pre-calculation. Please revise the running parameters"
       errorflag = 1
@@ -284,7 +284,7 @@ contains
       write(0,"(a)") "Not all required variables read in readsys subroutine"
       errorflag = 1
       return
-    end if  
+    end if
 
     call readparams
 
@@ -367,7 +367,7 @@ contains
     end do
 
     close (128)
-    
+
     if (Ebfmin.ge.Ebfmax) then
       write(0,"(a)") "Invalid values for Ebfmin and/or Ebfmax. Max must be higher than min"
       errorflag = 1
@@ -414,7 +414,7 @@ contains
 
       if(LINE== "ndim") then
         backspace(127)
-        read(127,*,iostat=ierr)LINE,ndim 
+        read(127,*,iostat=ierr)LINE,ndim
         if(ierr.ne.0) then
           write(0,"(a)")  "Error reading ndim"
           errorflag = 1
@@ -507,6 +507,8 @@ contains
           cloneflg = "YES"
         else if ((LINE2(1:1).eq.'n').or.(LINE2(1:1).eq.'N')) then
           cloneflg = "NO"
+       else if ((LINE2(1:1).eq.'q').or.(LINE2(1:1).eq.'Q')) then
+          cloneflg = "QSC"
         else if ((LINE2(1:1).eq.'b').or.(LINE2(1:1).eq.'B')) then
           if (LINE2(6:6).eq.'+') then
             cloneflg = "BLIND+"
@@ -514,7 +516,7 @@ contains
             cloneflg = "BLIND"
           end if
         else
-          write(0,"(a,a)") "Error. cloneflg value must be YES/NO/BLIND/BLIND+. Read ", trim(LINE2)
+          write(0,"(a,a)") "Error. cloneflg value must be YES/NO/QSC/BLIND/BLIND+. Read ", trim(LINE2)
         end if
         n = n+1
       else if (LINE=="Threshold") then
@@ -553,14 +555,23 @@ contains
           return
         end if
         n = n+1
+      else if (LINE=="QSC_epsilon") then
+        backspace(127)
+        read(127,*,iostat=ierr)LINE,qsce
+        if(ierr.ne.0) then
+          write(0,"(a)")  "Error reading QSC exclusion parameter"
+          errorflag = 1
+          return
+        end if
+        n = n+1
       end if
 
       read(127,*,iostat=ierr) LINE
 
     end do
 
-    close(127) 
-    
+    close(127)
+
     if ((in_pes.gt.npes).or.(in_pes.le.0)) then
       write(0,"(a)") "Initial PES does not exist"
       ierr=-1
@@ -595,7 +606,7 @@ contains
       errorflag = 1
       return
     end if
-    
+
     if (qss==1) then
       if (npes.ne.2) then
         write(0,"(a)") "qss amplitudes are only valid with npes = 2."
@@ -610,8 +621,8 @@ contains
       ierr=-1
       errorflag = 1
       return
-    end if    
-    
+    end if
+
     if ((basis.ne.'SWARM').and.(basis.ne.'swarm').and.(basis.ne.'SWTRN').and.(basis.ne.'swtrn')) then
       write(0,"(a,a)") "Invalid value for basis. Must be SWARM/SWTRN and all upper/lower case. Value is ", basis
       errorflag = 1
@@ -621,7 +632,7 @@ contains
     else if ((basis.eq.'SWTRN').or.(basis.eq.'swtrn'))then
       basis = 'SWTRN'
     end if
-    
+
     if (thresh .lt. 0.05d0) then
       write(0,"(a)") "Cloning threshold too small. Setting to default value of 0.249"
       thresh = 0.249d0
@@ -629,7 +640,7 @@ contains
       write(0,"(a)") "Cloning threshold larger than allowed limits. Setting to default value of 0.249"
       thresh = 0.249d0
     end if
-   
+
     if ((randfunc.ne.'ZBQL').and.(randfunc.ne.'zbql').and.(randfunc.ne.'gaus').and.(randfunc.ne.'GAUS')) then
       write(0,"(a,a)") "Invalid value for random number function. Must be ZBQL/zbql or GAUS/gaus. Value is ", randfunc
       errorflag = 1
@@ -638,9 +649,9 @@ contains
       randfunc = 'ZBQL'
     else
       randfunc = 'GAUS'
-    end if      
-    
-    if (n.ne.14) then
+    end if
+
+    if (n.ne.15) then
       write(0,"(a,i0)") "Not all required variables read in readbsparams subroutine. n=", n
       errorflag = 1
       return
@@ -649,17 +660,17 @@ contains
     return
 
   end subroutine readbsparams
-  
+
 !--------------------------------------------------------------------------------------------------
 
   subroutine checkparams    !   Subroutiner checks that parameters are compatible with each other
-  
+
     implicit none
-    
+
     if (errorflag.ne.0) return
-    
+
     !!!!!! Basis specific checks !!!!!!!
-    
+
     if (basis.eq."SWTRN") then
       if (step.eq."A") then
         write(0,"(a)") "Trains are only valid for static stepsizes."
@@ -678,9 +689,9 @@ contains
         write(0,"(a)") "MCEv1 cannot calculate the amplitudes correctly"
         errorflag = 1
         return
-      end if        
+      end if
     end if
-       
+
     !!!!!! Basis set change parameter check!!!!!!
 
     if (cloneflg.ne.'NO') then
@@ -695,7 +706,7 @@ contains
       else if ((method.eq."MCEv2").and.(basis.ne."SWARM")) then
         write (0,"(a)") "Cloning with MCEv1 can only work on a swarm"
         errorflag = 1
-        return        
+        return
       end if
       if (clonemax.lt.1) then
         write(0,"(a)") "Maximum number of clones allowed is less than 1 but cloning is enabled!"
@@ -704,7 +715,6 @@ contains
         return
       else if (clonemax.gt.20) then
         write(0,"(a)") "Maximum number of clones allowed is 20!"
-!        write(0,"(a)") "This will mean that over 1024 clones could be made from EACH member of the initial basis set"
         write(0,"(a)") "Try again with a lower number (8 should be enough for anyone)"
         errorflag = 1
         return
@@ -723,11 +733,11 @@ contains
         errorflag = 1
         return
       end if
-    end if 
-        
-   
-    !!!!!!!! Check the System!!!!!!  
-    
+    end if
+
+
+    !!!!!!!! Check the System!!!!!!
+
     select case (sys)
       case ("SB")
         if (npes.lt.2) then
@@ -744,7 +754,7 @@ contains
           write(0,"(a)") "This method must be used with Swarms or Swarm-Trains."
           errorflag = 1
           return
-        end if 
+        end if
       case ("HP")
         if (npes.ne.1) then
           write(0,"(a)") "Harmonic Potential only valid for 1 PES"
@@ -754,7 +764,7 @@ contains
         if (trim(method).ne."CCS") then
           write(0,"(a)") "Harmonic Potential can only be simulated by CCS"
           errorflag = 1
-          return  
+          return
         end if
       case ("MP")
         if (npes.ne.1) then
@@ -765,14 +775,14 @@ contains
         if (trim(method).ne."CCS") then
           write(0,"(a)") "Morse Potential can only be simulated by CCS"
           errorflag = 1
-          return  
-        end if 
+          return
+        end if
       case default
         write(0,"(a)") "System is not recognised. Value is ", sys
         errorflag = 1
         return
-    end select  
-    
+    end select
+
   end subroutine checkparams
 
 !--------------------------------------------------------------------------------------------------
@@ -833,7 +843,7 @@ contains
         if(ierr.ne.0) then
           write(6,"(a)")  "Error reading hbar value. This value is optional, defaulting to 1"
           hbar = 1.0d0
-        else if (hbar.ne.1.0d0) then 
+        else if (hbar.ne.1.0d0) then
           write(6,"(a,es12.5)") "hbar changed from default to ", hbar
         end if
         n = n+1
@@ -867,10 +877,10 @@ contains
     implicit none
     type(basisfn), dimension (:), allocatable, intent(inout) :: bs
     integer::ierr, n, j, k, m, r, cflg, bsunit
-    real(kind=8), dimension(:), allocatable, intent(out) :: mup, muq 
+    real(kind=8), dimension(:), allocatable, intent(out) :: mup, muq
     real(kind=8), intent(inout) :: t
     integer, intent(inout) :: nbf
-    integer, intent(in) :: rep  
+    integer, intent(in) :: rep
     character(LEN=100)::LINE
     character(LEN=14)::filename
     real(kind=8)::rl, im
@@ -889,7 +899,7 @@ contains
 
     write(6,"(a,a)") "Opening file ", trim(filename)
     call flush(6)
-    
+
     bsunit = 200+rep
 
     open(unit=bsunit, file=filename, status="old", iostat=ierr)
@@ -968,7 +978,7 @@ contains
       end if
       read(bsunit,*,iostat=ierr)LINE
     end do
-    
+
     call flush(6)
     call flush(0)
 
@@ -976,8 +986,8 @@ contains
       write(0,"(a,i0,a)") "Error in reading parameters. Only ", n, " of 6 parameters read."
       errorflag = 1
       return
-    end if 
-    
+    end if
+
     call flush(6)
     call flush(0)
 
@@ -1006,7 +1016,7 @@ contains
         return
       end if
     end do
-     
+
     read(bsunit,*,iostat=ierr)LINE
 
     if (LINE.ne."basis") then
@@ -1088,7 +1098,7 @@ contains
         bs(j)%z(m)=cmplx(rl,im,kind=8)
       end do
     end do
-    
+
     close(bsunit)
 
     if (t==0.0d0) then
@@ -1113,7 +1123,7 @@ contains
             bs(j)%a_pes(r) = bs(j)%d_pes(r) * cdexp(i*bs(j)%s_pes(r))
           end do
           bs(j)%D_big = dsum1 * bs(j)%D_big
-        end do       
+        end do
       end if
     else
       do j=1,nbf
@@ -1127,32 +1137,32 @@ contains
           return
         end if
       end do
-    end if   
-       
+    end if
+
   end subroutine readbasis
-  
+
 !------------------------------------------------------------------------------------
 
   subroutine restartnum(rep,gen,restart)
-  
+
     implicit none
-    
+
     integer, intent (inout) :: restart
     integer, intent(in) :: rep
     character(LEN=1), intent(inout) :: gen
 
-    real(kind=8) :: time    
+    real(kind=8) :: time
     integer :: ierr,fileun
     character(LEN=100) :: LINE
     character(LEN=13)::filename
     logical :: file_exists
-    
+
     if (errorflag.ne.0) return
-    
+
     fileun=25433+rep
     write(filename, "(a,i3.3,a)") "Outbs-",rep,".out"
     inquire(file=filename,exist=file_exists)
-    
+
     if (file_exists.eqv..false.) then
       gen="Y"
     else
@@ -1162,26 +1172,26 @@ contains
         errorflag = 1
         return
       end if
-      
+
       read(fileun,*,iostat=ierr)LINE
 
-      do while ((LINE.ne."time").and.(ierr==0)) 
+      do while ((LINE.ne."time").and.(ierr==0))
         read(fileun,*,iostat=ierr)LINE
       end do
       backspace(fileun)
-      
+
       read(fileun,*,iostat=ierr) LINE, time
-      
+
       if (time==timeend) then
         restart = 1
       else
         gen = "N"
       end if
       close(fileun)
-    end if      
-    
-  end subroutine restartnum  
-  
+    end if
+
+  end subroutine restartnum
+
 !--------------------------------------------------------------------------------------------------
 
   subroutine readtimepar   !   Level 1 Subroutine
@@ -1209,7 +1219,7 @@ contains
 
       if(LINE== "dtmin") then
         backspace(135)
-        read(135,*,iostat=ierr)LINE,dtmin 
+        read(135,*,iostat=ierr)LINE,dtmin
         if(ierr.ne.0) then
           write(0,"(a)")  "Error reading minimum dt"
           errorflag = 1
@@ -1242,7 +1252,7 @@ contains
           errorflag = 1
           return
         end if
-        n = n+1    
+        n = n+1
       else if (LINE=="time_start") then
         backspace(135)
         read(135,*,iostat=ierr)LINE,timestrt
@@ -1269,7 +1279,7 @@ contains
           errorflag = 1
         end if
         n = n+1
-      end if    
+      end if
 
       read(135,*,iostat=ierr)LINE
 
@@ -1284,34 +1294,34 @@ contains
     return
 
   end subroutine readtimepar
-  
+
 !--------------------------------------------------------------------------------------------------
 
   subroutine readclone(clonenum, reps, clone)
-  
+
     implicit none
-    
+
     integer, dimension(:), intent(inout) :: clonenum, clone
     integer, intent(in) :: reps
-    
+
     integer :: j, k, p, q, n, ierr
     character(LEN=255) :: filename
     character(LEN=3) :: rep
-    
+
     if (errorflag .ne. 0) return
-    
+
     write(rep,"(i3.3)") reps
     filename="clonearr-"//rep//".out"
-    
+
     n = 90254+reps
-    
+
     open(unit=n,file=trim(filename),status="old",iostat=ierr)
     if (ierr/=0) then
       write (0,"(3a,i0)") "Error opening ", trim(filename), " file. Ierr was ", ierr
       errorflag = 1
       return
     end if
-    
+
     do j=1,size(clonenum)
       read (n,*,iostat=ierr) k, p, q
       if (ierr/=0) then
@@ -1325,17 +1335,17 @@ contains
                                   " but read k = ", k
         errorflag = 1
         return
-      end if  
+      end if
       clonenum(j) = p
       clone(j) = q
     end do
-    
+
     close(n)
-        
+
     return
-  
-  end subroutine readclone  
-    
+
+  end subroutine readclone
+
 !*************************************************************************************************!
 
 END MODULE readpars

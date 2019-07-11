@@ -1,5 +1,5 @@
 MODULE bsetalter
-  
+
   use globvars
   use Ham
   use alarrays
@@ -8,7 +8,7 @@ MODULE bsetalter
 !***********************************************************************************!
 !*
 !*         Basis Set alteration module Module
-!*           
+!*
 !*   Contains subroutines for:
 !*
 !*      1) Relocating the wavefunction on a static grid
@@ -17,7 +17,7 @@ MODULE bsetalter
 !*              spin boson model
 !*      4) Retriving cloning information from previous calculations when using the
 !*              AIMC-MCE propagation system
-!*      
+!*
 !***********************************************************************************!
 
 contains
@@ -32,17 +32,17 @@ contains
     type(basisfn), dimension(:), allocatable, intent(inout) :: bsnew   ! This is the new basis set
     type(basisfn), dimension(:), allocatable, intent(inout) :: bsold   ! This is the previous basis set.
     integer, intent(in) :: x
- 
+
     complex(kind=8), dimension (:,:), allocatable :: ovrlp_mat
     complex(kind=8), dimension (:), allocatable :: cnew, dnew
     complex(kind=8) :: sumamps
     integer :: j, k, r, ierr, nbfnew, nbfold
 
     if (errorflag .ne. 0) return
-       
+
     nbfnew = size(bsnew)
     nbfold = size(bsold)
-       
+
     if (method=="MCEv1") then
       do j=1,nbfold
         sumamps = (0.0d0, 0.0d0)
@@ -67,15 +67,15 @@ contains
         end do
       end do
     end if
-    
+
     allocate (cnew(nbfnew), stat=ierr)
     if (ierr==0) allocate (ovrlp_mat(nbfnew,nbfold), stat=ierr)
     if (ierr/=0) then
       write (0,"(a)") "Error in allocating temporary z values for reprojection subroutine"
       errorflag=1
       return
-    end if 
-        
+    end if
+
     ! Ovrlp_mat is the overlap with the initial wavepacket
     do j=1,nbfold
       do k=1,nbfnew
@@ -107,7 +107,7 @@ contains
       write (0,"(a,a)") "Error in allocation of dnew in reprojection subroutine"
       errorflag=1
       return
-    end if    
+    end if
 
     do r=1,npes
       call lineq(ovrlp_mat, cnew, dnew)
@@ -123,7 +123,7 @@ contains
     do k=1,nbfnew
       bsnew(k)%D_big = dnew(k)
     end do
-   
+
     if (method=="MCEv1") then
       do j=1,nbfnew
         do r=1,npes
@@ -155,8 +155,8 @@ contains
 !--------------------------------------------------------------------------------------------------
 
   subroutine cloning(bs,nbf,x,time,clone, clonenum, reps)
-  
-    !NOTE: Cloning is only set up for 2 PESs. This needs to be generalised!
+
+    !!NOTE: Cloning is only set up for 2 PESs. This needs to be generalised!
 
     implicit none
 
@@ -167,15 +167,15 @@ contains
     integer, intent (inout) :: nbf
     integer, intent (in) :: x, reps
     complex(kind=8), dimension (:), allocatable :: dz
-    real(kind=8), dimension (:), allocatable :: dummy_arr
-    real(kind=8) :: brforce, normar, sumamps, p, q
-    integer, dimension(:), allocatable :: clonehere, clonecopy, clonecopy2 
-    integer :: k, m, j, n, nbfnew, ierr, r, clonetype
+    real(kind=8), dimension (:), allocatable :: dummy_arr, length, phi
+    real(kind=8) :: brforce, normar, sumamps, p, q, pqsqrd, deltaprob, phaseval, dist
+    integer, dimension(:), allocatable :: clonehere, clonecopy, clonecopy2
+    integer :: k, m, j, n, nbfnew, ierr, r, s, clonetype, dummy1, dummy2
     character(LEN=3)::rep
 
     if (errorflag==1) return
 
-    if ((cloneflg=="YES").or.((cloneflg=="BLIND+").and.(x.ne.0))) then
+    if ((cloneflg=="YES").or.(cloneflg=="QSC").or.((cloneflg=="BLIND+").and.(x.ne.0))) then
       clonetype = 1 ! 1=conditional cloning, 2=blind cloning
     else if ((cloneflg=="BLIND").or.((cloneflg=="BLIND+").and.(x.eq.0))) then
       clonetype = 2
@@ -193,7 +193,7 @@ contains
       errorflag = 1
       return
     end if
-    
+
     if (npes.ne.2) then
       write(6,*) "Error. Cloning currently only valid for npes=2"
       errorflag = 1
@@ -205,7 +205,7 @@ contains
       clonehere(k) = 0
     end do
 
-    ! Build the map of which trajectories to clone, done on the basis function by basis function level (clonetype=1), 
+    ! Build the map of which trajectories to clone, done on the basis function by basis function level (clonetype=1),
     ! or the entire basis set at once (clonetype=2)
 
     if (clonetype==1) then
@@ -214,11 +214,12 @@ contains
         do r=1,npes
           normar = normar + dconjg(bs(k)%a_pes(r))*bs(k)%a_pes(r)
         end do
+        !!!!! The line below needs changing to acount for multiple PESs
         brforce = ((abs(bs(k)%a_pes(1)*bs(k)%a_pes(2))**2.0)/(normar**2.0))
         if ((brforce.gt.thresh).and.(clone(k)==0).and.(clonenum(k).lt.clonemax)) then
           clone(k) = x
           clonehere(k) = 1
-        end if 
+        end if
         clonecopy(k) = clone(k)
         clonecopy2(k) = clonenum(k)
       end do
@@ -228,19 +229,20 @@ contains
           if (clonenum(k).lt.clonemax) then
             clone(k) = x
             clonehere(k) = 1
-          end if 
-        end do 
+          end if
+        end do
       end if
       do k=1,nbf
         clonecopy(k) = clone(k)
         clonecopy2(k) = clonenum(k)
       end do
-    end if          
+
+    end if
 
     ! build new sized clone mapping arrays to use for next itteration
 
     nbfnew = nbf + sum(clonehere(:))
-    
+
     deallocate (clone, stat=ierr)
     if (ierr==0) deallocate (clonenum, stat=ierr)
     if (ierr==0) allocate (clone(nbfnew), stat=ierr)
@@ -260,7 +262,7 @@ contains
       write(0,"(a)") "Error deallocating the cloning copy arrays"
       errorflag = 1
       return
-    end if 
+    end if
 
     ! Actual cloning section
 
@@ -269,7 +271,7 @@ contains
       call allocbs(bsnew, nbfnew)
 
       j=1
-      
+
       write(rep,"(i3.3)") reps
       open(unit=47756,file="Clonetrack-"//trim(rep)//".out",status="old",access="append",iostat=ierr)
 
@@ -280,25 +282,24 @@ contains
         return
       end if
 
-!      if (qsc==1) then
-!        clonetype = 3
-!      else        
-      if (method=="MCEv2") then
+      if (cloneflg=="QSC") then
+        clonetype = 3
+      else if (method=="MCEv2") then
         clonetype = 1
       else if (method=="MCEv1") then
         clonetype = 2
       end if
-      
+
       do k=1,nbf
-      
+
         if (clonehere(k) == 1) then
           clone(k) = x
           clone(nbf+j) = x
           clonenum(k) = clonenum(k) + 1
           clonenum(nbf+j) = clonenum(k)
-          
+
           if (clonetype==1) then
-          
+
             ! First child trajectory
             bsnew(k)%D_big = bs(k)%D_big * abs(bs(k)%a_pes(in_pes))
             bsnew(k)%d_pes(in_pes) = bs(k)%d_pes(in_pes)/abs(bs(k)%a_pes(in_pes))
@@ -312,7 +313,7 @@ contains
             do m=1,ndim
               bsnew(k)%z(m) = bs(k)%z(m)
             end do
-            
+
             ! Second child trajectory
             bsnew(nbf+j)%D_big = bs(k)%D_big * sqrt(1.-(dconjg(bs(k)%a_pes(in_pes))*bs(k)%a_pes(in_pes)))
             bsnew(nbf+j)%d_pes(in_pes) = (0.0d0,0.0d0)
@@ -322,23 +323,29 @@ contains
                   bsnew(nbf+j)%d_pes(r) = (1.0d0,0.0d0)
                 else
                   bsnew(nbf+j)%d_pes(r) = bs(k)%d_pes(r)/&
-                                  sqrt(1.-(dconjg(bs(k)%a_pes(in_pes))*bs(k)%a_pes(in_pes)))            
+                                  sqrt(1.-(dconjg(bs(k)%a_pes(in_pes))*bs(k)%a_pes(in_pes)))
                 end if
               end if
               bsnew(nbf+j)%s_pes(r) = bs(k)%s_pes(r)
-              bsnew(nbf+j)%a_pes(r) = bsnew(nbf+j)%d_pes(r) * cdexp(i*bsnew(nbf+j)%s_pes(r)) 
+              bsnew(nbf+j)%a_pes(r) = bsnew(nbf+j)%d_pes(r) * cdexp(i*bsnew(nbf+j)%s_pes(r))
             end do
             do m=1,ndim
               bsnew(nbf+j)%z(m) = bs(k)%z(m)
             end do
-                    
+
           else if (clonetype==2) then
+
+            !!!!!!!!!!NOTE!!!!!!!!!!!
+
+            !This is only half of the MCEv1 cloning procedure. After cloning occurs,
+            !the reloc_basis subroutine is called to recalculate the amplitudes.
+            ! Checking that the reloc function works as expected would be a good place to start
 
             ! First child trajectory
             bsnew(k)%D_big = bs(k)%D_big
             bsnew(k)%d_pes(in_pes) = bs(k)%d_pes(in_pes)
             do m=1,ndim
-              dz(m)=cmplx(ZBQLNOR(dble(bs(k)%z(m)),sqrt(0.5d0)),ZBQLNOR(dimag(bs(k)%z(m)),sqrt(0.5)))         
+              dz(m)=cmplx(ZBQLNOR(dble(bs(k)%z(m)),sqrt(0.5d0)),ZBQLNOR(dimag(bs(k)%z(m)),sqrt(0.5)))
             end do
             do r=1,npes
               if (r.ne.in_pes) then
@@ -350,7 +357,7 @@ contains
             do m=1,ndim
               bsnew(k)%z(m) = bs(k)%z(m) - dz(m)
             end do
-            
+
             ! Second child trajectory
             bsnew(nbf+j)%D_big = bs(k)%D_big
             bsnew(nbf+j)%d_pes(in_pes) = (0.0d0,0.0d0)
@@ -359,73 +366,187 @@ contains
                 if (x.eq.0) then
                   bsnew(nbf+j)%d_pes(r) = (1.0d0,0.0d0)
                 else
-                  bsnew(nbf+j)%d_pes(r) = bs(k)%d_pes(r)            
+                  bsnew(nbf+j)%d_pes(r) = bs(k)%d_pes(r)
                 end if
               end if
-              bsnew(nbf+j)%s_pes(r) = bs(k)%s_pes(r)
-              bsnew(nbf+j)%a_pes(r) = bsnew(nbf+j)%d_pes(r) * cdexp(i*bsnew(nbf+j)%s_pes(r)) 
-            end do
-            do m=1,ndim
-              bsnew(nbf+j)%z(m) = bs(k)%z(m) + dz(m)
-            end do
-            
-          else if (clonetype==3) then
-          
-            !First child trajectory
-            sumamps = 0.0d0
-            do r=1,npes
-              call random_number(q)
-              call random_number(p)
-              q = q * 2.0 - 1.0     ! possibly try modifying the range to enforce close to pes amplitudes
-              p = p * 2.0 - 1.0
-              bsnew(k)%d_pes(r) = cmplx(q,p,kind=8)
-              sumamps = sumamps + dsqrt(dble(cmplx(q,p,kind=8) * cmplx(q,-1.0*p,kind=8)))
-            end do
-            do r=1,npes
-              bsnew(k)%d_pes(r) = bsnew(k)%d_pes(r) / sumamps
-              bsnew(k)%s_pes(r) = bs(k)%s_pes(r)
-              bsnew(k)%a_pes(r) = bsnew(k)%d_pes(r) * cdexp(i*bsnew(k)%s_pes(r))
-            end do
-            do m=1,ndim
-              bsnew(k)%z(m) = bs(k)%z(m)
-            end do
-            
-            !Second child trajectory
-            sumamps = 0.0d0
-            do r=1,npes
-              call random_number(q)
-              call random_number(p)
-              q = q * 2.0 - 1.0     ! possibly try modifying the range to enforce close to pes amplitudes
-              p = p * 2.0 - 1.0
-              bsnew(nbf+j)%d_pes(r) = cmplx(q,p,kind=8)
-              sumamps = sumamps + dsqrt(dble(cmplx(q,p,kind=8) * cmplx(q,-1.0*p,kind=8)))
-            end do
-            do r=1,npes
-              bsnew(nbf+j)%d_pes(r) = bsnew(nbf+j)%d_pes(r) / sumamps
               bsnew(nbf+j)%s_pes(r) = bs(k)%s_pes(r)
               bsnew(nbf+j)%a_pes(r) = bsnew(nbf+j)%d_pes(r) * cdexp(i*bsnew(nbf+j)%s_pes(r))
             end do
             do m=1,ndim
-              bsnew(nbf+j)%z(m) = bs(k)%z(m)
+              bsnew(nbf+j)%z(m) = bs(k)%z(m) + dz(m)
             end do
-            
+
+          else if (clonetype==3) then
+
+          !!CCS circular distribution of amplitudes - generalised to n potential energy surfaces
+
+          allocate(length(npes),phi(npes))
+
+          !First Child Trajectory
+
+          do r=1,npes
+            dummy1 = 0
+            do while (dummy1 .eq. 0)
+              call random_number(length(r))
+              call random_number(phi(r))
+              phi(r) = phi(r) * 2.0d0 * pirl
+              if (r == 1) then
+                dummy1 = 1
+              else
+                do s = 1,r-1
+                  !!!! Check that the amplitude values would be sufficiently separated
+                  !!!! in the complex plane. This does not seem very efficient however.
+                  dist = 0.0d0
+                  dist = (length(r)*dcos(phi(r))-length(s)*dcos(phi(s)))**2
+                  dist = dist + (length(r)*dsin(phi(r))-length(s)*dsin(phi(s)))**2
+                  dist = sqrt(dist)
+                  if (dist > qsce) then
+                    dummy1 = 1
+                  end if
+                  !!!! Below checks no two amplitudes would stimulate cloning.
+                  !!!! Valid for 2 PESs, but the calculations would change for a more general case
+                  !!!! since the cloning is not stimulated by only a single pair of PES components
+                  if (dummy1 == 0) then
+                    dist = (length(r)**2)*(length(s)**2)/(length(r)**2)+(length(s)**2)
+                    if (dist > thresh) then
+                      dummy1 = 1
+                    end if
+                  end if
+                end do
+              end if
+            end do
+          end do
+
+          do r=1,npes
+            bsnew(k)%a_pes(r) = cmplx(length(r)*dcos(phi(r)),length(r)*dsin(phi(r)),kind=8)
+          end do
+
+          !Second Child Trajectory
+
+          do r=1,npes
+            s = npes - (r-1)
+            if (r .le. (npes/2.)) then
+              bsnew(nbf+j)%a_pes(r) = cmplx(length(s)*dcos(phi(s)),(-1.0d0)*length(s)*dsin(phi(s)),kind=8)
+            else
+              bsnew(nbf+j)%a_pes(r) = cmplx((-1.0d0)*length(s)*dcos(phi(s)),length(s)*dsin(phi(s)),kind=8)
+            end if
+            if ((mod(npes,2)==1).and.(r==int(floor(real(npes)/2.))+1)) then
+              bsnew(nbf+j)%a_pes(r) = cmplx(0.0d0*dcos(phi(r)),0.0d0*dsin(phi(r)),kind=8)
+            end if
+          end do
+
+          deallocate (length, phi)
+
+          do m=1,ndim
+            bsnew(k)%z(m) = bs(k)%z(m)
+            bsnew(nbf+j)%z(m) = bs(k)%z(m)
+          end do
+          do r= 1,npes
+            bsnew(k)%s_pes(r) = bs(k)%s_pes(r)
+            bsnew(k)%d_pes(r) = bsnew(k)%a_pes(r) * cdexp(-i*bsnew(k)%s_pes(r))
+            bsnew(nbf+j)%s_pes(r) = bs(k)%s_pes(r)
+            bsnew(nbf+j)%d_pes(r) = bsnew(nbf+j)%a_pes(r) * cdexp(-i*bsnew(nbf+j)%s_pes(r))
+          end do
+
+
+!          !!OAB circular distribution amplitudes
+
+!            dummy1 = 0
+!            do while (dummy1.eq.0)
+!              dummy2 = 0
+!              do while(dummy2.eq.0)
+!                call random_number(p)
+!                call random_number(q)
+!                pqsqrd = (p**2)+(q**2)
+!                if (pqsqrd <1) then
+!                  dummy2 = 1
+!                end if
+!              end do
+!              p = p/sqrt(pqsqrd)
+!              q = q/sqrt(pqsqrd)
+!              deltaprob = abs((p**2)-(q**2))
+!              if (deltaprob > qsce) then
+!                dummy1 = 1
+!              end if
+!            end do
+!            call random_number(phaseval)
+!            phaseval = phaseval * 2.0d0 * pirl
+!
+!            !Assign First child trajectory a'1
+!            bsnew(k)%a_pes(1) = cmplx(p,0.0d0,kind=8)
+!            !Assign First child trajectory a'2
+!            bsnew(k)%a_pes(2) = cmplx(q*dcos(phaseval),q*dsin(phaseval),kind=8)
+!            !Assign Second child trajectory to be orthogonal a"1
+!            bsnew(nbf+j)%a_pes(1)= cmplx(q*dcos(phaseval),-1.0d0*q*dsin(phaseval),kind=8)
+!            !Assign Second child trajectory to be orthogonal a"2
+!            bsnew(nbf+j)%a_pes(2)= cmplx(-p,0.0d0,kind=8)
+!
+!            do m=1,ndim
+!              bsnew(k)%z(m) = bs(k)%z(m)
+!              bsnew(nbf+j)%z(m) = bs(k)%z(m)
+!            end do
+!            do r= 1,npes
+!              bsnew(k)%s_pes(r) = bs(k)%s_pes(r)
+!              bsnew(k)%d_pes(r) = bsnew(k)%a_pes(r) * cdexp(-i*bsnew(k)%s_pes(r))
+!              bsnew(nbf+j)%s_pes(r) = bs(k)%s_pes(r)
+!              bsnew(nbf+j)%d_pes(r) = bsnew(nbf+j)%a_pes(r) * cdexp(-i*bsnew(nbf+j)%s_pes(r))
+!            end do
+
+!            !!CCS square distribution of amplitudes
+
+!            do r=1,npes
+!              !First child trajectory
+!              sumamps = 0.0d0
+!              q = q * 2.0 - 1.0     ! possibly try modifying the range to enforce close to pes amplitudes
+!              p = p * 2.0 - 1.0
+!              bsnew(k)%d_pes(r) = cmplx(q,p,kind=8)
+!              sumamps = sumamps + dsqrt(dble(cmplx(q,p,kind=8) * cmplx(q,-1.0*p,kind=8)))
+!            end do
+!            do r=1,npes
+!              bsnew(k)%d_pes(r) = bsnew(k)%d_pes(r) / sumamps
+!              bsnew(k)%s_pes(r) = bs(k)%s_pes(r)
+!              bsnew(k)%a_pes(r) = bsnew(k)%d_pes(r) * cdexp(i*bsnew(k)%s_pes(r))
+!            end do
+!            do m=1,ndim
+!              bsnew(k)%z(m) = bs(k)%z(m)
+!            end do
+!
+!            !Second child trajectory
+!            sumamps = 0.0d0
+!            do r=1,npes
+!              call random_number(q)
+!              call random_number(p)
+!              q = q * 2.0 - 1.0     ! possibly try modifying the range to enforce close to pes amplitudes
+!              p = p * 2.0 - 1.0
+!              bsnew(nbf+j)%d_pes(r) = cmplx(q,p,kind=8)
+!              sumamps = sumamps + dsqrt(dble(cmplx(q,p,kind=8) * cmplx(q,-1.0*p,kind=8)))
+!            end do
+!            do r=1,npes
+!              bsnew(nbf+j)%d_pes(r) = bsnew(nbf+j)%d_pes(r) / sumamps
+!              bsnew(nbf+j)%s_pes(r) = bs(k)%s_pes(r)
+!              bsnew(nbf+j)%a_pes(r) = bsnew(nbf+j)%d_pes(r) * cdexp(i*bsnew(nbf+j)%s_pes(r))
+!            end do
+!            do m=1,ndim
+!              bsnew(nbf+j)%z(m) = bs(k)%z(m)
+!            end do
+
             !Modifications to capital D amplitudes
 
             bsnew(k)%D_big = bs(k)%D_big * (bsnew(nbf+j)%a_pes(2)*bs(k)%a_pes(1)-bsnew(nbf+j)%a_pes(1)*bs(k)%a_pes(2))
             bsnew(nbf+j)%D_big = bs(k)%D_big * (bsnew(k)%a_pes(1)*bs(k)%a_pes(2)-bsnew(k)%a_pes(2)*bs(k)%a_pes(1))
-            
+
             bsnew(k)%D_big = bsnew(k)%D_big/&
                     (bsnew(k)%a_pes(1)*bsnew(nbf+j)%a_pes(2)-bsnew(k)%a_pes(2)*bsnew(nbf+j)%a_pes(1))
             bsnew(nbf+j)%D_big = bsnew(nbf+j)%D_big/&
                     (bsnew(k)%a_pes(1)*bsnew(nbf+j)%a_pes(2)-bsnew(k)%a_pes(2)*bsnew(nbf+j)%a_pes(1))
-            
+
           end if
-          
+
           write(47756,"(3i5,2es25.17e3)") x, k, nbf+j, abs(bs(k)%a_pes(in_pes)), sqrt(1.-((abs(bs(k)%a_pes(in_pes))**2.0d0)))
           j = j+1
-          
+
         else
-        
+
           bsnew(k)%D_big = bs(k)%D_big
           do r=1,npes
             bsnew(k)%d_pes(r) = bs(k)%d_pes(r)
@@ -435,18 +556,18 @@ contains
           do m=1,ndim
             bsnew(k)%z(m) = bs(k)%z(m)
           end do
-          
+
         end if
-        
+
       end do
-      
+
       close (47756)
-      
+
       if (method=="MCEv1") call reloc_basis(bsnew, bs, x)
-   
+
       call deallocbs(bs)
       call allocbs(bs, nbfnew)
-   
+
       do k=1,nbfnew
         bs(k)%D_big = bsnew(k)%D_big
         do r=1,npes
@@ -458,26 +579,26 @@ contains
           bs(k)%z(m) = bsnew(k)%z(m)
         end do
       end do
-      
-      call deallocbs(bsnew)   
-   
+
+      call deallocbs(bsnew)
+
       n = nbfnew-nbf
-     
+
       write (6,"(i0,a,i0,a,i0)") sum(clonehere(:)), " bfs cloned in step ", x, &
             ". nbf now = ", nbfnew
-   
+
       nbf = nbfnew
 
     end if
-    
+
     deallocate(clonehere, stat=ierr)
     if (ierr/=0) then
       write(0,"(a)") "Error deallocating the clone-here array"
       errorflag = 1
       return
-    end if 
+    end if
 
-  end subroutine cloning   
+  end subroutine cloning
 
 !***********************************************************************************!
 end module bsetalter

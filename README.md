@@ -53,7 +53,7 @@ If you wish to make a request for a bug fix or new feature, please see our guide
 If however you wish to contribute to the code in a more direct manner, please follow the instructions below.
 
 To make changes to the GitHub repo:
-- If you are a collaborator, you can simply push local changes to the main repo
+- If you are a collaborator, you can simply push local changes to the main repo. If you feel you should be a collaborator and are not, contact me directly.
 - If you are not a collaborator, follow these instructions:
   - Fork and clone the main repo
   - Configure your local forked repo to sync with the main repo:

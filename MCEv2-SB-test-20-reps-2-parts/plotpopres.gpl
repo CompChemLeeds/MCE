@@ -1,6 +1,0 @@
-set terminal png
-set output "popsculmres.png"
-set title "Graph of residuals over multiple repetitions"
-set xlabel "Time"
-set ylabel "Residual Population Difference"
-plot "popdiffresiduals.out" u 1:2 t "10 Reps" w l, "" u 1:3 t "20 Reps" w l

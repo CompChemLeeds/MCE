@@ -1,0 +1,68 @@
+# Hamiltonian Parameters File (Parameters are in atomic units)
+
+# Spin Boson Parameters (exp cutoff, DL, UBO, or DL base for LHC)
+
+SBDelta 1.0d0
+SBEps 0.0d0
+SBBeta 5.0d0
+SB_s_factor 1.0d0
+
+SBEwc 2.5d0
+SBEkondo 0.09d0
+SBEwmaxfact 5.0d0
+
+SBDlambda 1.0d0
+SBDwc 0.50d0
+SBDwmaxfact 20.0d0
+
+SBBlambda 0.20d0
+SBBGamma 0.66666666666d0
+SBBw0 6.0d0
+SBBwmaxfact 2.0d0
+
+SBupnorm 0.9999d0
+SBdownnorm 0.9998d0
+
+# Spin Boson LHC Parameters
+
+SBlambda_1 0.0125d0
+SBlambda_2 0.0083333333d0
+SBlambda_3 0.00625d0
+SBlambda_4 0.005d0
+SBlambda_5 0.004166666667d0
+SBlambda_6 0.00357143d0
+SBlambda_7 0.003125d0
+SBGamma_1 0.25d0
+SBGamma_2 0.25d0
+SBGamma_3 0.25d0
+SBGamma_4 0.25d0
+SBGamma_5 0.25d0
+SBGamma_6 0.25d0
+SBGamma_7 0.25d0
+SBw0_1 10.0d0
+SBw0_2 15.0d0
+SBw0_3 20.0d0
+SBw0_4 25.0d0
+SBw0_5 30.0d0
+SBw0_6 35.0d0
+SBw0_7 40.0d0
+
+# Harmonic Potential Parameters
+HPw 1.0d0
+HPupnorm 0.999d0
+HPdownnorm 0.998d0
+
+# Morse Potential Parameters
+MPw 1.0d0
+MPmass 1.0d0
+MPDissEn 10.25d0
+MPWellParam 0.2209d0
+MPupnorm 0.999d0
+MPdownnorm 0.998d0
+
+#Energy limit parameters
+ECheck No
+Ntries 10
+Ebfmax 5000000.0d0
+Ebfmin -5000000.0d0
+

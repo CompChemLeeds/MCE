@@ -28,139 +28,103 @@ contains
 !*************************************************************************************************!
 
   subroutine readrunconds   !   Level 1 Subroutine
-
     implicit none
-    character(LEN=100)::LINE, LINE2
+    character(LEN=100)::LINE1, LINE2, LINE3, LINE4, LINE5, LINE6, LINE7
+    !integer::LINE6
     integer::ierr, n
-
     if (errorflag .ne. 0) return
 
     ierr = 0
     n = 0
-
-    open(unit=140, file='input.dat', status='old', iostat=ierr)
+   
+    open(unit=140,file='rundata.csv',status='old',iostat=ierr)
 
     if (ierr.ne.0) then
-      write(0,"(a)") 'Error in opening runconds.dat file'
+      write(0,"(a)") 'Error in opening rundata.csv file'
+      errorflag = 1
+      return
+    end if
+    
+  
+    read(140,*,iostat=ierr)LINE1, LINE2, LINE3, LINE4, LINE5, LINE6, LINE7
+    close(140) 
+    if (ierr.ne.0) then
+      write(0,"(a)") "Error reading first line of input file"
       errorflag = 1
       return
     end if
 
-    read(140,*,iostat=ierr)LINE
-
-    do while (ierr==0)
-
-      if (LINE=='gen') then
-        backspace(140)
-        read(140,*,iostat=ierr)LINE,LINE2
-        if (ierr.ne.0) then
-          write(0,"(a)") "Error reading basis set generation status"
-          errorflag = 1
-          return
-        end if
-        if ((LINE2(1:1).eq.'y').or.(LINE2(1:1).eq.'Y')) then
-          gen = "Y"
-        else if ((LINE2(1:1).eq.'n').or.(LINE2(1:1).eq.'N')) then
-          gen = "N"
-        else
-          write(0,"(a,a)") "Error. gen value must be YES/NO. Read ", trim(LINE2)
-        end if
-        n=n+1
-      else if (LINE=='prop') then
-        backspace(140)
-        read(140,*,iostat=ierr)LINE,LINE2
-        if (ierr.ne.0) then
-          write(0,"(a)") "Error reading basis set propagation status"
-          errorflag = 1
-          return
-        end if
-        if ((LINE2(1:1).eq.'y').or.(LINE2(1:1).eq.'Y')) then
-          prop = "Y"
-        else if ((LINE2(1:1).eq.'n').or.(LINE2(1:1).eq.'N')) then
-          prop = "N"
-        else
-          write(0,"(a,a)") "Error. prop value must be YES/NO. Read ", trim(LINE2)
-        end if
-        n=n+1
-      else if (LINE=='restart') then
-        backspace(140)
-        read(140,*,iostat=ierr)LINE,restrtflg
-        if (ierr.ne.0) then
-          write(0,"(a)") "Error reading basis set propagation status"
-          errorflag = 1
-          return
-        end if
-        if ((restrtflg.ne.0).and.(restrtflg.ne.1)) then
-          write(0,"(a,a)") "Error. Restart flag must be 1/0. Read ", trim(LINE2)
-        end if
-        n=n+1
-      else if (LINE=='cmprss') then
-        backspace(140)
-        read(140,*,iostat=ierr)LINE,LINE2
-        if (ierr.ne.0) then
-          write(0,"(a)") "Error reading compression parameter change status"
-          errorflag = 1
-          return
-        end if
-        if ((LINE2(1:1).eq.'y').or.(LINE2(1:1).eq.'Y')) then
-          cmprss = "Y"
-        else if ((LINE2(1:1).eq.'n').or.(LINE2(1:1).eq.'N')) then
-          cmprss = "N"
-        else
-          write(0,"(a,a)") "Error. cmprss value must be YES/NO. Read ", trim(LINE2)
-        end if
-        n=n+1
-      else if (LINE=='method') then
-        backspace(140)
-        read(140,*,iostat=ierr)LINE,LINE2
-        if (ierr.ne.0) then
-          write(0,"(a)") "Error reading basis set propagation method"
-          errorflag = 1
-          return
-        end if
-        if ((LINE2(1:5).eq.'mcev1').or.(LINE2(1:5).eq.'MCEv1')) then
-          method = "MCEv1"
-        else if ((LINE2(1:5).eq.'mcev2').or.(LINE2(1:5).eq.'MCEv2')) then
-          method = "MCEv2"
-        else if ((LINE2(1:3).eq.'ccs').or.(LINE2(1:3).eq.'CCS')) then
-          method = "CCS"
-        else
-          write(0,"(a,a,a)") "Error. Method must be MCEv1, MCEv2, or CCS. Read ", trim(LINE2)
-        end if
-        n=n+1
-      else if (LINE=='Repeats') then
-        backspace(140)
-        read(140,*,iostat=ierr)LINE,reptot
-        if (ierr.ne.0) then
-          write(0,"(a)") "Error reading number of repeats"
-          errorflag = 1
-          return
-        end if
-        n=n+1
-      else if (LINE=='Conjugate_Repeats') then
-        backspace(140)
-        read(140,*,iostat=ierr)LINE,LINE2
-        if (ierr.ne.0) then
-          write(0,"(a)") "Error reading conjugate repeats flag"
-          errorflag = 1
-          return
-        end if
-        if ((LINE2(1:1).eq.'y').or.(LINE2(1:1).eq.'Y')) then
-          conjflg = 1
-        else if ((LINE2(1:1).eq.'n').or.(LINE2(1:1).eq.'N')) then
-          conjflg = 0
-        else
-          write(0,"(a,a)") "Error. Conjugate repeats flag must be Yes or No. Read ", trim(LINE2)
-        end if
-        n=n+1
-      end if
-
-      read(140,*,iostat=ierr) LINE
-
-    end do
-
-    close(140)
-
+    if((LINE1(1:1).eq.'y').or.(LINE1(1:1).eq.'Y')) then
+      gen="Y"
+    else if((LINE1(1:1).eq.'n').or.(LINE1(1:1).eq.'N')) then
+      gen="N"
+    else
+      write(0,"(a,a)") "Error. gen value must be YES/NO. Read ", trim(LINE1)
+      errorflag=1
+      return
+    end if
+    n=n+1
+    if((LINE2(1:1).eq.'y').or.(LINE2(1:1).eq.'Y')) then
+      prop="Y"
+    else if((LINE2(1:1).eq.'n').or.(LINE2(1:1).eq.'N')) then
+      prop="N"
+    else
+      write(0,"(a,a)") "Error. prop value must be YES/NO. Read ", trim(LINE2)
+      errorflag=1
+      return
+    end if
+    n=n+1
+    if((LINE3(1:1)=='y').or.(LINE3(1:1).eq.'Y')) then
+      restrtflg=1
+    else if((LINE3(1:1)=='n').or.(LINE3(1:1).eq.'N')) then
+      restrtflg=0
+    else
+      write(0,"(a,a)") "Error. Restart flag must be YES/NO. Read ", trim(LINE3)
+      errorflag=1
+      return
+    end if
+    n=n+1
+    if((LINE4(1:1).eq.'y').or.(LINE4(1:1).eq.'Y')) then
+      cmprss="Y"
+    else if((LINE4(1:1).eq.'n').or.(LINE4(1:1).eq.'N')) then
+      cmprss="N"
+    else
+      write(0,"(a,a)") "Error. cmprss value must be YES/NO. Read ", trim(LINE4)
+      errorflag=1
+      return
+    end if
+    n=n+1
+    if((LINE5(1:5).eq.'mcev1').or.(LINE5(1:5).eq.'MCEv1')) then
+      method="MCEv1"
+    else if((LINE5(1:5).eq.'mcev2').or.(LINE5(1:5).eq.'MCEv2')) then
+      method="MCEv2"
+    else if((LINE5(1:3).eq.'ccs').or.(LINE5(1:3).eq.'CCS')) then
+      method="CCS"
+    else
+      write(0,"(a,a)") "Error. cmprss value must be YES/NO. Read ", trim(LINE5)
+      errorflag=1
+      return
+    end if
+    n=n+1
+    read(LINE6,*,iostat=ierr)reptot
+    if(ierr.ne.0) then
+      write(0,"(a)") "Error reading repeats"
+      errorflag = 1
+      return
+    end if
+    !reptot=int(LINE6)
+    n=n+1
+    if((LINE7(1:1).eq.'y').or.(LINE7(1:1).eq.'Y')) then
+      conjflg=1
+    else if((LINE7(1:1).eq.'n').or.(LINE7(1:1).eq.'N')) then
+      conjflg=1
+    else
+      write(0,"(a,a)") "Error. cmprss value must be YES/NO. Read ", trim(LINE7)
+      errorflag=1
+      return
+    end if    
+    n=n+1
+  
     if ((gen.eq."N").and.(prop.eq."N")) then
       write(0,"(a)") "Error! Run conditions are for no basis set generation or propagation. So what now genius?"
       errorflag=1
@@ -172,6 +136,7 @@ contains
       write(6,"(a)")"Incrementing repeat total to even number"
       reptot = reptot + 1
     end if
+
 
     if ((conjflg==1).and.(gen=="N")) then
       write(0,"(a)")"Error! Conjugate repetition is not compatible for simulations with pre-calculated basis set"
@@ -191,72 +156,56 @@ contains
       errorflag = 1
       return
     end if
-
+  
     return
 
   end subroutine readrunconds
-
 !--------------------------------------------------------------------------------------------------
 
   subroutine readsys   !   Level 1 Subroutine
 
     implicit none
-    character(LEN=100)::LINE
+    character(LEN=100)::LINE1, LINE2, LINE3
     integer::ierr, n
 
     if (errorflag .ne. 0) return
 
     ierr = 0
     n = 0
-
-    open(unit=127, file='input.dat', status='old', iostat=ierr)
-
+    open(unit=127,file='rundata.csv',status='old',iostat=ierr)
+    read(127,*)
+    read(127,*,iostat=ierr)LINE1, LINE2, LINE3
+    close(127)
     if (ierr.ne.0) then
-      write(0,"(a)") 'Error in opening input.dat file'
+      write(0,"(a)") "Error reading second line of input file"
       errorflag = 1
       return
     end if
 
-    read(127,*,iostat=ierr)LINE
-
-    do while (ierr==0)
-
-      if(LINE=='System:') then
-        backspace(127)
-        read(127,*,iostat=ierr)LINE,sys
-        if (ierr.ne.0) then
-          write(0,"(a)") "Error reading System Name"
-          errorflag = 1
-          return
-        end if
-        n = n+1
-      else if(LINE=='SpecDen') then
-        backspace(127)
-        read(127,*,iostat=ierr)LINE,specden
-        if (ierr.ne.0) then
-          write(0,"(a)") "Error reading Spin Boson Spectral Density name"
-          errorflag = 1
-          return
-        end if
-        n = n+1
-      else if(LINE=='freqflg') then
-        backspace(127)
-        read(127,*,iostat=ierr)LINE,freqflg_sb
-        if (ierr.ne.0) then
-          write(0,"(a)") "Error reading Spin Boson Frequency calculation flag"
-          errorflag = 1
-          return
-        end if
-        n = n+1
-      end if
-      read(127,*,iostat=ierr) LINE
-
-    end do
-
-    close(127)
+    read(LINE1,*,iostat=ierr)sys
+    if (ierr.ne.0) then
+      write(0,"(a)") "Error reading system value"
+      errorflag = 1
+      return
+    end if
+    n=n+1
+    read(LINE2,*,iostat=ierr)specden
+    if (ierr.ne.0) then
+      write(0,"(a)") "Error reading spectral density value"
+      errorflag = 1
+      return
+    end if
+    n=n+1
+    read(LINE3,*,iostat=ierr)freqflg_sb
+    if (ierr.ne.0) then
+      write(0,"(a)") "Error reading Frequency flag value"
+      errorflag = 1
+      return
+    end if
+    n=n+1
 
     if ((sys.ne."SB").and.(sys.ne."HP").and.(sys.ne."MP")) then
-      write(0,"(2a)") "System not recognised. Please recheck input.dat file. Read value of ", sys
+      write(0,"(2a)") "System not recognised. Please recheck input file. Read value of ", sys
       errorflag = 1
       return
     end if
@@ -297,7 +246,7 @@ contains
   subroutine readecut   !   Level 1 Subroutine
 
     implicit none
-    character(LEN=100)::LINE, LINE2
+    character(LEN=100)::LINE1, LINE2, LINE3, LINE4
     integer::ierr, n
 
     if (errorflag .ne. 0) return
@@ -305,68 +254,59 @@ contains
     ierr = 0
     n = 0
 
-    open(unit=128, file='inham.dat', status='old', iostat=ierr)
+    open(unit=290,file='rundata.csv',status='old',iostat=ierr)
 
-    if (ierr.ne.0) then
-      write(0,"(a)") 'Error in opening inham.dat file'
+    if (ierr .ne. 0) then
+      write(0,"(a)") 'Error in opening rundata.csv file'
       errorflag = 1
       return
     end if
 
-    read(128,*,iostat=ierr)LINE
+    read(290,*,iostat=ierr)
+    read(290,*,iostat=ierr)
+    read(290,*,iostat=ierr)
+    read(290,*,iostat=ierr)
+    read(290,*,iostat=ierr)
+    read(290,*,iostat=ierr)
+    read(290,*,iostat=ierr)LINE1, LINE2, LINE3, LINE4
+    if (ierr .ne. 0) then
+      write(0,"(a)") 'Error reading Energy Limit data'
+      errorflag = 1
+      return
+    end if
 
-    do while (ierr==0)
+    close(290)
 
-      if(LINE=='ECheck') then
-        backspace(128)
-        read(128,*,iostat=ierr)LINE,LINE2
-        if (ierr.ne.0) then
-          write(0,"(a)") "Error reading ECheck value"
-          errorflag = 1
-          return
-        end if
-        if ((LINE2(1:1).eq.'y').or.(LINE2(1:1).eq.'Y')) then
-          Echeck = "YES"
-        else if ((LINE2(1:1).eq.'n').or.(LINE2(1:1).eq.'N')) then
-          Echeck = "NO"
-        else
-          write(0,"(a,a)") "Error. Echeck value must be YES/NO. Read ", trim(LINE2)
-        end if
-        n = n+1
-      else if(LINE=='Ntries') then
-        backspace(128)
-        read(128,*,iostat=ierr)LINE,Ntries
-        if (ierr.ne.0) then
-          write(0,"(a)") "Error reading Ntries value"
-          errorflag = 1
-          return
-        end if
-        n = n+1
-      else if(LINE=='Ebfmin') then
-        backspace(128)
-        read(128,*,iostat=ierr)LINE,Ebfmin
-        if (ierr.ne.0) then
-          write(0,"(a)") "Error reading Ebfmin value"
-          errorflag = 1
-          return
-        end if
-        n = n+1
-      else if(LINE=='Ebfmax') then
-        backspace(128)
-        read(128,*,iostat=ierr)LINE,Ebfmax
-        if (ierr.ne.0) then
-          write(0,"(a)") "Error reading Ebfmax value"
-          errorflag = 1
-          return
-        end if
-        n = n+1
-      end if
 
-      read(128,*,iostat=ierr) LINE
-
-    end do
-
-    close (128)
+    if ((LINE1(1:1).eq.'y').or.(LINE1(1:1).eq.'Y')) then
+      Echeck = "YES"
+    else if ((LINE1(1:1).eq.'n').or.(LINE1(1:1).eq.'N')) then
+      Echeck = "NO"
+    else
+      write(0,"(a,a)") "Error. Echeck value must be YES/NO. Read ", trim(LINE1)
+    end if
+    n = n+1
+    read(LINE2,*,iostat=ierr)Ntries
+    if (ierr.ne.0) then
+      write(0,"(a)") "Error reading Ntries value"
+      errorflag = 1
+      return
+    end if
+    n = n+1
+    read(LINE3,*,iostat=ierr)Ebfmax
+    if (ierr.ne.0) then
+      write(0,"(a)") "Error reading Ebfmax value"
+      errorflag = 1
+      return
+    end if
+    n = n+1
+    read(LINE4,*,iostat=ierr)Ebfmin
+    if (ierr.ne.0) then
+      write(0,"(a)") "Error reading Ebfmin value"
+      errorflag = 1
+      return
+    end if
+    n = n+1
 
     if (Ebfmin.ge.Ebfmax) then
       write(0,"(a)") "Invalid values for Ebfmin and/or Ebfmax. Max must be higher than min"
@@ -392,7 +332,7 @@ contains
   subroutine readbsparams   !   Level 1 Subroutine
 
     IMPLICIT NONE
-    character(LEN=100)::LINE, LINE2
+    character(LEN=100)::LINE1, LINE2, LINE3, LINE4,LINE5, LINE6, LINE7
     integer::ierr, n
 
     if (errorflag .ne. 0) return
@@ -400,177 +340,154 @@ contains
     ierr = 0
     n = 0
 
-    OPEN(UNIT=127, FILE='input.dat',STATUS='OLD', iostat=ierr)
+    open(unit=140,file='rundata.csv',status='old',iostat=ierr)
 
     if (ierr .ne. 0) then
-      write(0,"(a)") 'Error in opening input.dat file'
+      write(0,"(a)") 'Error in opening rundata.csv file'
       errorflag = 1
       return
     end if
 
-    read(127,*,iostat=ierr)LINE
+    read(140,*,iostat=ierr)
+    read(140,*,iostat=ierr)
+    read(140,*,iostat=ierr)LINE1, LINE2, LINE3, LINE4,LINE5, LINE6, LINE7
+    if (ierr .ne. 0) then
+      write(0,"(a)") 'Error reading Basis fucntion data'
+      errorflag = 1
+      return
+    end if
 
-    do while (ierr==0)
-
-      if(LINE== "ndim") then
-        backspace(127)
-        read(127,*,iostat=ierr)LINE,ndim
-        if(ierr.ne.0) then
-          write(0,"(a)")  "Error reading ndim"
-          errorflag = 1
-          return
-        end if
-        n = n+1
-      else if (LINE=="in_nbf") then
-        backspace(127)
-        read(127,*,iostat=ierr)LINE,in_nbf
-        if(ierr.ne.0) then
-          write(0,"(a)")  "Error reading in_nbf"
-          errorflag = 1
-          return
-        end if
-        n = n+1
-      else if (LINE=="randfunc") then
-        backspace(127)
-        read(127,*,iostat=ierr)LINE,randfunc
-        if(ierr.ne.0) then
-          write(0,"(a)")  "Error reading random number function"
-          call flush(0)
-          errorflag = 1
-          return
-        end if
-        call flush(6)
-        n = n+1
-      else if (LINE=="npes") then
-        backspace(127)
-        read(127,*,iostat=ierr)LINE,npes
-        if(ierr.ne.0) then
-          write(0,"(a)")  "Error reading npes"
-          errorflag = 1
-          return
-        end if
-        n = n+1
-      else if (LINE=="in_PES") then
-        backspace(127)
-        read(127,*,iostat=ierr)LINE,in_pes
-        if(ierr.ne.0) then
-          write(0,"(a)")  "Error reading in_PES"
-          errorflag = 1
-          return
-        end if
-        n = n+1
-      else if (LINE=="basis") then
-        backspace(127)
-        read(127,*,iostat=ierr)LINE,basis
-        if(ierr.ne.0) then
-          write(0,"(a)")  "Error reading basis option"
-          errorflag = 1
-          return
-        end if
-        n = n+1
-      else if (LINE=="trainsp") then
-        backspace(127)
-        read(127,*,iostat=ierr)LINE,trainsp
-        if(ierr.ne.0) then
-          write(0,"(a)")  "Error reading train spacing"
-          errorflag = 1
-          return
-        end if
-        n = n+1
-      else if (LINE=="train_len") then
-        backspace(127)
-        read(127,*,iostat=ierr)LINE,train_len
-        if(ierr.ne.0) then
-          write(0,"(a)")  "Error reading default number of basis functions per train."
-          errorflag = 1
-          return
-        end if
-        n = n+1
-      else if (LINE=="swtrn_swarm_size") then
-        backspace(127)
-        read(127,*,iostat=ierr)LINE,swtrn_swrm
-        if(ierr.ne.0) then
-          write(0,"(a)")  "Error reading size of central SWTRN swarm."
-          errorflag = 1
-          return
-        end if
-        n = n+1
-      else if (LINE=="Cloning") then
-        backspace(127)
-        read(127,*,iostat=ierr)LINE,LINE2
-        if(ierr.ne.0) then
-          write(0,"(a)")  "Error reading cloning flag"
-          errorflag = 1
-          return
-        end if
-        if ((LINE2(1:1).eq.'y').or.(LINE2(1:1).eq.'Y')) then
-          cloneflg = "YES"
-        else if ((LINE2(1:1).eq.'n').or.(LINE2(1:1).eq.'N')) then
-          cloneflg = "NO"
-       else if ((LINE2(1:1).eq.'q').or.(LINE2(1:1).eq.'Q')) then
-          cloneflg = "QSC"
-        else if ((LINE2(1:1).eq.'b').or.(LINE2(1:1).eq.'B')) then
-          if (LINE2(6:6).eq.'+') then
-            cloneflg = "BLIND+"
-          else
-            cloneflg = "BLIND"
-          end if
-        else
-          write(0,"(a,a)") "Error. cloneflg value must be YES/NO/QSC/BLIND/BLIND+. Read ", trim(LINE2)
-        end if
-        n = n+1
-      else if (LINE=="Threshold") then
-        backspace(127)
-        read(127,*,iostat=ierr)LINE,thresh
-        if(ierr.ne.0) then
-          write(0,"(a)")  "Error reading cloning threshold"
-          errorflag = 1
-          return
-        end if
-        n = n+1
-      else if (LINE=="max_cloning") then
-        backspace(127)
-        read(127,*,iostat=ierr)LINE,clonemax
-        if(ierr.ne.0) then
-          write(0,"(a)")  "Error reading maximum number of clones"
-          errorflag = 1
-          return
-        end if
-        n = n+1
-      else if (LINE=="clon_freq") then
-        backspace(127)
-        read(127,*,iostat=ierr)LINE,clonefreq
-        if(ierr.ne.0) then
-          write(0,"(a)")  "Error reading cloning frequency"
-          errorflag = 1
-          return
-        end if
-        n = n+1
-      else if (LINE=="qss") then
-        backspace(127)
-        read(127,*,iostat=ierr)LINE,qss
-        if(ierr.ne.0) then
-          write(0,"(a)")  "Error reading qss amplitudes"
-          errorflag = 1
-          return
-        end if
-        n = n+1
-      else if (LINE=="QSC_epsilon") then
-        backspace(127)
-        read(127,*,iostat=ierr)LINE,qsce
-        if(ierr.ne.0) then
-          write(0,"(a)")  "Error reading QSC exclusion parameter"
-          errorflag = 1
-          return
-        end if
-        n = n+1
+    read(LINE1,*,iostat=ierr)ndim
+    if(ierr.ne.0) then
+      write(0,"(a)")  "Error reading ndim"
+      errorflag = 1
+      return
+    end if
+    n=n+1
+    read(LINE2,*,iostat=ierr)in_nbf
+    if(ierr.ne.0) then
+      write(0,"(a)")  "Error reading in_nbf"
+      errorflag = 1
+      return
+    end if
+    n=n+1
+    read(LINE3,*,iostat=ierr)randfunc
+    if(ierr.ne.0) then
+      write(0,"(a)")  "Error reading random number function"
+      call flush(0)
+      errorflag = 1
+      return
+    end if
+    call flush(6)
+    n=n+1
+    read(LINE4,*,iostat=ierr)npes
+    if(ierr.ne.0) then
+      write(0,"(a)")  "Error reading npes"
+      errorflag = 1
+      return
+    end if
+    n=n+1
+    read(LINE5,*,iostat=ierr)in_pes
+    if(ierr.ne.0) then
+      write(0,"(a)")  "Error reading in_PES"
+      errorflag = 1
+      return
+    end if
+    n=n+1
+    read(LINE6,*,iostat=ierr)basis
+    if(ierr.ne.0) then
+      write(0,"(a)")  "Error reading basis option"
+      errorflag = 1
+      return
+    end if
+    n=n+1
+    read(Line7,*,iostat=ierr)qss
+    if(ierr.ne.0) then
+      write(0,"(a)")  "Error reading qss amplitudes"
+      errorflag = 1
+      return
+    end if
+    n=n+1
+    read(140,*,iostat=ierr)LINE1, LINE2, LINE3
+    if (ierr .ne. 0) then
+      write(0,"(a)") 'Error reading train data'
+      errorflag = 1
+      return
+    end if
+    read(LINE1,*,iostat=ierr)trainsp
+    if(ierr.ne.0) then
+      write(0,"(a)")  "Error reading train spacing"
+      errorflag = 1
+      return
+    end if
+    n=n+1
+    read(LINE2,*,iostat=ierr)train_len
+    if(ierr.ne.0) then
+      write(0,"(a)")  "Error reading default number of basis functions per train."
+      errorflag = 1
+      return
+    end if
+    n=n+1
+    read(LINE3,*,iostat=ierr)swtrn_swrm
+    if(ierr.ne.0) then
+      write(0,"(a)")  "Error reading size of central SWTRN swarm."
+      errorflag = 1
+      return
+    end if  
+    n=n+1
+    read(140,*,iostat=ierr)LINE1, LINE2, LINE3, LINE4,LINE5
+    if (ierr .ne. 0) then
+      write(0,"(a)") 'Error reading cloning data'
+      errorflag = 1
+      return
+    end if
+    close(140)
+    if ((LINE1(1:1).eq.'y').or.(LINE1(1:1).eq.'Y')) then
+      cloneflg = "YES"
+    else if ((LINE1(1:1).eq.'n').or.(LINE1(1:1).eq.'N')) then
+      cloneflg = "NO"
+    else if ((LINE1(1:1).eq.'q').or.(LINE1(1:1).eq.'Q')) then
+      cloneflg = "QSC"
+    else if ((LINE1(1:1).eq.'v').or.(LINE1(1:1).eq.'V')) then
+      cloneflg = "V1"
+    else if ((LINE1(1:1).eq.'b').or.(LINE1(1:1).eq.'B')) then
+      if (LINE1(6:6).eq.'+') then
+        cloneflg = "BLIND+"
+      else
+        cloneflg = "BLIND"
       end if
-
-      read(127,*,iostat=ierr) LINE
-
-    end do
-
-    close(127)
+    else
+      write(0,"(a,a)") "Error. cloneflg value must be YES/NO/QSC/BLIND/BLIND+/V1. Read ", trim(LINE1)
+    end if
+    n = n+1
+    read(LINE2,*,iostat=ierr)thresh
+    if(ierr.ne.0) then
+      write(0,"(a)")  "Error reading cloning threshold"
+      errorflag = 1
+      return
+    end if
+    n = n+1
+    read(LINE3,*,iostat=ierr)clonemax
+    if(ierr.ne.0) then
+      write(0,"(a)")  "Error reading maximum number of clones"
+      errorflag = 1
+      return
+    end if
+    n = n+1
+    read(LINE4,*,iostat=ierr)clonefreq
+    if(ierr.ne.0) then
+      write(0,"(a)")  "Error reading cloning frequency"
+      errorflag = 1
+      return
+    end if
+    n = n+1
+    read(LINE5,*,iostat=ierr)qsce
+    if(ierr.ne.0) then
+      write(0,"(a)")  "Error reading QSC exclusion parameter"
+      errorflag = 1
+      return
+    end if
+    n = n+1
 
     if ((in_pes.gt.npes).or.(in_pes.le.0)) then
       write(0,"(a)") "Initial PES does not exist"
@@ -790,7 +707,7 @@ contains
   subroutine readzparams   !   Level 1 Subroutine
 
     IMPLICIT NONE
-    character(LEN=100)::LINE
+    character(LEN=100)::LINE1, LINE2, LINE3, LINE4
     integer::ierr, n
 
     if (errorflag .ne. 0) return
@@ -798,63 +715,57 @@ contains
     ierr = 0
     n = 0
 
-    OPEN(UNIT=127, FILE='input.dat',STATUS='OLD', iostat=ierr)
+    open(unit=141,file='rundata.csv',status='old',iostat=ierr)
 
     if (ierr .ne. 0) then
-      write(0,"(a)") 'Error in opening input.dat file'
+      write(0,"(a)") 'Error in opening rundata.csv file'
       errorflag = 1
       return
     end if
 
-    read(127,*,iostat=ierr)LINE
-
-    do while (ierr==0)
-
-      if (LINE=="ALCMP") then
-        backspace(127)
-        read(127,*,iostat=ierr)LINE,initalcmprss
-        if(ierr.ne.0) then
-          write(0,"(a)")  "Error reading compression parameter"
-          errorflag = 1
-          return
-        end if
-        n = n+1
-      else if (LINE=="gamma") then
-        backspace(127)
-        read(127,*,iostat=ierr)LINE,gam
-        if(ierr.ne.0) then
-          write(0,"(a)")  "Error reading gamma factor"
-          errorflag = 1
-          return
-        end if
-        n = n+1
-      else if (LINE=="mu") then
-        backspace(127)
-        read(127,*,iostat=ierr)LINE,mu
-        if(ierr.ne.0) then
-          write(0,"(a)")  "Error reading mu (centre of initial random gaussian)"
-          errorflag = 1
-          return
-        end if
-        n = n+1
-      else if (LINE=="hbar") then
-        backspace(127)
-        read(127,*,iostat=ierr)LINE,hbar
-        if(ierr.ne.0) then
-          write(6,"(a)")  "Error reading hbar value. This value is optional, defaulting to 1"
-          hbar = 1.0d0
-        else if (hbar.ne.1.0d0) then
-          write(6,"(a,es12.5)") "hbar changed from default to ", hbar
-        end if
-        n = n+1
-      end if
-
-      read(127,*,iostat=ierr) LINE
-
-    end do
-
-    close(127)
-
+    read(141,*,iostat=ierr)
+    read(141,*,iostat=ierr)
+    read(141,*,iostat=ierr)
+    read(141,*,iostat=ierr)
+    read(141,*,iostat=ierr)
+    read(141,*,iostat=ierr)LINE1, LINE2, LINE3, LINE4
+    if (ierr .ne. 0) then
+      write(0,"(a)") 'Error reading paramz data'
+      errorflag = 1
+      return
+    end if
+    close(141)
+    
+    read(LINE1,*,iostat=ierr)initalcmprss
+    if(ierr.ne.0) then
+      write(0,"(a)")  "Error reading compression parameter"
+      errorflag = 1
+      return
+    end if
+    n = n+1
+    read(LINE2,*,iostat=ierr)gam
+    if(ierr.ne.0) then
+      write(0,"(a)")  "Error reading gamma factor"
+      errorflag = 1
+      return
+    end if
+    n = n+1
+    read(LINE3,*,iostat=ierr)mu
+    if(ierr.ne.0) then
+      write(0,"(a)")  "Error reading mu (centre of initial random gaussian)"
+      errorflag = 1
+      return
+    end if
+    n = n+1
+    read(LINE4,*,iostat=ierr)hbar
+    if(ierr.ne.0) then
+      write(6,"(a)")  "Error reading hbar value. This value is optional, defaulting to 1"
+      hbar = 1.0d0
+    else if (hbar.ne.1.0d0) then
+      write(6,"(a,es12.5)") "hbar changed from default to ", hbar
+    end if
+    n = n+1    
+     
     sigp = sqrt(1.0d0/(2.0d0*gam))
     sigq = sqrt(gam/2.0d0)
 
@@ -1197,7 +1108,7 @@ contains
   subroutine readtimepar   !   Level 1 Subroutine
 
     implicit none
-    character(LEN=100)::LINE, LINE2
+    character(LEN=100)::LINE1, LINE2, LINE3, LINE4, LINE5, LINE6
     integer::ierr, n
 
     if (errorflag .ne. 0) return
@@ -1205,86 +1116,76 @@ contains
     ierr = 0
     n = 0
 
-    OPEN(UNIT=135, FILE='prop.dat',STATUS='OLD', iostat=ierr)
+    open(unit=135,file='rundata.csv',status='old',iostat=ierr)
 
     if (ierr .ne. 0) then
-      write(0,"(a)") 'Error in opening prop.dat file'
+      write(0,"(a)") 'Error in opening rundata.csv file'
       errorflag = 1
       return
     end if
 
-    read(135,*,iostat=ierr)LINE
+    read(135,*,iostat=ierr)
+    read(135,*,iostat=ierr)
+    read(135,*,iostat=ierr)
+    read(135,*,iostat=ierr)
+    read(135,*,iostat=ierr)
+    read(135,*,iostat=ierr)
+    read(135,*,iostat=ierr)
+    read(135,*,iostat=ierr)LINE1, LINE2, LINE3, LINE4, LINE5, LINE6
+    if (ierr .ne. 0) then
+      write(0,"(a)") 'Error in reading propagation data'
+      errorflag = 1
+      return
+    end if
 
-    do while (ierr==0)
+    close(135)
 
-      if(LINE== "dtmin") then
-        backspace(135)
-        read(135,*,iostat=ierr)LINE,dtmin
-        if(ierr.ne.0) then
-          write(0,"(a)")  "Error reading minimum dt"
-          errorflag = 1
-          return
-        end if
-        n = n+1
-      else if (LINE=="dtmax") then
-        backspace(135)
-        read(135,*,iostat=ierr)LINE,dtmax
-        if(ierr.ne.0) then
-          write(0,"(a)")  "Error reading maximum dt"
-          errorflag = 1
-          return
-        end if
-        n = n+1
-      else if (LINE=="dtinit") then
-        backspace(135)
-        read(135,*,iostat=ierr)LINE,dtinit
-        if(ierr.ne.0) then
-          write(0,"(a)")  "Error reading initial dt"
-          errorflag = 1
-          return
-        end if
-        n = n+1
-      else if (LINE=="time_end") then
-        backspace(135)
-        read(135,*,iostat=ierr)LINE,timeend
-        if(ierr.ne.0) then
-          write(0,"(a)")  "Error reading end time for propagation"
-          errorflag = 1
-          return
-        end if
-        n = n+1
-      else if (LINE=="time_start") then
-        backspace(135)
-        read(135,*,iostat=ierr)LINE,timestrt
-        if(ierr.ne.0) then
-          write(0,"(a)")  "Error reading starting time for propagation"
-          errorflag = 1
-          return
-        end if
-        n = n+1
-      else if (LINE=="step") then
-        backspace(135)
-        read(135,*,iostat=ierr)LINE,LINE2
-        if(ierr.ne.0) then
-          write(0,"(a)")  "Error reading step type for propagation"
-          errorflag = 1
-          return
-        end if
-        if ((LINE2(1:1).eq.'S').or.(LINE2(1:1).eq.'s')) then
-          step = "S"
-        else if ((LINE2(1:1).eq.'A').or.(LINE2(1:1).eq.'a')) then
-          step = "A"
-        else
-          write(0,"(a,a)") "Error reading step type. Expected 'Static' or 'Adaptive', but got ", trim(LINE2)
-          errorflag = 1
-        end if
-        n = n+1
-      end if
-
-      read(135,*,iostat=ierr)LINE
-
-    end do
-
+    
+    read(LINE1,*,iostat=ierr)dtmin
+    if(ierr.ne.0) then
+      write(0,"(a)")  "Error reading minimum dt"
+      errorflag = 1
+      return
+    end if
+    n = n+1
+    read(LINE2,*,iostat=ierr)dtmax
+    if(ierr.ne.0) then
+      write(0,"(a)")  "Error reading maximum dt"
+      errorflag = 1
+      return
+    end if
+    n = n+1
+    read(LINE3,*,iostat=ierr)dtinit
+    if(ierr.ne.0) then
+      write(0,"(a)")  "Error reading initial dt"
+      errorflag = 1
+      return
+    end if
+    n = n+1
+    read(LINE4,*,iostat=ierr)timeend
+    if(ierr.ne.0) then
+      write(0,"(a)")  "Error reading end time for propagation"
+      errorflag = 1
+      return
+    end if
+    n = n+1
+    read(LINE5,*,iostat=ierr)timestrt
+    if(ierr.ne.0) then
+      write(0,"(a)")  "Error reading starting time for propagation"
+      errorflag = 1
+      return
+    end if
+    n = n+1
+    if ((LINE6(1:1).eq.'S').or.(LINE6(1:1).eq.'s')) then
+      step = "S"
+    else if ((LINE6(1:1).eq.'A').or.(LINE6(1:1).eq.'a')) then
+      step = "A"
+    else
+      write(0,"(a,a)") "Error reading step type. Expected 'Static' or 'Adaptive', but got ", trim(LINE6)
+      errorflag = 1
+    end if
+    n = n+1
+     
     if (n.ne.6) then
       write(0,"(a)") "Not all required variables read in readtimepar subroutine."
       errorflag = 1

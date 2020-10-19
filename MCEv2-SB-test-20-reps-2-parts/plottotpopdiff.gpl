@@ -1,0 +1,6 @@
+set terminal png
+set output "popsdifftot.png"
+set title "Graph total population difference"
+set xlabel "Time"
+set ylabel "Population difference"
+plot "normpop_cumul_20.out" u 1:13 t "20 Reps" w l, "" u 1:2 t "Total Av Norm" w l

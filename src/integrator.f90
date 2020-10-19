@@ -185,7 +185,7 @@ contains
   subroutine readspecparams  
   
     implicit none
-    character(LEN=100)::LINE
+    character(LEN=100)::LINE1,LINE2,LINE3,LINE4,LINE5,LINE6,LINE7,LINE8,LINE9,LINE10,LINE11,LINE12,LINE13,LINE14,LINE15,LINE16
     integer::ierr, n
 
     if (errorflag .ne. 0) return
@@ -193,124 +193,104 @@ contains
     ierr = 0
     n = 0
 
-    open(unit=10028, file='inham.dat', status='old', iostat=ierr)
+    open(unit=10028, file='rundata.csv', status='old', iostat=ierr)
 
     if (ierr.ne.0) then
-      write(0,"(a)") 'Error in opening inham.dat file'
+      write(0,"(a)") 'Error in opening rundata.csv file file'
       errorflag = 1
       return
     end if
 
-    read(10028,*,iostat=ierr)LINE
-
-    do while (ierr==0)
-
-      if (LINE=='SB_s_factor') then
-        backspace(10028)
-        read(10028,*,iostat=ierr)LINE,s
-        if (ierr.ne.0) then
-          write(0,"(a)") "Error reading 's' exponent value"
-          errorflag = 1
-          return
-        end if
-        n = n+1
-      else if (LINE=='SBEwc') then
-        backspace(10028)
-        read(10028,*,iostat=ierr)LINE,wc_exp
-        if (ierr.ne.0) then
-          write(0,"(a)") "Error reading wc value for exponential cutoff"
-          errorflag = 1
-          return
-        end if
-        n = n+1
-      else if (LINE=='SBEkondo') then
-        backspace(10028)
-        read(10028,*,iostat=ierr)LINE,kondo_exp
-        if (ierr.ne.0) then
-          write(0,"(a)") "Error reading kondo parameter value"
-          errorflag = 1
-          return
-        end if
-        n = n+1
-      else if (LINE=='SBEwmaxfact') then
-        backspace(10028)
-        read(10028,*,iostat=ierr)LINE,wmax_exp
-        if (ierr.ne.0) then
-          write(0,"(a)") "Error reading wmax value for exponential cutoff"
-          errorflag = 1
-          return
-        end if
-        n = n+1
-      else if (LINE=='SBDwc') then
-        backspace(10028)
-        read(10028,*,iostat=ierr)LINE,wc_dl
-        if (ierr.ne.0) then
-          write(0,"(a)") "Error reading wc value for drude lorentz cutoff"
-          errorflag = 1
-          return
-        end if
-        n = n+1
-      else if (LINE=='SBDlambda') then
-        backspace(10028)
-        read(10028,*,iostat=ierr)LINE,lambda_dl
-        if (ierr.ne.0) then
-          write(0,"(a)") "Error reading lambda value for drude lorentz cutoff"
-          errorflag = 1
-          return
-        end if
-        n = n+1
-      else if (LINE=='SBDwmaxfact') then
-        backspace(10028)
-        read(10028,*,iostat=ierr)LINE,wmax_dl
-        if (ierr.ne.0) then
-          write(0,"(a)") "Error reading wmax factor value for drude lorentz cutoff"
-          errorflag = 1
-          return
-        end if
-        n = n+1
-      else if (LINE=='SBBw0') then
-        backspace(10028)
-        read(10028,*,iostat=ierr)LINE,w0_ubo
-        if (ierr.ne.0) then
-          write(0,"(a)") "Error reading w0 value for underdamped brownian oscillator"
-          errorflag = 1
-          return
-        end if
-        n = n+1
-      else if (LINE=='SBBlambda') then
-        backspace(10028)
-        read(10028,*,iostat=ierr)LINE,lambda_ubo
-        if (ierr.ne.0) then
-          write(0,"(a)") "Error reading lambda value for underdamped brownian oscillator"
-          errorflag = 1
-          return
-        end if
-        n = n+1
-      else if (LINE=='SBBGamma') then
-        backspace(10028)
-        read(10028,*,iostat=ierr)LINE,gamma_ubo
-        if (ierr.ne.0) then
-          write(0,"(a)") "Error reading gamma parameter value for underdamped brownian oscillator"
-          errorflag = 1
-          return
-        end if
-        n = n+1
-      else if (LINE=='SBBwmaxfact') then
-        backspace(10028)
-        read(10028,*,iostat=ierr)LINE,wmax_ubo
-        if (ierr.ne.0) then
-          write(0,"(a)") "Error reading wmax factor value for underdamped brownian oscillator"
-          errorflag = 1
-          return
-        end if
-        n = n+1
-      end if
-
-      read(10028,*,iostat=ierr) LINE
-
-    end do
+    read(10028,*,iostat=ierr)
+    read(10028,*,iostat=ierr)
+    read(10028,*,iostat=ierr)
+    read(10028,*,iostat=ierr)
+    read(10028,*,iostat=ierr)
+    read(10028,*,iostat=ierr)
+    read(10028,*,iostat=ierr)
+    read(10028,*,iostat=ierr)
+    read(10028,*,iostat=ierr)LINE1,LINE2,LINE3,LINE4,LINE5,LINE6,LINE7,LINE8,LINE9,LINE10,LINE11,LINE12,LINE13,LINE14,LINE15,LINE16
     
-    close (10028)
+    close(10028)
+    
+    read(LINE12,*,iostat=ierr)s
+    if (ierr.ne.0) then
+      write(0,"(a)") "Error reading 's' exponent value"
+      errorflag = 1
+      return
+    end if
+    n = n+1
+    read(LINE4,*,iostat=ierr)wc_exp
+    if (ierr.ne.0) then
+      write(0,"(a)") "Error reading wc value for exponential cutoff"
+      errorflag = 1
+      return
+    end if
+    n = n+1
+    read(LINE5,*,iostat=ierr)kondo_exp
+    if (ierr.ne.0) then
+      write(0,"(a)") "Error reading kondo parameter value"
+      errorflag = 1
+      return
+    end if
+    n = n+1
+    read(LINE6,*,iostat=ierr)wmax_exp
+    if (ierr.ne.0) then
+      write(0,"(a)") "Error reading wmax value for exponential cutoff"
+      errorflag = 1
+      return
+    end if
+    n = n+1
+    read(LINE7,*,iostat=ierr)wc_dl
+    if (ierr.ne.0) then
+      write(0,"(a)") "Error reading wc value for drude lorentz cutoff"
+      errorflag = 1
+      return
+    end if
+    n = n+1
+    read(LINE8,*,iostat=ierr)lambda_dl
+    if (ierr.ne.0) then
+      write(0,"(a)") "Error reading lambda value for drude lorentz cutoff"
+      errorflag = 1
+      return
+    end if
+    n = n+1    
+    read(LINE9,*,iostat=ierr)wmax_dl
+    if (ierr.ne.0) then
+      write(0,"(a)") "Error reading wmax factor value for drude lorentz cutoff"
+      errorflag = 1
+      return
+    end if
+    n = n+1  
+    read(LINE13,*,iostat=ierr)w0_ubo
+    if (ierr.ne.0) then
+      write(0,"(a)") "Error reading w0 value for underdamped brownian oscillator"
+      errorflag = 1
+      return
+    end if
+    n = n+1
+    read(LINE14,*,iostat=ierr)lambda_ubo
+    if (ierr.ne.0) then
+      write(0,"(a)") "Error reading lambda value for underdamped brownian oscillator"
+      errorflag = 1
+      return
+    end if
+    n = n+1
+    read(LINE15,*,iostat=ierr)gamma_ubo
+    if (ierr.ne.0) then
+      write(0,"(a)") "Error reading gamma parameter value for underdamped brownian oscillator"
+      errorflag = 1
+      return
+    end if
+    n = n+1
+    read(LINE16,*,iostat=ierr)wmax_ubo
+    if (ierr.ne.0) then
+      write(0,"(a)") "Error reading wmax factor value for underdamped brownian oscillator"
+      errorflag = 1
+      return
+    end if
+    n = n+1
+  
     
     if (n.ne.11) then
       write(0,"(a,i0)") "Not all required variables read in readspecparams subroutine. n = ", n
@@ -325,7 +305,7 @@ contains
   subroutine readintparams  
   
     implicit none
-    character(LEN=100)::LINE
+    character(LEN=100)::LINE1,LINE2,LINE3,LINE4
     integer::ierr, n
 
     if (errorflag .ne. 0) return
@@ -333,52 +313,39 @@ contains
     ierr = 0
     n = 0
 
-    open(unit=10027, file='input.dat', status='old', iostat=ierr)
-
+    open(unit=10027, file='rundata.csv', status='old', iostat=ierr)
     if (ierr.ne.0) then
-      write(0,"(a)") 'Error in opening input.dat file'
+      write(0,"(a)") 'Error in opening rundata.csv file'
       errorflag = 1
       return
     end if
 
-    read(10027,*,iostat=ierr)LINE
+    read(10027,*,iostat=ierr)
+    read(10027,*,iostat=ierr)LINE1, LINE2, LINE3
+    read(10027,*,iostat=ierr)LINE4
+    close(10027)
 
-    do while (ierr==0)
-
-      if (LINE=='SpecDen') then
-        backspace(10027)
-        read(10027,*,iostat=ierr)LINE,specden
-        if (ierr.ne.0) then
-          write(0,"(a)") "Error reading spectral density value"
-          errorflag = 1
-          return
-        end if
-        n = n+1
-      else if (LINE=='ndim') then
-        backspace(10027)
-        read(10027,*,iostat=ierr)LINE,ndim
-        if (ierr.ne.0) then
-          write(0,"(a)") "Error reading ndim value"
-          errorflag = 1
-          return
-        end if
-        n = n+1  
-      else if (LINE=='freqflg') then
-        backspace(10027)
-        read(10027,*,iostat=ierr)LINE,freqflg
-        if (ierr.ne.0) then
-          write(0,"(a)") "Error reading freqflg value"
-          errorflag = 1
-          return
-        end if
-        n = n+1
-      end if
-      
-      read(10027,*,iostat=ierr)LINE
-      
-    end do
-    
-    close (10027)
+    read(LINE2,*,iostat=ierr)specden
+    if (ierr.ne.0) then
+      write(0,"(a)") "Error reading spectral density value"
+      errorflag = 1
+      return
+    end if
+    n = n+1
+    read(LINE4,*,iostat=ierr)ndim
+    if (ierr.ne.0) then
+      write(0,"(a)") "Error reading ndim value"
+      errorflag = 1
+      return
+    end if
+    n = n+1 
+    read(LINE3,*,iostat=ierr)freqflg
+    if (ierr.ne.0) then
+      write(0,"(a)") "Error reading freqflg value"
+      errorflag = 1
+      return
+    end if
+    n = n+1
       
     if (ndim.le.0) then
       write(0,"(a)") "Number of Degrees of Freedom <= 0"

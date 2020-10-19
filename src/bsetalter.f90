@@ -175,7 +175,7 @@ contains
 
     if (errorflag==1) return
 
-    if ((cloneflg=="YES").or.(cloneflg=="QSC").or.((cloneflg=="BLIND+").and.(x.ne.0))) then
+    if ((cloneflg=="YES").or.(cloneflg=="QSC").or.(cloneflg=="V1").or.((cloneflg=="BLIND+").and.(x.ne.0))) then
       clonetype = 1 ! 1=conditional cloning, 2=blind cloning
     else if ((cloneflg=="BLIND").or.((cloneflg=="BLIND+").and.(x.eq.0))) then
       clonetype = 2

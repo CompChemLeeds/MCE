@@ -30,8 +30,8 @@ import subprocess
 import getpass
 import random
 import shutil
+import glob
 import csv
-import numpy as np
 import inham
 import inputs
 
@@ -40,15 +40,15 @@ import inputs
 #########################################################################################
 
 # Number of repeats 
-repeats=2
+repeats=4
 # Number of nodes/folders
-nodes=1
+nodes=2
 #Number of parallel cores per folder/node (max 8)
 cores=2
 # Name of running folder 
 # Default : <method>-<system>-<random number> ie CCS-HP-31254
 # Otherwise:  <method>-<system>-<runfolder string>
-Runfolder='t3'
+Runfolder='Default'
 # Generate Basis Set? YES/NO
 gen='YES'
 # Propagate Basis Set? YES/NO
@@ -116,7 +116,7 @@ if(restart=="NO"):
         EXDIR="/nobackup/"+getpass.getuser()
 
     if(Runfolder=="Default"):
-        Runfolder=inputs.method+"-"+inputs.systems["System"]+"-"+repeats+"-"+nodes+"-"+cores
+        Runfolder=inputs.method+"-"+inputs.systems["System"]+"-"+str(repeats)+"-"+str(nodes)+"-"+str(cores)
     else:
         Runfolder=inputs.method+"-"+inputs.systems["System"]+"-"+Runfolder
 
@@ -132,10 +132,19 @@ if(restart=="NO"):
     
     EXDIR1=EXDIR+"/"+Runfolder  
 
+    mcerunf=os.getcwd()
+    #Builds result file
+    result=open(EXDIR1+"/result.sh","w")
+    result.write("python "+mcerunf+"/collate.py $PWD "+str(repeats)+" "+nodes+" '"+Runfolder+"' "+str(HPCFLG)+" '"+prop+"'")
+    result.close()
+    subprocess.run(['chmod', 'u+x', 'result.sh'])
+
     #Copies input files
     shutil.copy2("inham.py",EXDIR1)
     shutil.copy2("inputs.py",EXDIR1)
     shutil.copy2("run.py",EXDIR1)
+
+
 
     #Makes the program input file
     if(inputs.method=="MCE12"):
@@ -175,6 +184,9 @@ if(restart=="NO"):
             else:
                 writer.writerow(inham.SB.values())
         shutil.copy2("rundata.csv",EXDIR1)
+    
+    for file in glob.glob(mcerunf+"/*.csv"):
+        os.remove(file)
 
     #Makes subfolders
     if(inputs.method=="MCE12"):
@@ -200,6 +212,7 @@ if(restart=="NO"):
     shutil.copy2("MCE.exe",EXDIR1)
 
     os.chdir(EXDIR1)
+    EXDIR1=os.getcwd()
     if(inputs.method=="MCE12"):
         for j in range(2):
             for i in range (nodes):
@@ -216,13 +229,10 @@ if(restart=="NO"):
 
 #elif(restart=='YES'): Write routine to change restart flag in csv file
 
-#Code to run the job checking for SGE
-
+subprocess.call(['ls'])
 #If on a SGE machine make job submission file
-
-HPCFLG=1
 if(HPCFLG==1):
-    number=random.randint(9999,100000)
+    number=random.randint(99999,1000000)
     file1=str(number)+".sh"
     f=open(file1,"w")
     f.write("#$ -cwd -V \n")
@@ -232,7 +242,7 @@ if(HPCFLG==1):
     f.write("#$ -l h_vmem=4G \n")
     f.write("#$ -t 1-"+str(nodes)+" \n")
     f.write("date \n")
-    f.write("cd "+EXDIR1+"/run-'$SGE_TASK_ID'/ \n")
+    f.write("cd "+EXDIR1+"/run-$SGE_TASK_ID/ \n")
     f.write("echo "'"Running on $HOSTNAME in folder $PWD" \n')
     f.write("module load mkl \n")
     f.write("time ./MCE.exe \n")
@@ -242,16 +252,13 @@ if(HPCFLG==1):
         os.environ["OMP_NUM_THREADS"]=str(cores)
     subprocess.call(['qsub',file1])
 
-
 else:
     if(cores!=1):
         os.environ["OMP_NUM_THREADS"]=str(cores)
     for i in range(nodes):
-        #subprocess.run(['./run-'+str(i+1)+'/MCE.exe'])
-        subprocess.call(['cd','/run-1'+str(i+1)])
-        subprocess.call(['ls'])
-        subprocess.Popen('',executable="MCE.exe")
-        subprocess.call(['cd','..'])
+        SUBDIR=EXDIR1+"/run-"+str(i+1)
+        subprocess.Popen('',executable=SUBDIR+"/MCE.exe",cwd=SUBDIR)
+    
     
 
    

@@ -2,13 +2,15 @@
 #					Input File								!!!
 #!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-#Propagation method [can be CCS, MCEv1, MCEv2, or MCE12 (uses both MCE methods)]
-method='MCEv2'
+# Propagation method [can be CCS, MCEv1, MCEv2, or MCE12 (uses both MCE methods)]
+method='MCEv1'
 
-#Flag for adaptive altering of the compression parameter in swarms/grid-swarms/train-swarms or the grid spacing for grids. [YES/NO]
+# Flag for adaptive altering of the compression parameter in 
+# swarms/grid-swarms/train-swarms or the grid spacing for grids. [YES/NO]
 cmprss='YES'
 
-#Conjugate repeats flag. Allows even number repeats to start at the complex conjugate of the previous runs initial position [YES/NO]
+# Conjugate repeats flag. Allows even number repeats to start at the complex conjugate 
+# of the previous runs initial position. Not compatible with V1 cloning [YES/NO]
 Conjugate_Repeats='NO'
 
 systems={
@@ -27,10 +29,10 @@ systems={
 
 parameters={
     # Number of dimensions
-    'ndim':2,
+    'ndim':100,
 
     # Number of basis functions
-    'in_nbf':2,
+    'in_nbf':100,
 
     # Random Number generation function (ZBQL - using ZBQLNOR subroutine, GAUS - using function based on numerical recipes)
     'randfunc':'ZBQL',
@@ -45,7 +47,7 @@ parameters={
     'basis':'SWARM',
 
     # allows for the use of the quantum superposition sampling amplitudes [1/0]. 0=standard initial sampling, 1=quantum superposition sampling.
-    'qss':1
+    'qss':0
 }
 
 Train={
@@ -58,17 +60,17 @@ Train={
 }
 
 clone={
-    # Flag for cloning basis functions (yes/no/blind/blind+/QSC)
-    'Cloning':'no',
+    # Flag for cloning basis functions (yes/no/blind/blind+/QSC/v1)
+    'Cloning':'v1',
 
     # Cloning threshold (value of |sum_r(a_{r,k})|) - must be >= 0.05 and < 0.25, default 0.249
     'Threshold':'0.249d0',
 
     # Maximum number of Cloning events allowed
-    'max_cloning':4,
+    'max_cloning':15,
 
     # Minimum cloning frequency (ie how many timesteps since last cloning is new cloning event allowed)
-    'clon_freq':200,
+    'clon_freq':50,
 
     #Quantum Superposition Cloning exclusion paramter between the two child trajectories should >= ??? and < ???
     'QSC_epsilon':'0.1d0' 

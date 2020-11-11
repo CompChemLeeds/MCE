@@ -19,8 +19,8 @@ import shutil
 import glob
 import subprocess
 
-#Set purger to 0 to keep raw data.
-purger=0
+#Set purger to Y to keep raw data.
+purger='N'
 
 mcerunf=sys.argv[0]
 path=sys.argv[1]

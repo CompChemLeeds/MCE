@@ -6,21 +6,21 @@ SB={
     #Delta
     'SBDelta':'1.0d0',
     #Epsilon
-    'SBEps':'0.0d0',
+    'SBEps':'0.5d0',
     #Beta
-    'SBBeta':'5.0d0',
+    'SBBeta':'0.95d0',
 
     #Exponential cutoff    
-    'SBEwc':'2.5d0',
+    'SBEwc':'0.05d0',
     #Kondo Paramter
-    'SBEkondo':'0.09d0',
+    'SBEkondo':'2.5d0',
     #wmax exponential cutoff
     'SBEwmaxfact':'5.0d0',
 
     #wc drude lorentz cutoff
-    'SBDwc':'0.50d0',
+    'SBDwc':'0.05d0',
     #lambda value drude lorentz
-    'SBDlambda':'1.0d0',
+    'SBDlambda':'2.5d0',
     #wmax for drude lorentz cutoff
     'SBDwmaxfact':'20.0d0',
 

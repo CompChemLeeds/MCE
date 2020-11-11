@@ -117,7 +117,7 @@ contains
     if((LINE7(1:1).eq.'y').or.(LINE7(1:1).eq.'Y')) then
       conjflg=1
     else if((LINE7(1:1).eq.'n').or.(LINE7(1:1).eq.'N')) then
-      conjflg=1
+      conjflg=0
     else
       write(0,"(a,a)") "Error. cmprss value must be YES/NO. Read ", trim(LINE7)
       errorflag=1
@@ -558,6 +558,10 @@ contains
       thresh = 0.249d0
     end if
 
+    if (cloneflg=="V1") then
+      clonemax=20
+    end if
+
     if ((randfunc.ne.'ZBQL').and.(randfunc.ne.'zbql').and.(randfunc.ne.'gaus').and.(randfunc.ne.'GAUS')) then
       write(0,"(a,a)") "Invalid value for random number function. Must be ZBQL/zbql or GAUS/gaus. Value is ", randfunc
       errorflag = 1
@@ -574,6 +578,7 @@ contains
       return
     end if
 
+    
     return
 
   end subroutine readbsparams
@@ -622,6 +627,16 @@ contains
         return
       else if ((method.eq."MCEv2").and.(basis.ne."SWARM")) then
         write (0,"(a)") "Cloning with MCEv1 can only work on a swarm"
+        errorflag = 1
+        return
+      end if
+      if ( (cloneflg=='V1').and.(method.ne.'MCEv1')) then
+        write (0,"(a)") "MCEv1 specific cloning is strangely only compatible with MCEv1!"
+        errorflag = 1
+        return
+      end if
+      if ((cloneflg=='V1').and.(conjflg==1)) then
+        write(0,"(a)") "MCEv1 specifc cloning is note compatible with conjugate repeas"
         errorflag = 1
         return
       end if

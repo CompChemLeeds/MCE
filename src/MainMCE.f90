@@ -421,7 +421,7 @@ Program MainMCE
           end if
           write (6,'(a)') "Blind cloning arrays generated and cloning starting"
           call flush(6)
-          call cloning (bset, nbf, x, time, clone, clonenum, reps, mup, muq)
+          call cloning (bset, nbf, x, time, clone, clonenum, reps)
           call flush(6)
         end if
 
@@ -513,7 +513,7 @@ Program MainMCE
 
         !***********Timesteps***********!
 
-        if (((method=="MCEv2").or.(method=="MCEv1")).and.((cloneflg=="YES").or.(cloneflg=="QSC").or.(cloneflg=="V1"))) then
+        if (((method=="MCEv2").or.(method=="MCEv1")).and.((cloneflg=="YES").or.(cloneflg=="QSC"))) then
           write(rep,"(i3.3)") reps
           open(unit=47756,file="Clonetrack-"//trim(rep)//".out",status="new",iostat=ierr)
           close(47756)
@@ -547,7 +547,9 @@ Program MainMCE
           call trajchk(bset) !ensures that the position component of the coherent states are not too widely spaced
 
           if ((allocated(clone)).and.(cloneflg.ne."BLIND").and.(time.le.timeend)) then
-            call cloning (bset, nbf, x, time, clone, clonenum, reps,mup,muq)
+            call cloning (bset, nbf, x, time, clone, clonenum, reps)
+          else if(cloneflg=="V1") then
+            call newcloning(bset,nbf,x,time,reps,mup,muq)
           end if
 
           call outbs(bset, reps, mup, muq, time,x)

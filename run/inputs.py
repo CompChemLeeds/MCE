@@ -29,10 +29,10 @@ systems={
 
 parameters={
     # Number of dimensions
-    'ndim':100,
+    'ndim':10,
 
     # Number of basis functions
-    'in_nbf':100,
+    'in_nbf':10,
 
     # Random Number generation function (ZBQL - using ZBQLNOR subroutine, GAUS - using function based on numerical recipes)
     'randfunc':'ZBQL',
@@ -56,7 +56,7 @@ Train={
     # length of train in carriages. Used for swarm-trains only
     'train_len':10,
     # Size of the central swarm for swtrn basis. Used for swarm-trains only
-    'swtrn_swarm_size':10
+    'swtrn_swarm_size':50
 }
 
 clone={
@@ -67,7 +67,7 @@ clone={
     'Threshold':'0.249d0',
 
     # Maximum number of Cloning events allowed
-    'max_cloning':15,
+    'max_cloning':19,
 
     # Minimum cloning frequency (ie how many timesteps since last cloning is new cloning event allowed)
     'clon_freq':50,

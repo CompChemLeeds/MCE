@@ -137,7 +137,7 @@ Program MainMCE
   complex(kind=8)::normtemp, norm2temp, ehren, acft, extmp
   real(kind=8), dimension(:), allocatable :: mup, muq, popt
   real(kind=8) :: nrmtmp, nrm2tmp, ehrtmp, gridsp, timestrt_loc
-  real(kind=8) :: timeend_loc, timeold, time, dt, dtnext, dtdone, initehr
+  real(kind=8) :: timeend_loc, timeold, time, dt, dtnext, dtdone, initehr, nctmnd
   real(kind=8) :: initnorm, initnorm2, alcmprss, dum_re1, dum_re2
   integer, dimension(:), allocatable :: clone, clonenum
   integer :: j, k, r, y, x, m, nbf, recalcs, conjrep, restart, reps, trspace
@@ -249,7 +249,7 @@ Program MainMCE
   ! cols, genflg, istat, intvl, rprj, n, nsame, nchange, LINE, CWD
 
 
-  do k=1,reptot,intvl              ! Loop over all repeats.
+10  do k=1,reptot,intvl              ! Loop over all repeats.
 
     call flush(6)
     call flush(0)
@@ -549,7 +549,8 @@ Program MainMCE
           if ((allocated(clone)).and.(cloneflg.ne."BLIND").and.(time.le.timeend)) then
             call cloning (bset, nbf, x, time, clone, clonenum, reps)
           else if(cloneflg=="V1") then
-            call newcloning(bset,nbf,x,time,reps,mup,muq)
+            nctmnd=int(real(abs((timeend_loc-timestrt_loc)/dt)))
+            call newcloning(bset,nbf,x,time,reps,mup,muq,nctmnd)
           end if
 
           call outbs(bset, reps, mup, muq, time,x)
@@ -688,7 +689,12 @@ Program MainMCE
     call flush(0)
 
     if((cloneflg.eq."V1").and.(reps.eq.reptot)) then
-      print*,"check"
+      !$omp critical
+      reptot = reptot+adptreptot
+      adptreptot=0
+      restrtflg = 1
+      !$omp critical
+      GOTO 10
     end if
 
   end do ! The main repeat loop

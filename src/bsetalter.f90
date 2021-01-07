@@ -602,7 +602,7 @@ contains
   end subroutine cloning
 
 
-  subroutine newcloning(bs,nbf,x,time,reps,mup,muq)
+  subroutine newcloning(bs,nbf,x,time,reps,mup,muq,nctmnd)
 
     implicit none
 
@@ -610,17 +610,16 @@ contains
     real(kind=8), dimension(:), intent(in)::mup,muq
     type(basisfn), dimension(:), allocatable, intent(inout) :: bs
     type(basisfn), dimension(:), allocatable :: bsnew, bsnew2
-    real(kind=8), intent(in) :: time
+    real(kind=8), intent(in) :: time, nctmnd
     integer, intent(inout) :: nbf
     integer, intent(in) :: x, reps
     integer :: k, m, j, ierr, r, randomintV1
-    character(LEN=3)::rep
     character(LEN=4)::crrntrep, ranomintV1char
     
-    !print *,"In the newclone"
+
     if(errorflag==1) return
 
-    if(mod(x,clonefreq)==0)then
+    if((mod(x,clonefreq)==0).and.(x<nctmnd-1))then
       
 
       
@@ -629,6 +628,8 @@ contains
         errorflag = 1
         return
       end if
+
+      
 
       call allocbs(bsnew,nbf)
       call allocbs(bsnew2,nbf)
@@ -661,12 +662,16 @@ contains
           bsnew2(k)%z(m)=bs(k)%z(m)
         end do
       end do
-
-      randomintV1=reps+2000+x 
+      !$omp atomic
+      adptreptot=adptreptot+1
+      !$omp end atomic
+      print*, adptreptot
+      randomintV1=reptot+adptreptot 
       call outbs(bsnew2,randomintV1,mup,muq,time,x)
       write(crrntrep,"(i4.4)") reps
       write(ranomintV1char,"(i4.4)") randomintV1
       call execute_command_line('cp normpop-'//trim(crrntrep)//'.out normpop-'//trim(ranomintV1char)//'.out')
+      
       call deallocbs(bsnew2)
 
       do k=1,nbf

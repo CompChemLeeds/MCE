@@ -19,7 +19,7 @@ import shutil
 import glob
 import subprocess
 
-#Set purger to Y to keep raw data.
+#Set purger to Y to delte raw data.
 purger='N'
 
 mcerunf=sys.argv[0]

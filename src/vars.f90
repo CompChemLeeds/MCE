@@ -37,6 +37,7 @@ MODULE globvars
   integer:: clonemax   ! maximum number of cloning events allowed per basis function
   integer:: clonefreq  ! minimum number of timesteps between concurrent coloning events
   integer:: qss        ! quantum superposition sampling change to initial amplitudes
+  integer:: adptreptot ! Adapted number of repetitions for MCEv1 cloning
 
   real(kind=8),external :: ZBQLNOR ! The normally distributed random number external function
 
@@ -118,6 +119,7 @@ contains
     trainsp = 0
     train_len = 0
     swtrn_swrm = 0
+    adptreptot = 0
 
     wmax_sb = 0.0d0          ! SPIN BOSON PARAMETER
     eps_sb = 0.0d0           ! SPIN BOSON PARAMETER

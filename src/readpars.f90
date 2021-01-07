@@ -1080,13 +1080,15 @@ contains
     real(kind=8) :: time
     integer :: ierr,fileun
     character(LEN=100) :: LINE
-    character(LEN=13)::filename
+    character(LEN=14)::filename
+    !character(LEN=4)::reps
     logical :: file_exists
 
     if (errorflag.ne.0) return
 
+    !write(reps,"(i4.4)")rep
     fileun=25433+rep
-    write(filename, "(a,i3.3,a)") "Outbs-",rep,".out"
+    write(filename, "(a,i4.4,a)") "Outbs-",rep,".out"
     inquire(file=filename,exist=file_exists)
 
     if (file_exists.eqv..false.) then
@@ -1107,7 +1109,7 @@ contains
       backspace(fileun)
 
       read(fileun,*,iostat=ierr) LINE, time
-
+      
       if (time==timeend) then
         restart = 1
       else

@@ -70,7 +70,7 @@ clone={
     'max_cloning':19,
 
     # Minimum cloning frequency (ie how many timesteps since last cloning is new cloning event allowed)
-    'clon_freq':50,
+    'clon_freq':500,
 
     #Quantum Superposition Cloning exclusion paramter between the two child trajectories should >= ??? and < ???
     'QSC_epsilon':'0.1d0' 
@@ -100,7 +100,7 @@ prop={
     #Starting stepsize of adaptive / Constant stepsize for Static stepsize
     'dtinit':'2.500d-3',
     #End Time of propagation
-    'time_end':'1.00d+1',
+    'time_end':'0.25d+1', #1.00d+1
     #Start time of propagation
     'time_start':'0.0d+00',
     #Propagation size - either "static" or "adaptive"

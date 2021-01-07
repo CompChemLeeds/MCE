@@ -688,14 +688,14 @@ Program MainMCE
     call flush(6)
     call flush(0)
 
-    if((cloneflg.eq."V1").and.(reps.eq.reptot)) then
-      !$omp critical
-      reptot = reptot+adptreptot
-      adptreptot=0
-      restrtflg = 1
-      !$omp critical
-      GOTO 10
-    end if
+    !if((cloneflg.eq."V1").and.(reps.eq.reptot)) then
+    !  !$omp critical
+    !  reptot = reptot+adptreptot
+    !  adptreptot=0
+    !  restrtflg = 1
+    !  !$omp critical
+    !  GOTO 10
+    !end if
 
   end do ! The main repeat loop
   !$omp end do

@@ -227,11 +227,12 @@ Program MainMCE
   rprj=10
   genflg=0
 
-  if(cloneflg=="V1") then
-    v1check=((timeend/dtinit)/clonefreq)
-  else
-    v1check=1
-  end if
+  ! Oliver's attempt maybe delete later
+  ! if(cloneflg=="V1") then
+  !   v1check=((timeend/dtinit)/clonefreq)
+  ! else
+  !   v1check=1
+  ! end if
 
   
     
@@ -559,15 +560,20 @@ Program MainMCE
             y = x + 1  ! array index
 
             call trajchk(bset) !ensures that the position component of the coherent states are not too widely spaced
-
+            
             if ((allocated(clone)).and.(cloneflg.ne."BLIND").and.(time.le.timeend)) then
               call cloning (bset, nbf, x, time, clone, clonenum, reps)
-            else if(cloneflg=="V1") then
-              nctmnd=(real(abs((timeend_loc-timestrt_loc)/dt)))
-              if((mod(x,clonefreq)==0).and.(x<=(nctmnd-clonefreq)))then 
-                call newcloning(bset,nbf,x,time,reps,mup,muq)
-              end if
             end if
+
+            ! Oliver's bad attempt
+            ! if ((allocated(clone)).and.(cloneflg.ne."BLIND").and.(time.le.timeend)) then
+            !   call cloning (bset, nbf, x, time, clone, clonenum, reps)
+            ! else if(cloneflg=="V1") then
+            !   nctmnd=(real(abs((timeend_loc-timestrt_loc)/dt)))
+            !   if((mod(x,clonefreq)==0).and.(x<=(nctmnd-clonefreq)))then 
+            !     call newcloning(bset,nbf,x,time,reps,mup,muq)
+            !   end if
+            ! end if
 
             call outbs(bset, reps, mup, muq, time,x)
 

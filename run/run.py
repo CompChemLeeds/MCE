@@ -42,15 +42,15 @@ import inputs
 #########################################################################################
 
 # Number of repeats 
-repeats=1
+repeats=12
 # Number of nodes/folders
-nodes=1
+nodes=2
 #Number of parallel cores per folder/node (max 8)
-cores=1
+cores=2
 # Name of running folder 
 # Default : <method>-<system>-<random number> ie CCS-HP-31254
 # Otherwise:  <method>-<system>-<runfolder string>
-Runfolder='clonetest3'
+Runfolder='Test'
 # Generate Basis Set? YES/NO
 gen='YES'
 # Propagate Basis Set? YES/NO

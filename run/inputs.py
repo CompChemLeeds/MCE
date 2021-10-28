@@ -29,10 +29,10 @@ systems={
 
 parameters={
     # Number of dimensions
-    'ndim':10,
+    'ndim':50,
 
     # Number of basis functions
-    'in_nbf':10,
+    'in_nbf':2,
 
     # Random Number generation function (ZBQL - using ZBQLNOR subroutine, GAUS - using function based on numerical recipes)
     'randfunc':'ZBQL',
@@ -61,7 +61,7 @@ Train={
 
 clone={
     # Flag for cloning basis functions (yes/no/blind/blind+/QSC/v1)
-    'Cloning':'v1',
+    'Cloning':'no',
 
     # Cloning threshold (value of |sum_r(a_{r,k})|) - must be >= 0.05 and < 0.25, default 0.249
     'Threshold':'0.249d0',
@@ -100,7 +100,7 @@ prop={
     #Starting stepsize of adaptive / Constant stepsize for Static stepsize
     'dtinit':'2.500d-3',
     #End Time of propagation
-    'time_end':'0.25d+1', #1.00d+1
+    'time_end':'0.5d+1', #1.00d+1
     #Start time of propagation
     'time_start':'0.0d+00',
     #Propagation size - either "static" or "adaptive"

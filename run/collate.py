@@ -37,7 +37,7 @@ if not os.path.exists(path):
 
 if os.path.exists("../"+runfolder):
     value=input("File already exists do you want to delete it? y/n\n")
-    if(value=="y"):
+    if(value=="y"or value=="Y"):
         shutil.rmtree("../"+runfolder)
         os.mkdir("../"+runfolder)
     else:

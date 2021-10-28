@@ -249,14 +249,14 @@ contains
 
       close(fileun)
     end if
-
+      
     filenm2="plotacf-"//rep//".gnu"
     inquire(file=filenm2,exist=file_exists)
     if(file_exists.eqv..false.) then
-      open (unit=fileun,file=filenm2,status="new",iostat=ierr)
+      open (unit=fileun,file=filenm2,status='new',iostat=ierr)
       if (ierr .ne. 0) then
         write(0,"(a,a,a)") 'Error in opening ', trim(filenm2), ' output file'
-        errorflag=1
+        !errorflag=1
         return
       end if
 
@@ -268,14 +268,14 @@ contains
       write(fileun,"(a,a,a)") 'plot "', filenm, '" u 1:3 t "Re(ACF)" w l, "" u 1:4 t "Im(ACF)" w l, "" u 1:5 t "|ACF|" w l'
       close(fileun)
     end if
-
+    
     filenm2="plotnrm-"//rep//".gnu"
     inquire(file=filenm2,exist=file_exists)
     if(file_exists.eqv..false.) then
-      open (unit=fileun,file=filenm2,status="new",iostat=ierr)
+      open (unit=fileun,file=filenm2,status='new',iostat=ierr)
       if (ierr .ne. 0) then
         write(0,"(a,a,a)") 'Error in opening ', trim(filenm2), ' output file'
-        errorflag=1
+        !errorflag=1
         return
       end if
 
@@ -291,10 +291,10 @@ contains
     filenm2="plotext-"//rep//".gnu"
     inquire(file=filenm2,exist=file_exists)
     if(file_exists.eqv..false.) then
-      open (unit=fileun,file=filenm2,status="unknown",iostat=ierr)
+      open (unit=fileun,file=filenm2,status='unknown',iostat=ierr)
       if (ierr .ne. 0) then
         write(0,"(a,a,a)") 'Error in opening ', trim(filenm2), ' output file'
-        errorflag=1
+        !errorflag=1
         return
       end if
 
@@ -321,15 +321,13 @@ contains
       
       close(fileun)
     end if
-
-
     filenm2="plotdif-"//rep//".gnu"
     inquire(file=filenm2,exist=file_exists)
     if(file_exists.eqv..false.) then
-      open (unit=fileun,file=filenm2,status="unknown",iostat=ierr)
+      open (unit=fileun,file=filenm2,status='unknown',iostat=ierr)
       if (ierr .ne. 0) then
         write(0,"(a,a,a)") 'Error in opening ', trim(filenm2), ' output file'
-        errorflag=1
+        !errorflag=1
         return
       end if
 

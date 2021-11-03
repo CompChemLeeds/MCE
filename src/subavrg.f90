@@ -35,11 +35,12 @@ Program subavrg
   lines = 0
 
   do i=1,reps
-    write (repstr,"(i3.3)") i
+    write (repstr,"(i4.4)") i
     filename = "normpop-"//trim(repstr)//".out"    
     inquire(file=trim(filename), exist=file_exists)
     if (file_exists) then
       valid(i) = 1
+      print*,1
     else
       valid(i) = 0
     end if
@@ -50,7 +51,7 @@ Program subavrg
       cycle
     end if
     tot = tot+1       
-    write (repstr,"(i3.3)") i
+    write (repstr,"(i4.4)") i
     filename = "normpop-"//trim(repstr)//".out"
     OPEN(UNIT=128, FILE=trim(filename),STATUS='OLD', iostat=ierr)
     if (ierr .ne. 0) then
@@ -102,7 +103,7 @@ Program subavrg
     if (valid(i)==0) then
       cycle
     end if     
-    write (repstr,"(i3.3)") i
+    write (repstr,"(i4.4)") i
     filename = "normpop-"//trim(repstr)//".out"
     n = n+1
     OPEN(UNIT=n, FILE=trim(filename),STATUS='OLD', iostat=ierr)

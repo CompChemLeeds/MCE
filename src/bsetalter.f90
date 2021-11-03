@@ -602,7 +602,7 @@ contains
   end subroutine cloning
 
 
-  subroutine newcloning(bs,nbf,x,time,reps,mup,muq,nctmnd)
+  subroutine newcloning(bs,nbf,x,time,reps,mup,muq)
 
     implicit none
 
@@ -610,7 +610,7 @@ contains
     real(kind=8), dimension(:), intent(in)::mup,muq
     type(basisfn), dimension(:), allocatable, intent(inout) :: bs
     type(basisfn), dimension(:), allocatable :: bsnew, bsnew2
-    real(kind=8), intent(in) :: time, nctmnd
+    real(kind=8), intent(in) :: time
     integer, intent(inout) :: nbf
     integer, intent(in) :: x, reps
     integer :: k, m, j, ierr, r, randomintV1
@@ -619,76 +619,75 @@ contains
 
     if(errorflag==1) return
 
-    if((mod(x,clonefreq)==0).and.(x<nctmnd-1))then
+    !if((mod(x,clonefreq)==0).and.(x<nctmnd-1))then
       
 
       
-      if (npes.ne.2) then
-        write(6,*) "Error. Cloning currently only valid for npes=2"
-        errorflag = 1
-        return
-      end if
-
-      
-
-      call allocbs(bsnew,nbf)
-      call allocbs(bsnew2,nbf)
-
-      
-      do k=1,nbf
-
-        bsnew(k)%D_big = bs(k)%D_big
-        bsnew2(k)%D_big = bs(k)%D_big
-        do r=1,npes
-          if(r==in_pes) then
-            bsnew(k)%d_pes(r)=bs(k)%d_pes(r)
-            bsnew2(k)%d_pes(r)=(0.0d0,0.0d0)
-          else
-            bsnew2(k)%d_pes(2)=bs(k)%d_pes(r)
-            bsnew(k)%d_pes(2)=(0.0d0,0.0d0)
-          end if
-        end do
-
-        do r=1,npes
-          
-          bsnew(k)%s_pes(r)=bs(k)%s_pes(r)
-          bsnew2(k)%s_pes(r)=bs(k)%s_pes(r)
-          bsnew(k)%a_pes(r) = bsnew(k)%d_pes(r) * cdexp(i*bsnew(k)%s_pes(r))
-          bsnew2(k)%a_pes(r) = bsnew2(k)%d_pes(r) * cdexp(i*bsnew2(k)%s_pes(r))
-        end do
-
-        do m=1,ndim
-          bsnew(k)%z(m)=bs(k)%z(m)
-          bsnew2(k)%z(m)=bs(k)%z(m)
-        end do
-      end do
-      !$omp atomic
-      adptreptot=adptreptot+1
-      !$omp end atomic
-      print*, adptreptot
-      randomintV1=reptot+adptreptot 
-      call outbs(bsnew2,randomintV1,mup,muq,time,x)
-      write(crrntrep,"(i4.4)") reps
-      write(ranomintV1char,"(i4.4)") randomintV1
-      call execute_command_line('cp normpop-'//trim(crrntrep)//'.out normpop-'//trim(ranomintV1char)//'.out')
-      
-      call deallocbs(bsnew2)
-
-      do k=1,nbf
-        bs(k)%D_big = bsnew(k)%D_big
-        do r=1,npes
-          bs(k)%a_pes(r) = bsnew(k)%a_pes(r)
-          bs(k)%d_pes(r) = bsnew(k)%d_pes(r)
-          bs(k)%s_pes(r) = bsnew(k)%s_pes(r)
-        end do
-        do m=1,ndim
-          bs(k)%z(m) = bsnew(k)%z(m)
-        end do
-      end do
-      call deallocbs(bsnew)
+    if (npes.ne.2) then
+      write(6,*) "Error. Cloning currently only valid for npes=2"
+      errorflag = 1
       return
-    
     end if
+
+    
+
+    call allocbs(bsnew,nbf)
+    call allocbs(bsnew2,nbf)
+
+    
+    do k=1,nbf
+
+      bsnew(k)%D_big = bs(k)%D_big
+      bsnew2(k)%D_big = bs(k)%D_big
+      do r=1,npes
+        if(r==in_pes) then
+          bsnew(k)%d_pes(r)=bs(k)%d_pes(r)
+          bsnew2(k)%d_pes(r)=(0.0d0,0.0d0)
+        else
+          bsnew2(k)%d_pes(2)=bs(k)%d_pes(r)
+          bsnew(k)%d_pes(2)=(0.0d0,0.0d0)
+        end if
+      end do
+
+      do r=1,npes
+        
+        bsnew(k)%s_pes(r)=bs(k)%s_pes(r)
+        bsnew2(k)%s_pes(r)=bs(k)%s_pes(r)
+        bsnew(k)%a_pes(r) = bsnew(k)%d_pes(r) * cdexp(i*bsnew(k)%s_pes(r))
+        bsnew2(k)%a_pes(r) = bsnew2(k)%d_pes(r) * cdexp(i*bsnew2(k)%s_pes(r))
+      end do
+
+      do m=1,ndim
+        bsnew(k)%z(m)=bs(k)%z(m)
+        bsnew2(k)%z(m)=bs(k)%z(m)
+      end do
+    end do
+    !$omp atomic
+    adptreptot=adptreptot+1
+    !$omp end atomic
+    randomintV1=reptot+adptreptot 
+    call outbs(bsnew2,randomintV1,mup,muq,time,x)
+    write(crrntrep,"(i4.4)") reps
+    write(ranomintV1char,"(i4.4)") randomintV1
+    call execute_command_line('cp normpop-'//trim(crrntrep)//'.out normpop-'//trim(ranomintV1char)//'.out')
+    
+    call deallocbs(bsnew2)
+
+    do k=1,nbf
+      bs(k)%D_big = bsnew(k)%D_big
+      do r=1,npes
+        bs(k)%a_pes(r) = bsnew(k)%a_pes(r)
+        bs(k)%d_pes(r) = bsnew(k)%d_pes(r)
+        bs(k)%s_pes(r) = bsnew(k)%s_pes(r)
+      end do
+      do m=1,ndim
+        bs(k)%z(m) = bsnew(k)%z(m)
+      end do
+    end do
+    call deallocbs(bsnew)
+    return
+    
+    !end if
     
     return 
   end subroutine newcloning

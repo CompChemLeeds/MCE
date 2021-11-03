@@ -6,14 +6,14 @@ SB={
     #Delta
     'SBDelta':'1.0d0',
     #Epsilon
-    'SBEps':'0.5d0',
+    'SBEps':'1.0d0',
     #Beta
-    'SBBeta':'0.95d0',
+    'SBBeta':'5.0d0',
 
     #Exponential cutoff    
-    'SBEwc':'0.05d0',
+    'SBEwc':'7.5d0',
     #Kondo Paramter
-    'SBEkondo':'2.5d0',
+    'SBEkondo':'0.1d0',
     #wmax exponential cutoff
     'SBEwmaxfact':'5.0d0',
 

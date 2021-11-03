@@ -50,7 +50,7 @@ cores=2
 # Name of running folder 
 # Default : <method>-<system>-<random number> ie CCS-HP-31254
 # Otherwise:  <method>-<system>-<runfolder string>
-Runfolder='Test'
+Runfolder='clonetests_noclone'
 # Generate Basis Set? YES/NO
 gen='YES'
 # Propagate Basis Set? YES/NO
@@ -99,12 +99,14 @@ if __name__=="__main__":
         elif(inputs.systems['freqflg']not in{0,1}):
             sys.exit("Frequency flag msut be zero or 1")
         else:
-            print("Arguments checked")    
-            if(socket.gethostname()==("arc3"or"arc4")):
+            print("Arguments checked")
+            Hostname=socket.gethostname()
+            if(Hostname==("login2.arc4.leeds.ac.uk")):
                 HPCFLG=1
             else:
                 HPCFLG=0
-        
+
+
         #Might need grid altering calibration test for chlin451 bash code
         #if [[ -n $( echo $HOSTNAME | fgrep -e "chmlin451" ) ]]; then
         #grdalt=1
@@ -118,7 +120,7 @@ if __name__=="__main__":
                 os.mkdir("../EXEC")
             EXDIR="../EXEC"
         else:
-            subprocess.run(['module','load','mkl'])
+            # subprocess.run(['module','load','mkl'])
             os.environ['LOGNAME']
             EXDIR="/nobackup/"+getpass.getuser()
 
@@ -217,6 +219,8 @@ if __name__=="__main__":
             shutil.copy2("../build/makefile_chmlin","../build/Makefile")
             subprocess.run(["make"])
         shutil.copy2("MCE.exe",EXDIR1)
+        shutil.copy2("interpolate.exe",EXDIR1)
+        shutil.copy2("subavrg.exe",EXDIR1)
 
         if(inputs.systems['freqflg']==1):
             if os.path.exists(mcerunf+"/freq.dat"):
@@ -281,9 +285,9 @@ if __name__=="__main__":
         
 
 
-
     elif(restart=='YES'):
-        if(socket.gethostname()==("arc3"or"arc4")):
+        Hostname=socket.gethostname()
+        if(Hostname==("login2.arc4.leeds.ac.uk")):
                 HPCFLG=1
         else:
             HPCFLG=0
@@ -355,7 +359,7 @@ if __name__=="__main__":
     #If on a SGE machine make job submission file
     if(HPCFLG==1):
         number=random.randint(99999,1000000)
-        file1=str(number)+".sh"
+        file1="MCE"+str(number)+".sh"
         f=open(file1,"w")
         f.write("#$ -cwd -V \n")
         if(cores!=1):

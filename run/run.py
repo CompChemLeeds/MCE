@@ -42,11 +42,11 @@ import inputs
 #########################################################################################
 
 # Number of repeats 
-repeats=12
+repeats=400
 # Number of nodes/folders
-nodes=2
+nodes=1
 #Number of parallel cores per folder/node (max 8)
-cores=2
+cores=1
 # Name of running folder 
 # Default : <method>-<system>-<random number> ie CCS-HP-31254
 # Otherwise:  <method>-<system>-<runfolder string>
@@ -105,7 +105,6 @@ if __name__=="__main__":
                 HPCFLG=1
             else:
                 HPCFLG=0
-
 
         #Might need grid altering calibration test for chlin451 bash code
         #if [[ -n $( echo $HOSTNAME | fgrep -e "chmlin451" ) ]]; then

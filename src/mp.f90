@@ -21,7 +21,7 @@ contains
 
   subroutine readparams_mp
     implicit none
-    character(LEN=100)::LINE
+    character(LEN=100)::LINE1,LINE2,LINE3,LINE4,LINE5,LINE6
     integer::ierr, n
 
     if (errorflag .ne. 0) return
@@ -29,77 +29,69 @@ contains
     ierr = 0
     n = 0
 
-    open(unit=128, file='inham.dat', status='old', iostat=ierr)
+    open(unit=128, file='rundata.csv', status='old', iostat=ierr)
 
     if (ierr.ne.0) then
-      write(0,"(a)") 'Error in opening inham.dat file'
+      write(0,"(a)") 'Error in opening rundata.csv file file'
       errorflag = 1
       return
     end if
 
-    read(128,*,iostat=ierr)LINE
+    read(128,*,iostat=ierr)
+    read(128,*,iostat=ierr)
+    read(128,*,iostat=ierr)
+    read(128,*,iostat=ierr)
+    read(128,*,iostat=ierr)
+    read(128,*,iostat=ierr)
+    read(128,*,iostat=ierr)
+    read(128,*,iostat=ierr)
+    read(128,*,iostat=ierr)LINE1,LINE2,LINE3,LINE4,LINE5,LINE6
+    close(128)
 
-    do while (ierr==0)
-      if(LINE=='MPw') then
-        backspace(128)
-        read(128,*,iostat=ierr)LINE,freq_mp
-        if (ierr.ne.0) then
-          write(0,"(a)") "Error reading frequency value"
-          errorflag = 1
-          return
-        end if
-        n = n+1
-      else if(LINE=='MPmass') then
-        backspace(128)
-        read(128,*,iostat=ierr)LINE,mass_mp
-        if (ierr.ne.0) then
-          write(0,"(a)") "Error reading mass value"
-          errorflag = 1
-          return
-        end if
-        n = n+1
-      else if(LINE=='MPDissEn') then
-        backspace(128)
-        read(128,*,iostat=ierr)LINE,dissen_mp
-        if (ierr.ne.0) then
-          write(0,"(a)") "Error reading Dissasociation Energy value"
-          errorflag = 1
-          return
-        end if
-        n = n+1
-      else if(LINE=='MPWellParam') then
-        backspace(128)
-        read(128,*,iostat=ierr)LINE,a0_mp
-        if (ierr.ne.0) then
-          write(0,"(a)") "Error reading well shaping parameter value"
-          errorflag = 1
-          return
-        end if
-        n = n+1
-      else if(LINE=='MPupnorm') then
-        backspace(128)
-        read(128,*,iostat=ierr)LINE,uplimnorm
-        if (ierr.ne.0) then
-          write(0,"(a)") "Error reading upper limit of the norm"
-          errorflag = 1
-          return
-        end if
-        n = n+1
-      else if(LINE=='MPdownnorm') then
-        backspace(128)
-        read(128,*,iostat=ierr)LINE,lowlimnorm
-        if (ierr.ne.0) then
-          write(0,"(a)") "Error reading lower limit of the norm"
-          errorflag = 1
-          return
-        end if
-        n = n+1
-      end if
-      read (128,*,iostat=ierr)LINE
-    end do
+    read(LINE1,*,iostat=ierr)freq_mp
+    if (ierr.ne.0) then
+      write(0,"(a)") "Error reading frequency value"
+      errorflag = 1
+      return
+    end if
+    n = n+1
+    read(LINE2,*,iostat=ierr)mass_mp
+    if (ierr.ne.0) then
+      write(0,"(a)") "Error reading mass value"
+      errorflag = 1
+      return
+    end if
+    n = n+1
+    read(LINE3,*,iostat=ierr)dissen_mp
+    if (ierr.ne.0) then
+      write(0,"(a)") "Error reading Dissasociation Energy value"
+      errorflag = 1
+      return
+    end if
+    n = n+1
+    read(LINE4,*,iostat=ierr)a0_mp
+    if (ierr.ne.0) then
+      write(0,"(a)") "Error reading well shaping parameter value"
+      errorflag = 1
+      return
+    end if
+    n = n+1
+    read(LINE5,*,iostat=ierr)uplimnorm
+    if (ierr.ne.0) then
+      write(0,"(a)") "Error reading upper limit of the norm"
+      errorflag = 1
+      return
+    end if
+    n = n+1
+    read(LINE6,*,iostat=ierr)lowlimnorm
+    if (ierr.ne.0) then
+      write(0,"(a)") "Error reading lower limit of the norm"
+      errorflag = 1
+      return
+    end if
+    n = n+1
 
-    close (128)
-
+    
     if (n.ne.6) then
       write(0,"(a)") "Not all required variables read in readparams_mp subroutine"
       errorflag = 1

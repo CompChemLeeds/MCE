@@ -50,7 +50,7 @@ cores=1
 # Name of running folder 
 # Default : <method>-<system>-<random number> ie CCS-HP-31254
 # Otherwise:  <method>-<system>-<runfolder string>
-Runfolder='1repwithcloning'
+Runfolder='1rep'
 # Generate Basis Set? YES/NO
 gen='YES'
 # Propagate Basis Set? YES/NO

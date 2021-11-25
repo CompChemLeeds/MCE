@@ -61,7 +61,7 @@ Train={
 
 clone={
     # Flag for cloning basis functions (yes/no/blind/blind+/QSC/v1)
-    'Cloning':'V1',
+    'Cloning':'no',
 
     # Cloning threshold (value of |sum_r(a_{r,k})|) - must be >= 0.05 and < 0.25, default 0.249
     'Threshold':'0.249d0',

@@ -719,7 +719,6 @@ contains
     if (errorflag .ne. 0) return
 
     ierr = 0
-
     do k=1,size(zczdot,2)
       do j=1,size(zczdot,1)
         zczdot(j,k) = (0.0d0, 0.0d0)

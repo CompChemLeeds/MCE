@@ -141,6 +141,7 @@ contains
     write(bsunit,"(a,1x,i4)"       ) 'nbasisfns'  , size(bs)
     write(bsunit,"(a,1x,i4)"       ) 'initial_PES', in_pes
     write(bsunit,"(a,1x,es25.17e3)") 'time'       , t
+    
     write(bsunit,*),""
     do m=1,ndim
       write(bsunit,"(a,1x,i3,2(1x,es25.17e3))") 'zinit', m, muq(m), mup(m)
@@ -896,6 +897,31 @@ contains
 
    end subroutine hunt
 
+   subroutine copynorm(reps, cnum_start)
+    implicit none 
+
+    integer, intent(in) :: reps , cnum_start
+    character(len=4) :: rep, cnum
+    character(LEN=18) :: arg1, arg2 
+    character(LEN=41) :: command
+    
+    write(rep,"(i4.4)") reps
+    write(cnum,"(i4.4)") cnum_start
+    
+    
+    arg1 = "normpop-"//trim(rep)//".out"
+    arg2 = "normpop-"//trim(cnum)//".out"
+    command = "cp "//arg1//arg2
+    write(6,*) command
+    call system(command)
+
+   end subroutine copynorm
+
+  
+    
+   
+    
+    
 !*************************************************************************************************!
 
 END MODULE outputs

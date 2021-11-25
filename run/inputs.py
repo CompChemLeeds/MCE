@@ -31,8 +31,8 @@ parameters={
     # Number of dimensions
     'ndim':50,
 
-    # Number of basis functions
-    'in_nbf':2,
+    # Number of basis functions 
+    'in_nbf':4,
 
     # Random Number generation function (ZBQL - using ZBQLNOR subroutine, GAUS - using function based on numerical recipes)
     'randfunc':'ZBQL',
@@ -61,7 +61,7 @@ Train={
 
 clone={
     # Flag for cloning basis functions (yes/no/blind/blind+/QSC/v1)
-    'Cloning':'no',
+    'Cloning':'V1',
 
     # Cloning threshold (value of |sum_r(a_{r,k})|) - must be >= 0.05 and < 0.25, default 0.249
     'Threshold':'0.249d0',

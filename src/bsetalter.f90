@@ -620,7 +620,7 @@ contains
     if(errorflag==1) return
 
     !if((mod(x,clonefreq)==0).and.(x<nctmnd-1))then
-      
+   
 
       
     if (npes.ne.2) then
@@ -692,5 +692,116 @@ contains
     return 
   end subroutine newcloning
 
+  
+  subroutine v1cloning(bs,nbf,x,reps,muq,mup,time, cnum_start, reptot)
+    implicit none 
+
+    type(basisfn), dimension(:), allocatable, intent(inout) :: bs
+    type(basisfn), dimension(:), allocatable ::clone, clone2 
+    integer, intent(inout) :: nbf
+    integer, intent(in) :: x, reps, reptot
+    integer :: nbfold, k, m, r, nbfnew, ierr, l
+    complex(kind=8), dimension(:), allocatable :: dz
+    real(kind=8), dimension(:), intent(in)::mup,muq
+    real(kind=8), intent(in) :: time
+    integer(kind=4), intent(inout) :: cnum_start
+
+    write(6,*) "Starting new V1 cloning subroutine"
+    !error catchers 
+    if(errorflag==1) return
+    if (npes.ne.2) then
+      write(6,*) "Error. Cloning currently only valid for npes=2"
+      errorflag = 1
+      return
+    end if
+
+    ! need to clone the entire basis set 
+    
+    call allocbs(clone, nbf)
+    call allocbs(clone2, nbf)
+    if(ierr/=0) then 
+      write(0,'(a)') "error in allocating first MCEv1 cloning array"
+    end if
+    
+    !write(6,*) "trying to allocate dz"
+    !allocate (dz(ndim), stat=ierr)
+    !if (ierr==0) write(6,*) "allocated dz"
+    
+    ! Previous attempt doesn't work at all 
+    !do k=1,nbf
+    !  do m=1,ndim
+    !    dz(m)=cmplx(ZBQLNOR(dble(bs(k)%z(m)),sqrt(0.5d0)),ZBQLNOR(dimag(bs(k)%z(m)),sqrt(0.5)))
+    !    call random_number(c)
+    !    !write(6,*) "D(z) for k, m =", k, m, dz(m)
+    !    clone(k)%z(m)=bs(k)%z(m) + c*dz(m)
+    !    clone(k+nbf)%z(m)=bs(k)%z(m) - c*dz(m)
+    !    !write(6,*) "z for basis set ", k, "degree ", m, bs(k)%z(m)
+    !    !write(6,*) "so z(m)+dz for k, m =", clone(k)%z(m) 
+    !    !write(6,*) "so z(m)-dz for k, m =", clone(k+nbf)%z(m)
+    !    !write(6,*) "*************************"
+    !  end do
+    !end do 
+    
+  
+    !manipulating the child amplitudes 
+    do k=1, nbf
+      do m=1, ndim
+        clone(k)%z(m) = bs(k)%z(m)
+        clone2(k)%z(m) = bs(k)%z(m)
+      end do
+      clone(k)%D_big = bs(k)%D_big ! the prefactor doesn't change through cloning 
+      clone2(k)%D_big = bs(k)%D_big 
+      clone(k)%d_pes(in_pes) = bs(k)%d_pes(in_pes) ! it's easier to set all the first child to the preclone value and change later 
+      clone2(k)%d_pes(in_pes) = bs(k)%d_pes(in_pes)
+      clone(k)%a_pes(in_pes) = bs(k)%a_pes(in_pes)
+      clone2(k)%a_pes(in_pes) = (0.0d0,0.0d0)
+      !clone2(k)%d_pes(in_pes) = (0.0d0,0.0d0) ! set to zero so it can be changed in the same loop as child one
+      do r=1, npes
+        if(r.ne.in_pes) then ! should only happen once for a system with 2PES
+          clone(k)%d_pes(r) = (0.0d0,0.0d0) ! clone 1 will be 0 if not on the pes
+          clone2(k)%d_pes(r) = bs(k)%d_pes(r) ! clone 2 will be non zero only when not on the pes
+          clone2(k)%a_pes(r) = bs(k)%a_pes(in_pes)
+          clone(k)%a_pes(r) = (0.0d0,0.0d0)
+        end if 
+        clone(k)%s_pes(r) = bs(k)%s_pes(r) !the classical action does not change between clones
+        !clone(k)%a_pes(r) = clone(k)%d_pes(r) * exp(i*clone(k)%s_pes(r)) ! the amplitude calculated from the normal equation
+        clone2(k)%s_pes(r) = bs(k)%s_pes(r)
+        !clone2(k)%a_pes(r) = clone2(k)%d_pes(r) * exp(i*clone2(k)%s_pes(r))
+        clone(k)%d_pes(r) = bs(k)%d_pes(r) ! it's easier to set all the first child to the preclone value and change later 
+        clone2(k)%d_pes(r) = bs(k)%d_pes(r)
+        
+      end do 
+        
+     end do 
+     
+    
+
+
+
+    !the basis needs to be reallocated for some reason?
+    !call reloc_basis(clone, bs, x)
+    !call reloc_basis(clone2, bs, x)
+    
+    call outbs(clone2, cnum_start, mup, muq, time, x)
+    call copynorm(reps,cnum_start)
+    cnum_start =  cnum_start + 1
+    write(6,*) cnum_start
+   
+    do k=1, nbf
+      bs(k)%D_big = clone(k)%D_big ! not sure if have to reassign separately or together?
+      do r=1,npes
+        bs(k)%a_pes(r) = clone(k)%a_pes(r)
+        bs(k)%d_pes(r) = clone(k)%d_pes(r)
+        bs(k)%s_pes(r) = clone(k)%s_pes(r)
+      end do
+      do m=1, ndim
+        bs(k)%z(m) = clone(k)%z(m)
+      end do 
+    end do 
+    
+  
+    write (6,*) "V1 cloning finished" !should print out the basis set and how it's doubled.
+    
+  end subroutine v1cloning
 !***********************************************************************************!
 end module bsetalter

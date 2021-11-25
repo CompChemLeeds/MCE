@@ -143,6 +143,7 @@ Program MainMCE
   integer :: j, k, r, y, x, m, nbf, recalcs, conjrep, restart, reps, trspace
   integer :: ierr, timestpunit, stepback, dum_in1, dum_in2, dum_in3, finbf, v1check,loop
   character(LEN=3):: rep
+  integer :: clone_instance
 
   !Reduction Variables
   complex(kind=8), dimension (:), allocatable :: acf_t, extra
@@ -157,6 +158,7 @@ Program MainMCE
   integer:: tnum, cols, genflg, istat, intvl, rprj, n, nsame, nchange
   character(LEN=100) :: LINE, CWD
   character(LEN=1) :: genloc
+  integer(kind=4)  :: cnum_start
 
   call CPU_TIME(starttime) !used to calculate the runtime, which is output at the end
 
@@ -215,6 +217,7 @@ Program MainMCE
   absnorm2 = 0.0d0      ! Absolute value of the sum of the single config. norms
   acf_t = (0.0d0,0.0d0) ! Auto-correlation function
   extra = (0.0d0,0.0d0)
+  
 
   if (conjflg==1) then    ! This statement ensures that if conjugate repetition
     intvl = 2             ! is selected the outer repetition loop will increase
@@ -226,6 +229,9 @@ Program MainMCE
   nsame=0
   rprj=10
   genflg=0
+  cnum_start=reptot + 1
+  
+
 
   ! Oliver's attempt maybe delete later
   ! if(cloneflg=="V1") then
@@ -233,7 +239,7 @@ Program MainMCE
   ! else
   !   v1check=1
   ! end if
-
+  
   
     
     
@@ -258,9 +264,8 @@ Program MainMCE
     ! This leaves the following variables currently shared actross all threads:
     ! p, q, t, starttime, stoptime, up, down, runtime, num1, num2, ranseed, tnum,
     ! cols, genflg, istat, intvl, rprj, n, nsame, nchange, LINE, CWD
-
+    
     do k=1,reptot,intvl              ! Loop over all repeats.
-
       call flush(6)
       call flush(0)
 
@@ -319,7 +324,7 @@ Program MainMCE
         else
           conjrep = 3
         end if
-
+        
         time = timestrt         ! It is possible to start at t=/=0, but
         timestrt_loc = timestrt ! precalculated basis should be used
     
@@ -413,7 +418,7 @@ Program MainMCE
             stop
           end if
 
-          if (((method=="MCEv2").or.(method=="MCEv1")).and.((cloneflg=="BLIND").or.(cloneflg=="BLIND+"))) then
+          if (((method=="MCEv2").or.(method=="MCE1")).and.((cloneflg=="BLIND").or.(cloneflg=="BLIND+"))) then
             write(rep,"(i3.3)") reps
             open(unit=47756,file="Clonetrack-"//trim(rep)//".out",status="new",iostat=ierr)
             close(47756)
@@ -439,6 +444,7 @@ Program MainMCE
 
           if (errorflag.eq.0) then  ! Only executes if generation is successful
             write(6,"(a)") "Basis Set Generated Successfully"
+            write(6,"(a),(i0)") "Cloneflag is", cloneflg
             write(6,"(a,e15.8)") "Abs(Norm) = ", initnorm
             if (npes.ne.1) write(6,"(a,e15.8)") "Popsum    = ", initnorm2
             if ((cmprss.eq."Y").and.((basis.eq."SWARM").or.(basis.eq."SWTRN"))) write(6,"(a,e15.8)") "Alcmprss  = ", 1.0d0/alcmprss
@@ -561,9 +567,15 @@ Program MainMCE
 
             call trajchk(bset) !ensures that the position component of the coherent states are not too widely spaced
             
-            if ((allocated(clone)).and.(cloneflg.ne."BLIND").and.(time.le.timeend)) then
-              call cloning (bset, nbf, x, time, clone, clonenum, reps)
-            end if
+
+            !!!! Original place!!!
+            
+            !if ((allocated(clone)).and.(cloneflg.ne."BLIND").and.(time.le.timeend).and.(cloneflg.ne."V1")) then
+            !  call cloning (bset, nbf, x, time, clone, clonenum, reps)
+            !elseif ((cloneflg=="V1").and.(x==1000)) then 
+            !  write(6,'(a)') "trying to clone for v1"
+            !  call v1cloning(bset,nbf,x,reps,muq,mup,time, cnum_start, reptot)
+            !end if
 
             ! Oliver's bad attempt
             ! if ((allocated(clone)).and.(cloneflg.ne."BLIND").and.(time.le.timeend)) then
@@ -582,8 +594,10 @@ Program MainMCE
             else
               if ((time+dt-timeend_loc).lt.0.0d0) dt = timeend_loc - time
             end if
-
+            
             call propstep (bset, dt, dtnext, dtdone, time, genflg, timestrt_loc,x,reps)     ! This subroutine takes a single timestep
+  
+            
 
             if (dtdone.eq.dt) then   ! nsame and nchange are used to keep track of changes to the stepsize.
               !$omp atomic           !atomic parameter used to ensure two threads do not write to the same
@@ -592,13 +606,26 @@ Program MainMCE
               !$omp atomic
               nchange = nchange + 1
             end if
-
+            
+            !if ((allocated(clone)).and.(cloneflg.ne."BLIND").and.(time.le.timeend).and.(cloneflg.ne."V1")) then
+            !  call cloning (bset, nbf, x, time, clone, clonenum, reps)
+            !elseif ((cloneflg=="V1").and.(x==1000)) then 
+            !  write(6,'(a)') "trying to clone for v1"
+            !  call v1cloning(bset,nbf,x,reps,muq,mup,time, cnum_start, reptot)
+            !end if
+            
             if (abs(time+dtdone-timeend_loc).le.1.0d-10) then   ! if time is close enough to end time, set as end time
               time=timeend_loc
             else
               time = time + dtdone                         ! increment time
             end if
 
+            if ((allocated(clone)).and.(cloneflg.ne."BLIND").and.(time.le.timeend).and.(cloneflg.ne."V1")) then
+              call cloning (bset, nbf, x, time, clone, clonenum, reps)
+            elseif ((cloneflg=="V1").and.(x==1000).and.(x.ne.int(real(abs((timeend_loc-timestrt_loc)/dt))))) then 
+              call v1cloning(bset,nbf,x,reps,muq,mup,time,cnum_start,reptot)
+            end if
+            
             dt = dtnext      ! dtnext is set by the adaptive step size system. If static, dtnext = dt already
 
             ! output variables written to arrays. Note - if a non-fatal error flag is implemented (currently only fatal errors implemented),
@@ -683,7 +710,7 @@ Program MainMCE
 
         if (errorflag==1) then
           write(6,"(a)") "Last basis set outputting...."
-          call outbs(bset, reps, mup, muq, time,x)
+          call outbs(bset, reps, mup, muq, time, x)
         end if
 
         call deallocbs(bset)     ! Deallocates basis set ready for next repeat

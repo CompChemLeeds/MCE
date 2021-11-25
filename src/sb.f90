@@ -56,10 +56,10 @@ contains
 
   subroutine readparams_sb
   
-    !   This subroutine reads the system specific parameters from the inham.dat file
+    !   This subroutine reads the system specific parameters from the rundata.csv file
   
     implicit none
-    character(LEN=100)::LINE
+    character(LEN=100)::LINE1,LINE2,LINE3,LINE4,LINE5,LINE6,LINE7,LINE8,LINE9,LINE10,LINE11
     integer::ierr, n
 
     if (errorflag .ne. 0) return
@@ -67,125 +67,104 @@ contains
     ierr = 0
     n = 0
 
-    open(unit=128, file='inham.dat', status='old', iostat=ierr)
+    open(unit=128, file='rundata.csv', status='old', iostat=ierr)
 
     if (ierr.ne.0) then
-      write(0,"(a)") 'Error in opening inham.dat file'
+      write(0,"(a)") 'Error in opening rundata.csv file file'
       errorflag = 1
       return
     end if
 
-    read(128,*,iostat=ierr)LINE
+    read(128,*,iostat=ierr)
+    read(128,*,iostat=ierr)
+    read(128,*,iostat=ierr)
+    read(128,*,iostat=ierr)
+    read(128,*,iostat=ierr)
+    read(128,*,iostat=ierr)
+    read(128,*,iostat=ierr)
+    read(128,*,iostat=ierr)
+    read(128,*,iostat=ierr)LINE1,LINE2,LINE3,LINE4,LINE5,LINE6,LINE7,LINE8,LINE9,LINE10,LINE11
+    
+    close(128)
 
-    do while (ierr==0)
-
-      if(LINE=='SBDelta') then
-        backspace(128)
-        read(128,*,iostat=ierr)LINE,delta_sb
-        if (ierr.ne.0) then
+    read(LINE1,*,iostat=ierr)delta_sb
+    if (ierr.ne.0) then
           write(0,"(a)") "Error reading Delta value"
           errorflag = 1
           return
         end if
         n = n+1
-      else if (LINE=='SBEps') then
-        backspace(128)
-        read(128,*,iostat=ierr)LINE,eps_sb
-        if (ierr.ne.0) then
-          write(0,"(a)") "Error reading Epsilon value"
-          errorflag = 1
-          return
-        end if
-        n = n+1
-      else if (LINE=='SBBeta') then
-        backspace(128)
-        read(128,*,iostat=ierr)LINE,beta_sb
-        if (ierr.ne.0) then
-          write(0,"(a)") "Error reading beta value"
-          errorflag = 1
-          return
-        end if
-        n = n+1
-      else if (LINE=='SBEwc') then
-        backspace(128)
-        read(128,*,iostat=ierr)LINE,wc_exp
-        if (ierr.ne.0) then
-          write(0,"(a)") "Error reading wc value for exponential cutoff"
-          errorflag = 1
-          return
-        end if
-        n = n+1
-      else if (LINE=='SBEkondo') then
-        backspace(128)
-        read(128,*,iostat=ierr)LINE,kondo_exp
-        if (ierr.ne.0) then
-          write(0,"(a)") "Error reading kondo parameter value"
-          errorflag = 1
-          return
-        end if
-        n = n+1
-      else if (LINE=='SBEwmaxfact') then
-        backspace(128)
-        read(128,*,iostat=ierr)LINE,wmax_exp
-        if (ierr.ne.0) then
-          write(0,"(a)") "Error reading wmax value for exponential cutoff"
-          errorflag = 1
-          return
-        end if
-        n = n+1
-      else if (LINE=='SBDwc') then
-        backspace(128)
-        read(128,*,iostat=ierr)LINE,wc_dl
-        if (ierr.ne.0) then
-          write(0,"(a)") "Error reading wc value for drude lorentz cutoff"
-          errorflag = 1
-          return
-        end if
-        n = n+1
-      else if (LINE=='SBDlambda') then
-        backspace(128)
-        read(128,*,iostat=ierr)LINE,lambda_dl
-        if (ierr.ne.0) then
-          write(0,"(a)") "Error reading lambda value for drude lorentz cutoff"
-          errorflag = 1
-          return
-        end if
-        n = n+1
-      else if (LINE=='SBDwmaxfact') then
-        backspace(128)
-        read(128,*,iostat=ierr)LINE,wmax_dl
-        if (ierr.ne.0) then
-          write(0,"(a)") "Error reading wmax factor value for drude lorentz cutoff"
-          errorflag = 1
-          return
-        end if
-        n = n+1
-      else if(LINE=='SBupnorm') then
-        backspace(128)
-        read(128,*,iostat=ierr)LINE,uplimnorm
-        if (ierr.ne.0) then
-          write(0,"(a)") "Error reading upper limit of the norm"
-          errorflag = 1
-          return
-        end if
-        n = n+1
-      else if(LINE=='SBdownnorm') then
-        backspace(128)
-        read(128,*,iostat=ierr)LINE,lowlimnorm
-        if (ierr.ne.0) then
-          write(0,"(a)") "Error reading lower limit of the norm"
-          errorflag = 1
-          return
-        end if
-        n = n+1
-      end if
-
-      read(128,*,iostat=ierr) LINE
-
-    end do
-
-    close (128)
-
+    read(LINE2,*,iostat=ierr)eps_sb
+    if (ierr.ne.0) then
+      write(0,"(a)") "Error reading Epsilon value"
+      errorflag = 1
+      return
+    end if
+    n = n+1
+    read(LINE3,*,iostat=ierr)beta_sb
+    if (ierr.ne.0) then
+      write(0,"(a)") "Error reading beta value"
+      errorflag = 1
+      return
+    end if
+    n = n+1
+    read(LINE4,*,iostat=ierr)wc_exp
+    if (ierr.ne.0) then
+      write(0,"(a)") "Error reading wc value for exponential cutoff"
+      errorflag = 1
+      return
+    end if
+    n = n+1
+    read(LINE5,*,iostat=ierr)kondo_exp
+    if (ierr.ne.0) then
+      write(0,"(a)") "Error reading kondo parameter value"
+      errorflag = 1
+      return
+    end if
+    n = n+1
+    read(LINE6,*,iostat=ierr)wmax_exp
+    if (ierr.ne.0) then
+      write(0,"(a)") "Error reading wmax value for exponential cutoff"
+      errorflag = 1
+      return
+    end if
+    n = n+1
+    read(LINE7,*,iostat=ierr)wc_dl
+    if (ierr.ne.0) then
+      write(0,"(a)") "Error reading wc value for drude lorentz cutoff"
+      errorflag = 1
+      return
+    end if
+    n = n+1
+    read(LINE8,*,iostat=ierr)lambda_dl
+    if (ierr.ne.0) then
+      write(0,"(a)") "Error reading lambda value for drude lorentz cutoff"
+      errorflag = 1
+      return
+    end if
+    n = n+1
+    read(LINE9,*,iostat=ierr)wmax_dl
+    if (ierr.ne.0) then
+      write(0,"(a)") "Error reading wmax factor value for drude lorentz cutoff"
+      errorflag = 1
+      return
+    end if
+    n = n+1
+    read(LINE10,*,iostat=ierr)uplimnorm
+    if (ierr.ne.0) then
+      write(0,"(a)") "Error reading upper limit of the norm"
+      errorflag = 1
+      return
+    end if
+    n = n+1
+    read(LINE11,*,iostat=ierr)lowlimnorm
+    if (ierr.ne.0) then
+      write(0,"(a)") "Error reading lower limit of the norm"
+      errorflag = 1
+      return
+    end if
+    n=n+1
+    
     if (specden=="EXP") then 
       wmax_sb = wc_exp * wmax_exp
     else if (specden=="DL") then 

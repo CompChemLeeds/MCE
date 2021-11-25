@@ -22,7 +22,7 @@ contains
 
    subroutine readparams_hp
     implicit none
-    character(LEN=100)::LINE
+    character(LEN=100)::LINE1,LINE2,LINE3
     integer::ierr, n
 
     if (errorflag .ne. 0) return
@@ -30,49 +30,47 @@ contains
     ierr = 0
     n = 0
 
-    open(unit=128, file='inham.dat', status='old', iostat=ierr)
+    open(unit=128, file='rundata.csv', status='old', iostat=ierr)
 
     if (ierr.ne.0) then
-      write(0,"(a)") 'Error in opening inham.dat file'
+      write(0,"(a)") 'Error in opening rundata.csv file file'
       errorflag = 1
       return
     end if
 
-    read(128,*,iostat=ierr)LINE
-
-    do while (ierr==0)
-      if(LINE=='HPw') then
-        backspace(128)
-        read(128,*,iostat=ierr)LINE,freq_hp
-        if (ierr.ne.0) then
-          write(0,"(a)") "Error reading Frequency value"
-          errorflag = 1
-          return
-        end if
-        n = n+1
-      else if(LINE=='HPupnorm') then
-        backspace(128)
-        read(128,*,iostat=ierr)LINE,uplimnorm
-        if (ierr.ne.0) then
-          write(0,"(a)") "Error reading upper limit of the norm"
-          errorflag = 1
-          return
-        end if
-        n = n+1
-      else if(LINE=='HPdownnorm') then
-        backspace(128)
-        read(128,*,iostat=ierr)LINE,lowlimnorm
-        if (ierr.ne.0) then
-          write(0,"(a)") "Error reading lower limit of the norm"
-          errorflag = 1
-          return
-        end if
-        n = n+1
-      end if
-      read (128,*,iostat=ierr)LINE
-    end do
-
-    close (128)
+    read(128,*,iostat=ierr)
+    read(128,*,iostat=ierr)
+    read(128,*,iostat=ierr)
+    read(128,*,iostat=ierr)
+    read(128,*,iostat=ierr)
+    read(128,*,iostat=ierr)
+    read(128,*,iostat=ierr)
+    read(128,*,iostat=ierr)
+    read(128,*,iostat=ierr)LINE1,LINE2,LINE3
+    
+    close(128)
+    
+    read(LINE1,*,iostat=ierr)freq_hp
+    if (ierr.ne.0) then
+      write(0,"(a)") "Error reading Frequency value"
+      errorflag = 1
+      return
+    end if
+    n = n+1
+    read(LINE2,*,iostat=ierr)uplimnorm
+    if (ierr.ne.0) then
+      write(0,"(a)") "Error reading upper limit of the norm"
+      errorflag = 1
+      return
+    end if
+    n = n+1
+    read(LINE3,*,iostat=ierr)lowlimnorm
+    if (ierr.ne.0) then
+      write(0,"(a)") "Error reading lower limit of the norm"
+      errorflag = 1
+      return
+    end if
+    n = n+1
 
     if (n.ne.3) then
       write(0,"(a)") "Not all required variables read in readparams_hp subroutine"

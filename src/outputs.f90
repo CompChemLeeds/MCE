@@ -215,6 +215,7 @@ contains
     character(LEN=16)::filenm, filenm2
     integer, intent(in) :: reps
     character(LEN=4):: rep
+    logical :: file_exists
 
     if (errorflag .ne. 0) return
 
@@ -223,113 +224,121 @@ contains
     write(rep,"(i4.4)") reps
 
     filenm = "normpop-"//trim(rep)//".out"  
+    inquire(file=filenm,exist=file_exists)
+    if(file_exists.eqv..false.) then
+      fileun = 610+reps
 
-    fileun = 610+reps
+      open(unit=fileun,file=filenm,status='unknown',iostat=ierr)
 
-    open(unit=fileun,file=filenm,status='unknown',iostat=ierr)
+      if (ierr.ne.0) then
+        write(0,"(a,a,a)") "Error in initial opening of ", trim(filenm), " file"
+        errorflag = 1
+        return
+      end if
 
-    if (ierr.ne.0) then
-      write(0,"(a,a,a)") "Error in initial opening of ", trim(filenm), " file"
-      errorflag = 1
-      return
+      if (npes==2) then 
+        write(fileun,"(a,a)") "Time Norm Re(ACF(t)) Im(ACF(t)) |ACF(t)| Re(Extra) Im(Extra) |Extra| ",&
+                        "Sum(HEhr) Pop1 Pop2 Pop1+Pop2 Pop2-Pop1"
+        write(fileun,*), ""
+        write(fileun,*), ""
+      else
+        write(fileun,"(a)") "Time Norm Re(ACF(t)) Im(ACF(t) |ACF(t)| Re(Extra) Im(Extra) |Extra| Sum(HEhr) Pops(1...n)"
+        write(fileun,*), ""
+        write(fileun,*), ""
+      end if
+
+      close(fileun)
     end if
-
-    if (npes==2) then 
-      write(fileun,"(a,a)") "Time Norm Re(ACF(t)) Im(ACF(t)) |ACF(t)| Re(Extra) Im(Extra) |Extra| ",&
-                      "Sum(HEhr) Pop1 Pop2 Pop1+Pop2 Pop2-Pop1"
-      write(fileun,*), ""
-      write(fileun,*), ""
-    else
-      write(fileun,"(a)") "Time Norm Re(ACF(t)) Im(ACF(t) |ACF(t)| Re(Extra) Im(Extra) |Extra| Sum(HEhr) Pops(1...n)"
-      write(fileun,*), ""
-      write(fileun,*), ""
-    end if
-
-    close(fileun)
-
+      
     filenm2="plotacf-"//rep//".gnu"
+    inquire(file=filenm2,exist=file_exists)
+    if(file_exists.eqv..false.) then
+      open (unit=fileun,file=filenm2,status='new',iostat=ierr)
+      if (ierr .ne. 0) then
+        write(0,"(a,a,a)") 'Error in opening ', trim(filenm2), ' output file'
+        !errorflag=1
+        return
+      end if
 
-    open (unit=fileun,file=filenm2,status="unknown",iostat=ierr)
-    if (ierr .ne. 0) then
-      write(0,"(a,a,a)") 'Error in opening ', trim(filenm2), ' output file'
-      errorflag=1
-      return
-    end if
-
-    write(fileun,"(a)") 'set terminal png'
-    write(fileun,"(a,a,a)") 'set output "ACF-',trim(rep),'.png"'
-    write(fileun,"(a)") 'set title "Graph of Autocorrelation Function"'
-    write(fileun,"(a)") 'set xlabel "Time (au)"'
-    write(fileun,"(a)") 'set ylabel "ACF"'
-    write(fileun,"(a,a,a)") 'plot "', filenm, '" u 1:3 t "Re(ACF)" w l, "" u 1:4 t "Im(ACF)" w l, "" u 1:5 t "|ACF|" w l'
-    close(fileun)
-
-    filenm2="plotnrm-"//rep//".gnu"
-
-    open (unit=fileun,file=filenm2,status="unknown",iostat=ierr)
-    if (ierr .ne. 0) then
-      write(0,"(a,a,a)") 'Error in opening ', trim(filenm2), ' output file'
-      errorflag=1
-      return
-    end if
-
-    write(fileun,"(a)") 'set terminal png'
-    write(fileun,"(a,a,a)") 'set output "Norm-',trim(rep),'.png"'
-    write(fileun,"(a)") 'set title "Graph of Norm"'
-    write(fileun,"(a)") 'set xlabel "Time (au)"'
-    write(fileun,"(a)") 'set ylabel "Norm"'
-    write(fileun,"(a,a,a)") 'plot "', filenm, '" u 1:2 t "Norm" w l'
-    close(fileun)
-
-    filenm2="plotext-"//rep//".gnu"
-
-    open (unit=fileun,file=filenm2,status="unknown",iostat=ierr)
-    if (ierr .ne. 0) then
-      write(0,"(a,a,a)") 'Error in opening ', trim(filenm2), ' output file'
-      errorflag=1
-      return
-    end if
-
-    write(fileun,"(a)") 'set terminal png'
-    if (sys=="IV") then
-      write(fileun,"(a,a,a)") 'set output "Dipole-',trim(rep),'.png"'
-      write(fileun,"(a)") 'set title "Graph of Dipole Acceleration"'
-      write(fileun,"(a)") 'set ylabel "Dipole Acceleration"'
+      write(fileun,"(a)") 'set terminal png'
+      write(fileun,"(a,a,a)") 'set output "ACF-',trim(rep),'.png"'
+      write(fileun,"(a)") 'set title "Graph of Autocorrelation Function"'
       write(fileun,"(a)") 'set xlabel "Time (au)"'
-      write(fileun,"(a,a,a)") 'plot "', filenm, '" u 1:6 t "Real" w l'
-    else if (sys=="VP") then
-      write(fileun,"(a,a,a)") 'set output "Disp-',trim(rep),'.png"'
-      write(fileun,"(a)") 'set title "Graph of Dispersion"'
-      write(fileun,"(a)") 'set ylabel "<\Delta x>"'
-      write(fileun,"(a)") 'set xlabel "Time (au)"'
-      write(fileun,"(a,a,a)") 'plot "', filenm, '" u 1:6 t "Real" w l'
-    else
-      write(fileun,"(a,a,a)") 'set output "Extra-',trim(rep),'.png"'
-      write(fileun,"(a)") 'set title "Graph of Extra Calculated Quantity"'
-      write(fileun,"(a)") 'set ylabel "Extra"'
-      write(fileun,"(a)") 'set xlabel "Time (au)"'
-      write(fileun,"(a,a,a)") 'plot "', filenm, '" u 1:6 t "Real" w l, "" u 1:7 t "Imaginary" w l, "" u 1:8 t "Absolute" w l'
+      write(fileun,"(a)") 'set ylabel "ACF"'
+      write(fileun,"(a,a,a)") 'plot "', filenm, '" u 1:3 t "Re(ACF)" w l, "" u 1:4 t "Im(ACF)" w l, "" u 1:5 t "|ACF|" w l'
+      close(fileun)
     end if
     
-    close(fileun)
+    filenm2="plotnrm-"//rep//".gnu"
+    inquire(file=filenm2,exist=file_exists)
+    if(file_exists.eqv..false.) then
+      open (unit=fileun,file=filenm2,status='new',iostat=ierr)
+      if (ierr .ne. 0) then
+        write(0,"(a,a,a)") 'Error in opening ', trim(filenm2), ' output file'
+        !errorflag=1
+        return
+      end if
 
-
-    filenm2="plotdif-"//rep//".gnu"
-
-    open (unit=fileun,file=filenm2,status="unknown",iostat=ierr)
-    if (ierr .ne. 0) then
-      write(0,"(a,a,a)") 'Error in opening ', trim(filenm2), ' output file'
-      errorflag=1
-      return
+      write(fileun,"(a)") 'set terminal png'
+      write(fileun,"(a,a,a)") 'set output "Norm-',trim(rep),'.png"'
+      write(fileun,"(a)") 'set title "Graph of Norm"'
+      write(fileun,"(a)") 'set xlabel "Time (au)"'
+      write(fileun,"(a)") 'set ylabel "Norm"'
+      write(fileun,"(a,a,a)") 'plot "', filenm, '" u 1:2 t "Norm" w l'
+      close(fileun)
     end if
 
-    write(fileun,"(a)") 'set terminal png'
-    write(fileun,"(a,a,a)") 'set output "PopDiff-',trim(rep),'.png"'
-    write(fileun,"(a)") 'set title "Graph of Population Difference"'
-    write(fileun,"(a)") 'set ylabel "Population Difference"'
-    write(fileun,"(a)") 'set xlabel "Time (au)"'
-    write(fileun,"(a,a,a)") 'plot "', filenm, '" u 1:13 t "Population Difference" w l, "" u 1:2 t "Norm" w l'
-    close(fileun)
+    filenm2="plotext-"//rep//".gnu"
+    inquire(file=filenm2,exist=file_exists)
+    if(file_exists.eqv..false.) then
+      open (unit=fileun,file=filenm2,status='unknown',iostat=ierr)
+      if (ierr .ne. 0) then
+        write(0,"(a,a,a)") 'Error in opening ', trim(filenm2), ' output file'
+        !errorflag=1
+        return
+      end if
+
+      write(fileun,"(a)") 'set terminal png'
+      if (sys=="IV") then
+        write(fileun,"(a,a,a)") 'set output "Dipole-',trim(rep),'.png"'
+        write(fileun,"(a)") 'set title "Graph of Dipole Acceleration"'
+        write(fileun,"(a)") 'set ylabel "Dipole Acceleration"'
+        write(fileun,"(a)") 'set xlabel "Time (au)"'
+        write(fileun,"(a,a,a)") 'plot "', filenm, '" u 1:6 t "Real" w l'
+      else if (sys=="VP") then
+        write(fileun,"(a,a,a)") 'set output "Disp-',trim(rep),'.png"'
+        write(fileun,"(a)") 'set title "Graph of Dispersion"'
+        write(fileun,"(a)") 'set ylabel "<\Delta x>"'
+        write(fileun,"(a)") 'set xlabel "Time (au)"'
+        write(fileun,"(a,a,a)") 'plot "', filenm, '" u 1:6 t "Real" w l'
+      else
+        write(fileun,"(a,a,a)") 'set output "Extra-',trim(rep),'.png"'
+        write(fileun,"(a)") 'set title "Graph of Extra Calculated Quantity"'
+        write(fileun,"(a)") 'set ylabel "Extra"'
+        write(fileun,"(a)") 'set xlabel "Time (au)"'
+        write(fileun,"(a,a,a)") 'plot "', filenm, '" u 1:6 t "Real" w l, "" u 1:7 t "Imaginary" w l, "" u 1:8 t "Absolute" w l'
+      end if
+      
+      close(fileun)
+    end if
+    filenm2="plotdif-"//rep//".gnu"
+    inquire(file=filenm2,exist=file_exists)
+    if(file_exists.eqv..false.) then
+      open (unit=fileun,file=filenm2,status='unknown',iostat=ierr)
+      if (ierr .ne. 0) then
+        write(0,"(a,a,a)") 'Error in opening ', trim(filenm2), ' output file'
+        !errorflag=1
+        return
+      end if
+
+      write(fileun,"(a)") 'set terminal png'
+      write(fileun,"(a,a,a)") 'set output "PopDiff-',trim(rep),'.png"'
+      write(fileun,"(a)") 'set title "Graph of Population Difference"'
+      write(fileun,"(a)") 'set ylabel "Population Difference"'
+      write(fileun,"(a)") 'set xlabel "Time (au)"'
+      write(fileun,"(a,a,a)") 'plot "', filenm, '" u 1:13 t "Population Difference" w l, "" u 1:2 t "Norm" w l'
+      close(fileun)
+    end if
 
    end subroutine outnormpopadapheads
 

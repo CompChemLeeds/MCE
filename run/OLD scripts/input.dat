@@ -12,7 +12,7 @@ SpecDen EXP
 
 #Name of running folder [Default : <method>-<system>-<random number> ie CCS-HP-31254 (input "default", case insensitive)
 #                       Otherwise:  <method>-<system>-<runfolder string> ie CCS-HP-withgrids]
-Runfolder testforMWE
+Runfolder test
 
 #Basis Set Generation flag [YES/NO for generating the basis set]
 gen YES
@@ -30,7 +30,7 @@ cmprss YES
 method MCEv2
 
 #Number of repeats. Do not need to set manually - this is set by the run command.
-Repeats 1
+Repeats 20
 
 #Conjugate repeats flag. Allows even number repeats to start at the complex conjugate of the previous runs initial position [YES/NO]
 Conjugate_Repeats NO
@@ -39,7 +39,7 @@ Conjugate_Repeats NO
 in_nbf 10
 
 # Number of dimensions
-ndim 50
+ndim 20
 
 #determine which PES you are on initially
 in_PES 1
@@ -48,10 +48,10 @@ in_PES 1
 npes 2
 
 # determines shape of the initial basis [SWARM/SWTRN]
-basis SWTRN
+basis SWARM
 
 # allows for the use of the quantum superposition sampling amplitudes [1/0]. 0=standard initial sampling, 1=quantum superposition sampling.
-qss 1
+qss 0
 
 # Compression parameter (can be tweaked to allow better norm value, or altered automatically)   Used for swarms/swarm-trains
 ALCMP 1.0d0
@@ -60,7 +60,7 @@ ALCMP 1.0d0
 # freqflg = 1 enables reading of precalculated frequencies, freqflg = 0 mean they are calculated withing the program
 freqflg 0
 
-# Flag for cloning basis functions (yes/no/blind/blind+)
+# Flag for cloning basis functions (yes/no/blind/blind+/v1)
 Cloning no
 
 # Cloning threshold (value of |sum_r(a_{r,k})|) - must be >= 0.05 and < 0.25, default 0.249

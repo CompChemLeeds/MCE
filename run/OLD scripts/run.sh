@@ -198,12 +198,12 @@ fi
 
 if [[ $freqflg -eq 1 && ! -f freq.dat ]]; then ./integrator.exe; fi
 
-sed -i "s/^Repeats.*/Repeats $REPS/g" input2.dat   # Writes number of repeats per
-grep "^Repeats $REPS" input2.dat > /dev/null       # folder to input.dat file
-if [[ $? != 0 ]]; then
-  echo "Could not change the number of repeats in input.dat. Exitting"
-  exit 1
-fi
+#sed -i "s/^Repeats.*/Repeats $REPS/g" input2.dat   # Writes number of repeats per
+#grep "^Repeats $REPS" input2.dat > /dev/null       # folder to input.dat file
+#if [[ $? != 0 ]]; then
+#  echo "Could not change the number of repeats in input.dat. Exitting"
+#  exit 1
+#fi
 
 # The name of the output folder is taken from the input.dat file
 # If it is "default" then the folder name is made from the system, 

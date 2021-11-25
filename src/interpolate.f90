@@ -14,7 +14,7 @@ Program Interpolate
   real(kind=8) :: dt, timeend, timestrt
   real(kind=8), dimension (:), allocatable :: fileline
   real(kind=8), dimension (:,:), allocatable :: input, output, output2
-  character (LEN=100) :: filename1, filename2, LINE, LINE2, LINE3
+  character (LEN=100) :: filename1, filename2, LINE, LINE1, LINE2, LINE3, LINE4, LINE5, LINE6
   character (LEN=3) :: repstr, folstr
   character (LEN=14) :: myfmt
   logical :: file_exists
@@ -35,58 +35,55 @@ Program Interpolate
   end if
   read (LINE,*) cols
 
-  OPEN(UNIT=135, FILE='prop.dat',STATUS='OLD', iostat=ierr)
+  OPEN(UNIT=135,file='rundata.csv',status='old',iostat=ierr)
 
   if (ierr .ne. 0) then
-     print *, 'error in opening prop.dat file'
-     stop
+   write(0,"(a)") 'Error in opening rundata.csv file'
+   errorflag = 1
+   return
   end if
 
-  read(135,*,iostat=ierr)LINE
-
-  do while (ierr==0)
-     if (LINE=="dtinit") then
-        backspace(135)
-        read(135,*,iostat=ierr)LINE,dt
-        if(ierr.ne.0) then
-           print *,  "Error reading initial dt"
-           stop
-        end if
-     else if (LINE=="time_end") then
-        backspace(135)
-        read(135,*,iostat=ierr)LINE,timeend
-        if(ierr.ne.0) then
-           print *,  "Error reading end time for propagation"
-           stop
-        end if  
-     else if (LINE=="time_start") then
-        backspace(135)
-        read(135,*,iostat=ierr)LINE,timestrt
-        if(ierr.ne.0) then
-           print *,  "Error reading starting time for propagation"
-           stop
-        end if
-     else if (LINE=="step") then
-        backspace(135)
-        read(135,*,iostat=ierr)LINE,LINE2
-        if(ierr.ne.0) then
-           print *,  "Error reading step type for propagation"
-           stop
-        end if
-        if ((LINE2(1:1).eq.'S').or.(LINE2(1:1).eq.'s')) then
-           print *, "Error! Static step size chosen but interpolation program was started"
-           print *, "Exiting now"
-           stop
-        else if ((LINE2(1:1).ne.'A').and.(LINE2(1:1).ne.'a')) then
-           print *, "Error reading step type. Expected 'Static' or 'Adaptive', but got ", trim(LINE2)
-           stop
-        end if
-     end if
-     read(135,*,iostat=ierr)LINE    
-  end do
+  read(135,*,iostat=ierr)
+  read(135,*,iostat=ierr)
+  read(135,*,iostat=ierr)
+  read(135,*,iostat=ierr)
+  read(135,*,iostat=ierr)
+  read(135,*,iostat=ierr)
+  read(135,*,iostat=ierr)
+  read(135,*,iostat=ierr)LINE1, LINE2, LINE3, LINE4, LINE5, LINE6
+  if (ierr .ne. 0) then
+    write(0,"(a)") 'Error in reading propagation data'
+    errorflag = 1
+    return
+  end if
 
   close(135)
 
+  read(LINE3,*,iostat=ierr)dt
+  if(ierr.ne.0) then
+    print *,  "Error reading initial dt"
+    stop
+  end if
+  read(LINE4,*,iostat=ierr)timeend
+  if(ierr.ne.0) then
+    print *,  "Error reading end time for propagation"
+    stop
+  end if  
+  read(LINE5,*,iostat=ierr)timestrt
+  if(ierr.ne.0) then
+    print *,  "Error reading starting time for propagation"
+    stop
+  end if
+    
+  if ((LINE6(1:1).eq.'S').or.(LINE6(1:1).eq.'s')) then
+    print *, "Error! Static step size chosen but interpolation program was started"
+    print *, "Exiting now"
+    stop
+  else if ((LINE6(1:1).ne.'A').or.(LINE6(1:1).ne.'a')) then
+    print *, "Error reading step type. Expected 'Static' or 'Adaptive', but got ", trim(LINE2)
+    stop
+  end if
+    
   allocate (valid(filenum))
   valid = 0
   lines = 0

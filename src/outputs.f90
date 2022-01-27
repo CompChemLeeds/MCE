@@ -912,7 +912,6 @@ contains
     arg1 = "normpop-"//trim(rep)//".out"
     arg2 = "normpop-"//trim(cnum)//".out"
     command = "cp "//arg1//arg2
-    write(6,*) command
     call system(command)
 
    end subroutine copynorm

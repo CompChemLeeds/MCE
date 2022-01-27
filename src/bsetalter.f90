@@ -693,7 +693,7 @@ contains
   end subroutine newcloning
 
   
-  subroutine v1cloning(bs,nbf,x,reps,muq,mup,time, cnum_start, reptot)
+  subroutine v1cloning(bs,nbf,x,reps,muq,mup,time, cnum_start, reptot, repchanger)
     implicit none 
 
     type(basisfn), dimension(:), allocatable, intent(inout) :: bs
@@ -704,7 +704,7 @@ contains
     complex(kind=8), dimension(:), allocatable :: dz
     real(kind=8), dimension(:), intent(in)::mup,muq
     real(kind=8), intent(in) :: time
-    integer(kind=4), intent(inout) :: cnum_start
+    integer(kind=4), intent(inout) :: cnum_start, repchanger
 
     write(6,*) "Starting new V1 cloning subroutine"
     !error catchers 
@@ -742,7 +742,7 @@ contains
     !  end do
     !end do 
     
-  
+    cnum_start =  cnum_start + 1
     !manipulating the child amplitudes 
     do k=1, nbf
       do m=1, ndim
@@ -784,8 +784,9 @@ contains
     
     call outbs(clone2, cnum_start, mup, muq, time, x)
     call copynorm(reps,cnum_start)
-    cnum_start =  cnum_start + 1
-    write(6,*) cnum_start
+    repchanger = repchanger + 1
+    write(6,*) "additional runs created this loop", repchanger
+    
    
     do k=1, nbf
       bs(k)%D_big = clone(k)%D_big ! not sure if have to reassign separately or together?

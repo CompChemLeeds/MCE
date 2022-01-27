@@ -158,7 +158,7 @@ Program MainMCE
   integer:: tnum, cols, genflg, istat, intvl, rprj, n, nsame, nchange
   character(LEN=100) :: LINE, CWD
   character(LEN=1) :: genloc
-  integer(kind=4)  :: cnum_start
+  integer(kind=4)  :: cnum_start, repchanger, newrep, resnum, norestart
 
   call CPU_TIME(starttime) !used to calculate the runtime, which is output at the end
 
@@ -229,9 +229,10 @@ Program MainMCE
   nsame=0
   rprj=10
   genflg=0
-  cnum_start=reptot + 1
-  
-
+  cnum_start=reptot
+  repchanger=0
+  resnum=0
+  norestart=0
 
   ! Oliver's attempt maybe delete later
   ! if(cloneflg=="V1") then
@@ -243,7 +244,7 @@ Program MainMCE
   
     
     
-  do loop=0,v1check
+  do while(norestart==0)
     ! The variables set as private in the below statement are duplicated when Open MP
     ! is run such that there exists individual copies on each thread. The reduction
     ! variables are summed over all threads. The reduction variables are only used in
@@ -264,7 +265,6 @@ Program MainMCE
     ! This leaves the following variables currently shared actross all threads:
     ! p, q, t, starttime, stoptime, up, down, runtime, num1, num2, ranseed, tnum,
     ! cols, genflg, istat, intvl, rprj, n, nsame, nchange, LINE, CWD
-    
     do k=1,reptot,intvl              ! Loop over all repeats.
       call flush(6)
       call flush(0)
@@ -276,6 +276,7 @@ Program MainMCE
       genloc = gen
       restart=0
       trspace = trainsp
+      
 
       if (restrtflg==1) then
         call restartnum(k,genloc,restart)
@@ -622,8 +623,10 @@ Program MainMCE
 
             if ((allocated(clone)).and.(cloneflg.ne."BLIND").and.(time.le.timeend).and.(cloneflg.ne."V1")) then
               call cloning (bset, nbf, x, time, clone, clonenum, reps)
-            elseif ((cloneflg=="V1").and.(x==1000).and.(x.ne.int(real(abs((timeend_loc-timestrt_loc)/dt))))) then 
-              call v1cloning(bset,nbf,x,reps,muq,mup,time,cnum_start,reptot)
+            elseif ((cloneflg=="V1").and.((mod(x,clonefreq)==0)).and.(x.ne.int(real(abs((timeend_loc-timestrt_loc)/dt))))) then
+              !$omp critical 
+               call v1cloning(bset,nbf,x,reps,muq,mup,time,cnum_start,reptot,repchanger)
+              !$omp end critical 
             end if
             
             dt = dtnext      ! dtnext is set by the adaptive step size system. If static, dtnext = dt already
@@ -742,11 +745,17 @@ Program MainMCE
     end do ! The main repeat loop
     !$omp end do
     !$omp end parallel
-    if(cloneflg=="V1") then 
-      reptot = reptot+adptreptot
-      adptreptot=0
-      restrtflg = 1
+    if (repchanger.eq.0) then
+      norestart=1
+      write(6,*) "no new restarts needed, repeat number now", reptot
+    end if 
+    if (repchanger.ne.0) then
+      newrep = reptot+repchanger
+      repchanger = 0
+      reptot= newrep
+      restrtflg=1
     end if
+
   end do
   
 

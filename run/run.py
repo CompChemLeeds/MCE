@@ -101,7 +101,7 @@ if __name__=="__main__":
         else:
             print("Arguments checked")
             Hostname=socket.gethostname()
-            if(Hostname==("login2.arc4.leeds.ac.uk")):
+            if(Hostname==("login1.arc4.leeds.ac.uk")):
                 HPCFLG=1
             else:
                 HPCFLG=0

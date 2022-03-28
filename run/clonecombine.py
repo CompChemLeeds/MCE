@@ -140,8 +140,8 @@ for i in range(nodes):
     timestep=z.astype(int)
     SUBDIR=EXDIR1+"/run-"+str(i+1)
     for j in range(0,int(y[-1])):
-        print(EXDIR1+"/run-"+str(i+1)+"/normpop-"+str(int(j+1)).zfill(4,0)+".out")
-        fp1=open(EXDIR1+"/run-"+str(i+1)+"/normpop-"+str(int(j+1)).zfill(4,0)+".out")
+        print(EXDIR1+"/run-"+str(i+1)+"/normpop-"+str(int(j+1)).zfill(4)+".out")
+        fp1=open(EXDIR1+"/run-"+str(i+1)+"/normpop-"+str(int(j+1)).zfill(4)+".out")
         if(j==0):
             for k, line in enumerate(fp1):
                 if k>= 3:

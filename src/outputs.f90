@@ -902,8 +902,9 @@ contains
 
     integer, intent(in) :: reps , cnum_start
     character(len=4) :: rep, cnum
-    character(LEN=18) :: arg1, arg2 
-    character(LEN=41) :: command
+    character(LEN=18) :: arg1, arg2
+    character(len=41) :: command
+
     
     write(rep,"(i4.4)") reps
     write(cnum,"(i4.4)") cnum_start
@@ -912,11 +913,42 @@ contains
     arg1 = "normpop-"//trim(rep)//".out"
     arg2 = "normpop-"//trim(cnum)//".out"
     command = "cp "//arg1//arg2
+    write(6,*) arg1, arg2, command
     call system(command)
-
-   end subroutine copynorm
+    
+    
+    
+   
 
   
+  end subroutine copynorm
+  
+  subroutine clonetag(reps,cnum_start,x, tf, te, norm1, norm2)
+     integer :: ierr, timestep, fileun
+     integer(kind=4), intent(in) :: cnum_start
+     integer, intent(in) :: x, reps, te, tf
+     character(LEN=12) :: filenm
+     real(kind=8) norm1, norm2
+     
+    
+    if (tf.gt.te) then
+      timestep = x + (tf-te)
+    else
+      timestep = x
+    end if 
+    filenm = "clonetag.out"  
+
+
+    open(unit=321,file=filenm,status='unknown',access= 'append',iostat=ierr)
+    !if (ierr.ne.0) then 
+    !  errorflag=1
+    !end if
+    write(321, *) reps, cnum_start, timestep, norm1, norm2
+    
+    close(321)
+
+
+  end subroutine clonetag
     
    
     

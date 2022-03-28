@@ -13,7 +13,7 @@ Program subavrg
   character(LEN=5000)::lngchar, lngchar2
   integer, dimension(:),allocatable::valid, lines
   logical :: file_exists
-        
+      
   call getarg(0,filename)
   call getarg(1,LINE)
   if (ierr==-1) then
@@ -183,7 +183,7 @@ Program subavrg
       popdiffav = sum(popdiff(:))/tot
     else
       do j=1,size(popsav)
-        popsav(j) = sum(pops(j,:))/tot
+        popsav(j) = sum(pops(j,:))
       end do
     end if
     if (cols == 13) then

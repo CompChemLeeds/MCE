@@ -1,0 +1,6 @@
+set terminal png
+set output "popstot.png"
+set title "Graph total populations"
+set xlabel "Time"
+set ylabel "Populations"
+plot "normpop_cumul_1.out" u 1:10 t "1 Reps" w l, "" u 1:11 t "1" w l

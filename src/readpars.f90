@@ -1055,7 +1055,6 @@ contains
       do j=1,nbf
         if ((dble(bs(j)%D_big) /= 1.0d0).and.(method.eq."MCEv1")) then
           write(0,"(a)") "The D_big amplitudes are not compatible with MCEv1 propagation for t/=0"
-          errorflag=1
           return
         else if ((dble(bs(j)%d_pes(1)) /= 1.0d0).and.(method.eq."CCS")) then
           write(0,"(a)") "The d_pes amplitudes are not compatible with CCS propagation for t/=0"

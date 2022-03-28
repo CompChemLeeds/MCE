@@ -8,7 +8,7 @@ VPATH=../src
 
 # Link step
 
-all: Main avrgpops timehist subavrg interpolate integrator
+all: Main avrgpops timehist subavrg interpolate integrator clonecondense
 
 Main:BLAS.o zgesv_with_dpndnss.o zheev_with_dpndnss.o randgen.o vars.o alarrays.o sb.o hp.o mp.o outputs.o redirect.o Ham.o Chks.o bsetalter.o readpars.o derivsMCE.o propMCE.o bsetgen.o MainMCE.o 
 	 $(F90) $(FFLAGS) -o MCE.exe BLAS.o zgesv_with_dpndnss.o zheev_with_dpndnss.o randgen.o vars.o alarrays.o sb.o hp.o mp.o outputs.o redirect.o Ham.o Chks.o bsetalter.o readpars.o derivsMCE.o propMCE.o bsetgen.o MainMCE.o $(FLINKS)
@@ -27,6 +27,10 @@ interpolate:neville.o interpolate.o
 
 integrator:integrator.f90
 	 $(F90) -O3 -o integrator.exe $<
+
+
+clonecondense:clonecondense.f90
+	 $(F90) -O3 -o clonecondense.exe $<
 
 # Compile steps
 

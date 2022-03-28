@@ -153,12 +153,12 @@ Program MainMCE
   !Public Variables
   real(kind=8), dimension(:), allocatable :: t
   real(kind=8) :: starttime, stoptime, up, down, runtime
-  real(kind=8) :: num1, num2
+  real(kind=8) :: num1, num2, hc
   integer(kind=8) :: ranseed
-  integer:: tnum, cols, genflg, istat, intvl, rprj, n, nsame, nchange
+  integer:: tnum, cols, genflg, istat, intvl, rprj, n, nsame, nchange, rerun
   character(LEN=100) :: LINE, CWD
   character(LEN=1) :: genloc
-  integer(kind=4)  :: cnum_start, repchanger, newrep, resnum, norestart
+  integer(kind=4)  :: cnum_start, repchanger, newrep, resnum, norestart, tf, te
 
   call CPU_TIME(starttime) !used to calculate the runtime, which is output at the end
 
@@ -218,6 +218,7 @@ Program MainMCE
   acf_t = (0.0d0,0.0d0) ! Auto-correlation function
   extra = (0.0d0,0.0d0)
   
+  
 
   if (conjflg==1) then    ! This statement ensures that if conjugate repetition
     intvl = 2             ! is selected the outer repetition loop will increase
@@ -233,6 +234,9 @@ Program MainMCE
   repchanger=0
   resnum=0
   norestart=0
+  rerun=0
+  
+  
 
   ! Oliver's attempt maybe delete later
   ! if(cloneflg=="V1") then
@@ -276,6 +280,7 @@ Program MainMCE
       genloc = gen
       restart=0
       trspace = trainsp
+      hc=0.d0
       
 
       if (restrtflg==1) then
@@ -569,14 +574,7 @@ Program MainMCE
             call trajchk(bset) !ensures that the position component of the coherent states are not too widely spaced
             
 
-            !!!! Original place!!!
             
-            !if ((allocated(clone)).and.(cloneflg.ne."BLIND").and.(time.le.timeend).and.(cloneflg.ne."V1")) then
-            !  call cloning (bset, nbf, x, time, clone, clonenum, reps)
-            !elseif ((cloneflg=="V1").and.(x==1000)) then 
-            !  write(6,'(a)') "trying to clone for v1"
-            !  call v1cloning(bset,nbf,x,reps,muq,mup,time, cnum_start, reptot)
-            !end if
 
             ! Oliver's bad attempt
             ! if ((allocated(clone)).and.(cloneflg.ne."BLIND").and.(time.le.timeend)) then
@@ -589,12 +587,14 @@ Program MainMCE
             ! end if
 
             call outbs(bset, reps, mup, muq, time,x)
+            if (rerun==0) then
+              tf = int(real(abs((timeend_loc-timestrt_loc)/dt)))
+            end if 
+            te = int(real(abs((timeend_loc-timestrt_loc)/dt)))
 
-            if (timeend_loc.gt.timestrt_loc) then
-              if ((time+dt-timeend_loc).gt.0.0d0) dt = timeend_loc - time
-            else
-              if ((time+dt-timeend_loc).lt.0.0d0) dt = timeend_loc - time
-            end if
+
+
+         
             
             call propstep (bset, dt, dtnext, dtdone, time, genflg, timestrt_loc,x,reps)     ! This subroutine takes a single timestep
   
@@ -620,19 +620,28 @@ Program MainMCE
             else
               time = time + dtdone                         ! increment time
             end if
-
-            if ((allocated(clone)).and.(cloneflg.ne."BLIND").and.(time.le.timeend).and.(cloneflg.ne."V1")) then
-              call cloning (bset, nbf, x, time, clone, clonenum, reps)
-            elseif ((cloneflg=="V1").and.((mod(x,clonefreq)==0)).and.(x.ne.int(real(abs((timeend_loc-timestrt_loc)/dt))))) then
-              !$omp critical 
-               call v1cloning(bset,nbf,x,reps,muq,mup,time,cnum_start,reptot,repchanger)
-              !$omp end critical 
-            end if
+           
+       
             
             dt = dtnext      ! dtnext is set by the adaptive step size system. If static, dtnext = dt already
 
             ! output variables written to arrays. Note - if a non-fatal error flag is implemented (currently only fatal errors implemented),
             ! the outputs will have to be saved over the course of propagation and then added to the main arrays at time==timeend
+
+            if (rerun==0) then
+              tf = int(real(abs((timeend_loc-timestrt_loc)/dt)))
+            end if 
+            te = int(real(abs((timeend_loc-timestrt_loc)/dt)))
+
+
+
+            if ((allocated(clone)).and.(cloneflg.ne."BLIND").and.(time.le.timeend).and.(cloneflg.ne."V1")) then
+              call cloning (bset, nbf, x, time, clone, clonenum, reps)
+              elseif ((cloneflg=="V1").and.((mod(x,clonefreq)==0)).and.(x.ne.int(real(abs((timeend_loc-timestrt_loc)/dt))))) then
+              !$omp critical 
+               call v1cloning(bset,nbf,x,reps,muq,mup,time,cnum_start,reptot,repchanger,tf, te)
+              !$omp end critical 
+            end if
 
             allocate (ovrlp(size(bset),size(bset)))
             ovrlp=ovrlpmat(bset)
@@ -652,6 +661,21 @@ Program MainMCE
             do r=1,npes
               popt(r) = pop(bset, r, ovrlp)
             end do
+
+            ! if (rerun==0) then
+            !   tf = int(real(abs((timeend_loc-timestrt_loc)/dt)))
+            ! end if 
+            ! te = int(real(abs((timeend_loc-timestrt_loc)/dt)))
+
+
+
+            ! if ((allocated(clone)).and.(cloneflg.ne."BLIND").and.(time.le.timeend).and.(cloneflg.ne."V1")) then
+            !   call cloning (bset, nbf, x, time, clone, clonenum, reps)
+            !   elseif ((cloneflg=="V1").and.((mod(x,clonefreq)==0)).and.(x.ne.int(real(abs((timeend_loc-timestrt_loc)/dt))))) then
+            !   !$omp critical 
+            !    call v1cloning(bset,nbf,x,reps,muq,mup,time,cnum_start,reptot,repchanger,tf, te)
+            !   !$omp end critical 
+            ! end if
 
             if ((step == "S").and.(time.le.timeend)) then
               do r=1,npes
@@ -754,6 +778,7 @@ Program MainMCE
       repchanger = 0
       reptot= newrep
       restrtflg=1
+      rerun=1
     end if
 
   end do
@@ -763,9 +788,9 @@ Program MainMCE
 
   if (prop=="Y") then
     if ((step=="S").and.(errorflag==0)) then    !Outputs data to file
-      pops = pops/dble(reptot)
+      pops = pops!/dble(reptot)
       absehr = absehr/dble(reptot)
-      absnorm = absnorm/dble(reptot)
+      absnorm = absnorm!/dble(reptot)
       if (method=="MCEv2") absnorm2 = absnorm2/dble(reptot)
       acf_t = acf_t/dble(reptot)
       extra = extra/dble(reptot)

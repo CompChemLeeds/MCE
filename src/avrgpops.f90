@@ -20,7 +20,7 @@ Program avrgnorm
   real(kind=8)::pop1av, pop2av, popsumav, popdiffav, nrmav, rlacfav, imacfav
   real(kind=8)::abacfav, rlexav, imexav, abexav, ehrav, timeav
   integer, dimension(:), allocatable :: valid, lines
-  integer::ierr, i=1, j=1, k=1, l=1, n, m, tot=0, folders, folreps, totreps, cols
+  integer::ierr, i=1, j=1, k=1, l=1, n, m, tot=0, folders, folreps, totreps, cols, v
   character(LEN=50000)::lngchar, lngchar2
   character(LEN=100)::LINE, filename
   character(LEN=19)::myfmt
@@ -144,10 +144,13 @@ Program avrgnorm
       write (0,"(3a,i0)") 'Error in opening ',trim(filename),' file. Ierr was ', ierr
       stop
     end if
-
+    v=1
     do
       read (n,*,iostat=ierr)LINE
+      write(6,*) v
+      v = v+1
       if (ierr.ne.0) then
+
         write (0,"(3a,i0)") "Read error in normpop_",trim(repstr),".out. Ierr was ",&
                             ierr
         stop
@@ -161,7 +164,6 @@ Program avrgnorm
     end do
 
   end do
-
   ! Open the output files and write the headers
   do l=1,tot
 

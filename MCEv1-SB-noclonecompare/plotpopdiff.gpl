@@ -1,0 +1,6 @@
+set terminal png
+set output "popsculm.png"
+set title "Graph of convergence over multiple repetitions"
+set xlabel "Time"
+set ylabel "Population difference"
+plot "normpop_cumul_1.out" u 1:13 t "1 Reps" w l, "normpop_cumul_1.out" u 1:2 t "Total Av Norm" w l

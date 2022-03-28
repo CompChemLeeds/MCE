@@ -43,7 +43,7 @@ if(inputs.clone["Cloning"]=='v1'):
     repeats=run.repeats*roar
 else:
     repeats=run.repeats
-if(repeats!=(counter*nodes)):
+    if(repeats!=(counter*nodes)):
         sys.exit("Expected "+str(repeats)+" repeats but got "+str(counter)+" per folder")
 
 if os.path.exists(EXDIR1+"/combination_backup"):

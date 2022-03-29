@@ -1,0 +1,6 @@
+set terminal png
+set output "ext.png"
+set title "Graph total extra quantity"
+set xlabel "Time"
+set ylabel "Extra Quantity"
+plot "normpop_cumul_2.out" u 1:6 t "2 Reps" w l

@@ -794,8 +794,7 @@ contains
         
       end do 
         
-      end do 
-    
+    end do 
     ! do k=1,size(bs)
     !   do j=1,size(bs)
     !     asum1 = (0.0d0, 0.0d0)
@@ -841,9 +840,9 @@ contains
       ! clone2(k)%d_pes(1) = clone2(k)%d_pes(1)/normc2
       ! clone2(k)%d_pes(2) = clone2(k)%d_pes(2)/normc2
 
-      clone(k)%normweight = clone(k)%normweight * normc1
+    
       ! write(6,*) "normweight = ", clone(k)%normweight
-      clone2(k)%normweight = clone2(k)%normweight * normc2
+    
       ! write(6,*) "normweight2 = ", clone2(k)%normweight
     !end do 
     ! do k=1, nbf
@@ -858,12 +857,15 @@ contains
     !   end do 
     do k=1, nbf
       clone(k)%d_pes(in_pes) = clone(k)%d_pes(in_pes)/sqrt(clonenorm)!exp(-i*clone(k)%s_pes(r)) ! it's easier to set all the first child to the preclone value and change later 
+      clone(k)%normweight = clone(k)%normweight * normc1
+      clone2(k)%normweight = clone2(k)%normweight * normc2
       do r=1, npes
         if(r.ne.in_pes) then 
           clone2(k)%d_pes(r) = clone2(k)%d_pes(r)/sqrt(clonenorm2)!exp(-i*clone(k)%s_pes(r)) ! clone 2 will be non zero only when not on the pes
         end if 
         clone(k)%a_pes(r) = clone(k)%d_pes(r) * exp(i*clone(k)%s_pes(r))
         clone2(k)%a_pes(r) = clone2(k)%d_pes(r) * exp(i*clone2(k)%s_pes(r))
+     
       end do 
     end do 
 
@@ -905,7 +907,7 @@ contains
 
     call deallocbs(clone)
     call deallocbs(clone2)
-  write (6,*) "V1 cloning finished" !should print out the basis set and how it's doubled.
+  
       
   end subroutine v1cloning
 !***********************************************************************************!

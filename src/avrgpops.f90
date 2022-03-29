@@ -155,7 +155,7 @@ Program avrgnorm
                             ierr
         stop
       end if
-      if (LINE=="0.00000000E+000") then
+      if ((LINE=="0.00000000E+000").or.(LINE=="0.000000000000000000e+00")) then
         backspace (n)
         exit
       else

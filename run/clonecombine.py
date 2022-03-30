@@ -47,31 +47,6 @@ if(inputs.clone["Cloning"]!='v1'):
 else:
     print('version 1 condensing')
 
-# for i in range(nodes):
-#     SUBDIR=EXDIR1+"/run-"+str(i+1)
-#     clonedir= EXDIR1+"/run-"+str(i+1)+"/clonetag.out"
-#     x, y, z, a, b = np.loadtxt(clonedir, unpack=True)
-#     x = list(x)
-#     y = list(y) 
-#     z = list(z)
-#     a = list(a)
-#     b = list(b)
-#     print(x,y,z,a,b)
-#     totalreps= int(y[-1])
-#     normweighting = np.ones((totalreps,no_t_step))
-#     for k in range(0,len(y)):
-#         row1 = int(x[k]-1)
-#         row2 = int(y[k]-1)
-#         d = int(z[k-1])
-#         hold = normweighting[row1, d]
-#         for m in range(int(z[k]-1),no_t_step):
-#             normweighting[row1,m] = normweighting[row1, m] * a[k]
-#             normweighting[row2,m] = hold * b[k]
-#         for j in range(0,int(z[k]-1)):
-#             normweighting[row2,j] = 0 
-# print(normweighting[0:,0:10])
-# print(normweighting[0:,1490:1510])
-# print(normweighting[0:,1990:])
 
 
 
@@ -134,29 +109,24 @@ else:
 for i in range(nodes):
     SUBDIR=EXDIR1+"/run-"+str(i+1)
     clonedir= EXDIR1+"/run-"+str(i+1)+"/clonetag.out"
-    x, y, z, a, b = np.loadtxt(clonedir, unpack=True)
+    parent, child, time_clone, normWP, normWC = np.loadtxt(clonedir, unpack=True)
     normp=np.zeros((no_t_step+4,13))
-    x = list(x)
-    y = list(y) 
-    z = list(z)
-    a = list(a)
-    b = list(b)
-    print(x,y,z,a,b)
-    totalreps= int(y[-1])
+    # print(x,y,z,a,b)
+    timestep_clone = np.rint((time_clone/time_end)*no_t_step)
+    totalreps= int(child[-1])
     normweighting = np.ones((totalreps,no_t_step+1))
-    for k in range(0,len(y)):
-        row1 = int(x[k]-1)
-        row2 = int(y[k]-1)
-        d = int(z[k-1])
+    for k in range(0,len(child)):
+        row1 = int(parent[k]-1)
+        row2 = int(child[k]-1)
+        d = int(timestep_clone[k-1])
         hold = normweighting[row1, d]
-        for m in range(int(z[k]-1),no_t_step+1):
-            normweighting[row1,m] = normweighting[row1, m] * a[k]
-            normweighting[row2,m] = hold * b[k]
-        for j in range(0,int(z[k]-1)):
+        for m in range(int(timestep_clone[k]-1),no_t_step+1):
+            normweighting[row1,m] = normweighting[row1, m] * normWP[k]
+            normweighting[row2,m] = hold * normWC[k]
+        for j in range(0,int(timestep_clone[k]-1)):
             normweighting[row2,j] = 0 
     # timestep=z.astype(int)
-    SUBDIR=EXDIR1+"/run-"+str(i+1)
-    for j in range(0,int(y[-1])):
+    for j in range(0,int(child[-1])):
         print(EXDIR1+"/run-"+str(i+1)+"/normpop-"+str(int(j+1)).zfill(4)+".out")
         fp1=open(EXDIR1+"/run-"+str(i+1)+"/normpop-"+str(int(j+1)).zfill(4)+".out")
         if(j==0):

@@ -923,19 +923,21 @@ contains
   
   end subroutine copynorm
   
-  subroutine clonetag(reps,cnum_start,x, tf, te, norm1, norm2)
+  subroutine clonetag(reps,cnum_start,time, tf, te, norm1, norm2)
      integer :: ierr, timestep, fileun
      integer(kind=4), intent(in) :: cnum_start
-     integer, intent(in) :: x, reps, te, tf
+     integer, intent(in) ::  reps, te, tf
      character(LEN=12) :: filenm
-     real(kind=8) norm1, norm2
+     real(kind=8), intent(in) :: norm1, norm2,time
+
+
      
     
-    if (tf.gt.te) then
-      timestep = x + (tf-te)
-    else
-      timestep = x
-    end if 
+    ! if (tf.gt.te) then
+    !   timestep = x + (tf-te)
+    ! else
+    !   timestep = x
+    ! end if 
     filenm = "clonetag.out"  
 
 
@@ -943,7 +945,7 @@ contains
     !if (ierr.ne.0) then 
     !  errorflag=1
     !end if
-    write(321, *) reps, cnum_start, timestep, norm1, norm2
+    write(321, *) reps, cnum_start, time, norm1, norm2
     
     close(321)
 

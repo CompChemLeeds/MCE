@@ -788,9 +788,9 @@ Program MainMCE
 
   if (prop=="Y") then
     if ((step=="S").and.(errorflag==0)) then    !Outputs data to file
-      pops = pops!/dble(reptot)
+      pops = pops/dble(reptot)
       absehr = absehr/dble(reptot)
-      absnorm = absnorm!/dble(reptot)
+      absnorm = absnorm/dble(reptot)
       if (method=="MCEv2") absnorm2 = absnorm2/dble(reptot)
       acf_t = acf_t/dble(reptot)
       extra = extra/dble(reptot)

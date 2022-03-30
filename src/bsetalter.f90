@@ -779,12 +779,14 @@ contains
       clone2(k)%D_big = (1.0d0,0.00)
       clone(k)%d_pes(in_pes) = bs(k)%d_pes(in_pes) ! it's easier to set all the first child to the preclone value and change later 
       clone2(k)%d_pes(in_pes) = (0.0d0,0.0d0) 
+      clone2(k)%s_pes(in_pes) = (0.0d0)
       clone(k)%normweight = bs(k)%normweight
       clone2(k)%normweight = bs(k)%normweight
       !clone2(k)%d_pes(in_pes) = (0.0d0,0.0d0) ! set to zero so it can be changed in the same loop as child one
       do r=1, npes
         if(r.ne.in_pes) then ! should only happen once for a system with 2PES
           clone(k)%d_pes(r) = (0.0d0,0.0d0) ! clone 1 will be 0 if not on the pes
+          clone(k)%s_pes(r) = (0.0d0)
           clone2(k)%d_pes(r) = bs(k)%d_pes(r) ! clone 2 will be non zero only when not on the pes
         end if 
         clone(k)%s_pes(r) = bs(k)%s_pes(r) !the classical action does not change between clones
@@ -883,7 +885,7 @@ contains
     !call reloc_basis(clone2, bs, x)
     call outbs(clone2, cnum_start, mup, muq, time, x)
     call copynorm(reps,cnum_start)
-    call clonetag(reps,cnum_start, x, tf, te, normc1, normc2)
+    call clonetag(reps,cnum_start, time, tf, te, normc1, normc2)
    
     repchanger = repchanger + 1
 

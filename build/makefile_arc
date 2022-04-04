@@ -8,7 +8,7 @@ VPATH=../src
 
 # Link step
 
-all: Main avrgpops timehist subavrg interpolate integrator clonecombine
+all: Main avrgpops timehist subavrg interpolate integrator 
 
 Main:randgen.o vars.o alarrays.o sb.o hp.o mp.o outputs.o redirect.o Ham.o Chks.o bsetalter.o readpars.o derivsMCE.o propMCE.o bsetgen.o MainMCE.o
 	 $(F90) $(FFLAGS) -o MCE.exe randgen.o vars.o alarrays.o sb.o hp.o mp.o outputs.o redirect.o Ham.o Chks.o bsetalter.o readpars.o derivsMCE.o propMCE.o bsetgen.o MainMCE.o $(FLINKS)
@@ -28,8 +28,7 @@ interpolate:neville.o interpolate.o
 integrator:integrator.f90
 	 $(F90) -O3 -o integrator.exe $<
 
-clonecombine:clonecombine.f90
-	 $(F90) -O3 -o clonecombine.exe $<
+
 
 # Compile steps
 

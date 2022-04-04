@@ -32,7 +32,7 @@ parameters={
     'ndim':10,
 
     # Number of basis functions 
-    'in_nbf':10,
+    'in_nbf':1,
 
     # Random Number generation function (ZBQL - using ZBQLNOR subroutine, GAUS - using function based on numerical recipes)
     'randfunc':'ZBQL',
@@ -70,7 +70,7 @@ clone={
     'max_cloning':19,
 
     # Minimum cloning frequency (ie how many timesteps since last cloning is new cloning event allowed)
-    'clon_freq':750,
+    'clon_freq':500,
 
     #Quantum Superposition Cloning exclusion paramter between the two child trajectories should >= ??? and < ???
     'QSC_epsilon':'0.1d0' 
@@ -98,7 +98,7 @@ prop={
     #Maximum stepsize - used in adaptive stepsize
     'dtmax':'500.d0',
     #Starting stepsize of adaptive / Constant stepsize for Static stepsize
-    'dtinit':'7.500d-3',
+    'dtinit':'7.5d-3',
     #End Time of propagation
     'time_end':'1.5d+1', #1.00d+1
     #Start time of propagation

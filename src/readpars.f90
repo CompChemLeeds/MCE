@@ -558,9 +558,9 @@ contains
       thresh = 0.249d0
     end if
 
-    if (cloneflg=="V1") then
-      clonemax=20
-    end if
+    ! if (cloneflg=="V1") then
+    !   clonemax=20
+    ! end if
 
     if ((randfunc.ne.'ZBQL').and.(randfunc.ne.'zbql').and.(randfunc.ne.'gaus').and.(randfunc.ne.'GAUS')) then
       write(0,"(a,a)") "Invalid value for random number function. Must be ZBQL/zbql or GAUS/gaus. Value is ", randfunc

@@ -140,7 +140,7 @@ Program MainMCE
   real(kind=8) :: timeend_loc, timeold, time, dt, dtnext, dtdone, initehr, nctmnd
   real(kind=8) :: initnorm, initnorm2, alcmprss, dum_re1, dum_re2
   integer, dimension(:), allocatable :: clone, clonenum
-  integer :: j, k, r, y, x, m, nbf, recalcs, conjrep, restart, reps, trspace
+  integer :: j, k, r, y, x, m, nbf, recalcs, conjrep, restart, reps, trspace, v1clonenum
   integer :: ierr, timestpunit, stepback, dum_in1, dum_in2, dum_in3, finbf, v1check,loop
   character(LEN=3):: rep
   integer :: clone_instance
@@ -217,6 +217,7 @@ Program MainMCE
   absnorm2 = 0.0d0      ! Absolute value of the sum of the single config. norms
   acf_t = (0.0d0,0.0d0) ! Auto-correlation function
   extra = (0.0d0,0.0d0)
+  v1clonenum = 0.d0
   
   
 
@@ -637,9 +638,10 @@ Program MainMCE
 
             if ((allocated(clone)).and.(cloneflg.ne."BLIND").and.(time.le.timeend).and.(cloneflg.ne."V1")) then
               call cloning (bset, nbf, x, time, clone, clonenum, reps)
-              elseif ((cloneflg=="V1").and.((mod(x,clonefreq)==0)).and.(x.ne.int(real(abs((timeend_loc-timestrt_loc)/dt))))) then
+              elseif ((cloneflg=="V1").and.((mod(x,clonefreq)==0)).and.(v1clonenum.lt.clonemax)&
+                .and.(x.ne.int(real(abs((timeend_loc-timestrt_loc)/dt))))) then
               !$omp critical 
-               call v1cloning(bset,nbf,x,reps,muq,mup,time,cnum_start,reptot,repchanger,tf, te)
+               call v1cloning(bset,nbf,x,reps,muq,mup,time,cnum_start,reptot,repchanger,tf, te,v1clonenum)
               !$omp end critical 
             end if
 

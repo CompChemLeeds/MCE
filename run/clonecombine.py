@@ -20,7 +20,7 @@ dtinit=inputs.prop['dtinit']
 size=len(dtinit)
 dtinit=float(dtinit[:-3])*10**-3
 time_start=0
-
+incr= 0
 no_t_step=int((time_end-time_start)/dtinit)
 
 
@@ -42,7 +42,7 @@ for i in range(nodes):
       else:
         sys.exit("Folder "+str(i+1)+" has "+str(counter)+" normpop files previous folders had "+str(counterprev))
 
-if(inputs.clone["Cloning"]!='v1'):
+if(inputs.clone["Cloning"]!='V1'):
     print("Only works with version 1 cloning")
 else:
     print('version 1 condensing')
@@ -111,10 +111,19 @@ for i in range(nodes):
     clonedir= EXDIR1+"/run-"+str(i+1)+"/clonetag.out"
     parent, child, time_clone, normWP, normWC = np.loadtxt(clonedir, unpack=True)
     normp=np.zeros((no_t_step+4,13))
-    # print(x,y,z,a,b)
     timestep_clone = np.rint((time_clone/time_end)*no_t_step)
+    print(timestep_clone)
     totalreps= int(child[-1])
     normweighting = np.ones((totalreps,no_t_step+1))
+    print(child)
+    for h in range(1,repeats+1):
+        for s in range(100,no_t_step+100,100):
+            dir ='Outbs-'+str(h).zfill(4)+"-"+str(int(s)).zfill(4)
+            print(dir)
+    for h in range(repeats-1,totalreps-1):
+        for s in range(round(int(timestep_clone[h]),-2),no_t_step,100):
+            dir ='Outbs-'+str(int(child[h])).zfill(4)+"-"+str(int(s)+100-round(int(timestep_clone[h]),-2)).zfill(4)
+            print(dir)
     for k in range(0,len(child)):
         row1 = int(parent[k]-1)
         row2 = int(child[k]-1)
@@ -125,7 +134,6 @@ for i in range(nodes):
             normweighting[row2,m] = hold * normWC[k]
         for j in range(0,int(timestep_clone[k]-1)):
             normweighting[row2,j] = 0 
-    # timestep=z.astype(int)
     for j in range(0,int(child[-1])):
         print(EXDIR1+"/run-"+str(i+1)+"/normpop-"+str(int(j+1)).zfill(4)+".out")
         fp1=open(EXDIR1+"/run-"+str(i+1)+"/normpop-"+str(int(j+1)).zfill(4)+".out")
@@ -135,27 +143,23 @@ for i in range(nodes):
                     list = line.split()
                     list = [float(p) for p in list]
                     list1=np.array(list)
-                    # print(k, list1)
                     normp[k,0]= np.add(normp[k,0],list1[0])
                     list1 = list1 * normweighting[j,k-3]
-                    # print(k, list1)
                     normp[k,1:]= np.add(normp[k,1:],list1[1:])
         else:        
             for k, line in enumerate(fp1):
                 if k >= 3:
                     list = line.split()
                     list = [float(p) for p in list]
-                    # print(EXDIR1+"/run-"+str(i+1)+"/normpop-000"+str(int(j+1))+".out")
-                    # print(k-3, normweighting[j,0:10])
                     list1=np.array(list)
                     list1= list1 *normweighting[j,k-3]
                     normp[k,1:]= np.add(normp[k,1:],list1[1:])    
         fp1.close()
-
+    normp[:,1:]=normp[:,1:]/repeats
 
     # print(repeats)
     # print(normp[2003,:])
-    normp[:,1:]=normp[:,1:]/repeats
+    
     # normp=normp[0,:]*repeats
     # print(normp[2003:])
     header = "Time Norm Re(ACF(t)) Im(ACF(t)) |ACF(t)| Re(Extra) Im(Extra) |Extra| Sum(HEhr) Pop1 Pop2 Pop1+Pop2 Pop2-Pop1 \n \n"

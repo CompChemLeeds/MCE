@@ -140,7 +140,7 @@ Program MainMCE
   real(kind=8) :: timeend_loc, timeold, time, dt, dtnext, dtdone, initehr, nctmnd
   real(kind=8) :: initnorm, initnorm2, alcmprss, dum_re1, dum_re2
   integer, dimension(:), allocatable :: clone, clonenum
-  integer :: j, k, r, y, x, m, nbf, recalcs, conjrep, restart, reps, trspace, v1clonenum
+  integer :: j, k, r, y, x, m, nbf, recalcs, conjrep, restart, reps, trspace, v1clonenum, ovrlpout
   integer :: ierr, timestpunit, stepback, dum_in1, dum_in2, dum_in3, finbf, v1check,loop
   character(LEN=3):: rep
   integer :: clone_instance
@@ -236,6 +236,7 @@ Program MainMCE
   resnum=0
   norestart=0
   rerun=0
+  ovrlpout=100
   
   
 
@@ -635,11 +636,10 @@ Program MainMCE
             te = int(real(abs((timeend_loc-timestrt_loc)/dt)))
 
 
-
+           
             if ((allocated(clone)).and.(cloneflg.ne."BLIND").and.(time.le.timeend).and.(cloneflg.ne."V1")) then
               call cloning (bset, nbf, x, time, clone, clonenum, reps)
-              elseif ((cloneflg=="V1").and.((mod(x,clonefreq)==0)).and.(v1clonenum.lt.clonemax)&
-                .and.(x.ne.int(real(abs((timeend_loc-timestrt_loc)/dt))))) then
+            elseif ((cloneflg=="V1").and.((mod(x,clonefreq)==0)).and.(x.ne.int(real(abs((timeend_loc-timestrt_loc)/dt))))) then
               !$omp critical 
                call v1cloning(bset,nbf,x,reps,muq,mup,time,cnum_start,reptot,repchanger,tf, te,v1clonenum)
               !$omp end critical 
@@ -700,6 +700,9 @@ Program MainMCE
             deallocate(ovrlp)
 
             call outbs(bset, reps, mup, muq, time,x)
+            if (mod(x,100)==0) then 
+              call outbscont(bset, reps, mup, muq, time,x)
+            end if 
             if ((cloneflg == "YES").or.(cloneflg == "BLIND+").or.(cloneflg == "QSC")) then
               call outclones(clonenum, reps, clone)
             end if

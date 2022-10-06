@@ -39,6 +39,12 @@ contains
 
     call deriv(bs, dbs_dt1, 1, time, genflg, reps, x)
 
+    ! testing what the different values of the basis correspond to. 
+    ! if (x == 1) then 
+    !   write(6,*) size(dbs_dt1,2)
+    ! endif 
+
+
     if (step == "A") then
 
       call allocbs(bserr0,size(bs))
@@ -354,7 +360,6 @@ contains
         call allocbf(dbs_dt(l,k))
       end do
     end do
-
     do k=1,size(dbs_dt,2)
       dbs_dt(1,k)=dbs_dt1(k)
     end do

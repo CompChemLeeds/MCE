@@ -913,7 +913,7 @@ contains
     arg1 = "normpop-"//trim(rep)//".out"
     arg2 = "normpop-"//trim(cnum)//".out"
     command = "cp "//arg1//arg2
-    write(6,*) arg1, arg2, command
+    ! write(6,*) arg1, arg2, command
     call system(command)
     
     
@@ -951,7 +951,94 @@ contains
 
 
   end subroutine clonetag
+
+  subroutine outbscont(bs, reps, mup, muq, t, x)
+    implicit none
+    type(basisfn), dimension (:), intent(in) :: bs
+    real(kind=8), dimension(:), intent(in) :: mup, muq
+    real(kind=8), intent(in) :: t
+    integer::m, j, r, k, ierr, bsunit, fileun
+    character(LEN=28)::filename, filenm, filenm2, myfmt
+    integer, intent(in) :: reps, x
+    character(LEN=4):: rep
+    character(LEN=5)::step
+    character(LEN=1)::rkstp
+    character(LEN=13):: path
+    logical :: dir_e
+    character(len=4):: tstep
     
+    inquire(file='./bscontinuous/.', exist=dir_e)
+
+    if ( dir_e ) then
+      ! write(6,*) "dir exists!"
+    else
+      call system('mkdir bscontinuous')
+      open(unit=3181, file = ('bscontinoustrack.out'), status='unknown', iostat= ierr)
+      close(3181)
+    end if  
+
+    ierr = 0
+
+    write(rep,"(i4.4)") reps
+    write(tstep, "(i4.4)") x
+    if (x.lt.0) then
+      write(step,"(i5.4)") x
+    else
+      write(step,"(i5.5)") x
+    end if
+    path = "bscontinuous/"
+    if (errorflag.eq.0) then
+     filename = path//"Outbs-"//trim(rep)//"-"//trim(tstep)//".out"
+    else
+     filename = path//"Errbs-"//trim(rep)//"-"//trim(tstep)//".out" 
+    end if
+    open(unit=3181, file = ('bscontinoustrack.out'), status='unknown', POSITION='APPEND', iostat= ierr)
+    write(3181,"(a,1x,i4)"       ) filename
+    close(3181)
+    bsunit=235+reps
+
+    open(unit=bsunit, file=trim(filename), status='unknown', iostat=ierr)
+    
+    if (size(bs).eq.0) then
+      write(bsunit,"(a)") "Basis set cannot be output as it is not allocated properly"
+      errorflag = 1
+      return
+    end if
+
+    write(bsunit,"(a,1x,i4)"       ) 'ndof'       , ndim
+    write(bsunit,"(a,1x,i4)"       ) 'nconf'      , npes
+    write(bsunit,"(a,1x,i4)"       ) 'nbasisfns'  , size(bs)
+    write(bsunit,"(a,1x,i4)"       ) 'initial_PES', in_pes
+    write(bsunit,"(a,1x,es25.17e3)") 'time'       , t
+    
+    write(bsunit,*),""
+    do m=1,ndim
+      write(bsunit,"(a,1x,i3,2(1x,es25.17e3))") 'zinit', m, muq(m), mup(m)
+    end do
+
+    do j=1,size(bs)
+      write(bsunit,*),""
+      write(bsunit,"(a,1x,i5)")'basis', j
+      write(bsunit,"(a,2(1x,es25.17e3))") "D", dble(bs(j)%D_big), dimag(bs(j)%D_big)
+      do r=1,npes
+        write(bsunit,"(a,i4,2(1x,es25.17e3))") "a",r, dble(bs(j)%a_pes(r)), dimag(bs(j)%a_pes(r)) 
+      end do  
+      do r=1,npes
+        write(bsunit,"(a,i4,2(1x,es25.17e3))") "d",r, dble(bs(j)%d_pes(r)), dimag(bs(j)%d_pes(r)) 
+      end do  
+      do r=1,npes
+        write(bsunit,"(a,i4,1x,es25.17e3)") "s",r, (bs(j)%s_pes(r))
+      end do  
+      do m=1,ndim
+        write(bsunit,"(a,i4,2(1x,es25.17e3))") "z",m, dble(bs(j)%z(m)), dimag(bs(j)%z(m))
+      end do
+    end do
+
+    close(bsunit)
+   
+    return
+
+  end subroutine
    
     
     

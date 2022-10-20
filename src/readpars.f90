@@ -1265,17 +1265,17 @@ contains
 
 !*************************************************************************************************!
 
-  subroutine readcontbasis(bs, mup, muq, rep, t, nbf)   !   Level 1 Subroutine
+  subroutine readcontbasis(bs, name ,nbf)   !   Level 1 Subroutine
 
     implicit none
     type(basisfn), dimension (:), allocatable, intent(inout) :: bs
     integer::ierr, n, j, k, m, r, cflg, bsunit
-    real(kind=8), dimension(:), allocatable, intent(out) :: mup, muq
-    real(kind=8), intent(inout) :: t
+    real(kind=8), dimension(:), allocatable :: mup, muq
+    real(kind=8) :: t
     integer, intent(inout) :: nbf
-    integer, intent(in) :: rep
     character(LEN=100)::LINE
     character(LEN=14)::filename
+    character(len=19) ::name
     real(kind=8)::rl, im
     complex(kind = 8) :: dsum1
 
@@ -1288,12 +1288,12 @@ contains
     write(6,"(a)")"Starting read subroutine"
     call flush(6)
 
-    write(filename,"(a,i4.4,a)") "Outbs-", rep, ".out"
+    write(filename,"(a,i4.4,a)") name
 
     write(6,"(a,a)") "Opening file ", trim(filename)
     call flush(6)
 
-    bsunit = 200+rep
+    bsunit = 7171
 
     open(unit=bsunit, file=filename, status="old", iostat=ierr)
 

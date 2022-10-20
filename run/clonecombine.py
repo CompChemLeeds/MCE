@@ -10,6 +10,7 @@ import inputs
 
 time_end=inputs.prop['time_end']
 time_start=inputs.prop['time_start']
+nbf = inputs.nbf
 repeats = run.repeats
 nodes = run.nodes
 repeats =int(repeats/nodes)
@@ -112,18 +113,26 @@ for i in range(nodes):
     parent, child, time_clone, normWP, normWC = np.loadtxt(clonedir, unpack=True)
     normp=np.zeros((no_t_step+4,13))
     timestep_clone = np.rint((time_clone/time_end)*no_t_step)
-    print(timestep_clone)
     totalreps= int(child[-1])
+    shift= np.zeros((totalreps,3))
+    for h in range(1,totalreps+1):
+        # print(h)
+        shift[h-1,0] = h
+        if h in child:
+            place = np.where(child==h)
+            print('place is, ', place[0])
+            place = int(place[0])
+            shift[h-1,1] = timestep_clone[place]
+            shift[h-1,2] = int(parent[place])  
     normweighting = np.ones((totalreps,no_t_step+1))
-    print(child)
-    for h in range(1,repeats+1):
-        for s in range(100,no_t_step+100,100):
-            dir ='Outbs-'+str(h).zfill(4)+"-"+str(int(s)).zfill(4)
-            print(dir)
-    for h in range(repeats-1,totalreps-1):
-        for s in range(round(int(timestep_clone[h]),-2),no_t_step,100):
-            dir ='Outbs-'+str(int(child[h])).zfill(4)+"-"+str(int(s)+100-round(int(timestep_clone[h]),-2)).zfill(4)
-            print(dir)
+    # for h in range(1,repeats+1):
+    #     for s in range(100,no_t_step+100,100):
+    #         dir ='Outbs-'+str(h).zfill(4)+"-"+str(int(s)).zfill(4)
+    #         # print(dir)
+    # for h in range(0,totalreps-repeats):
+    #     for s in range(round(int(timestep_clone[h]),-2),no_t_step-1,100):
+    #         dir ='Outbs-'+str(int(child[h])).zfill(4)+"-"+str(int(s)+100-round(int(timestep_clone[h]),-2)).zfill(4)
+    #         print(dir)
     for k in range(0,len(child)):
         row1 = int(parent[k]-1)
         row2 = int(child[k]-1)

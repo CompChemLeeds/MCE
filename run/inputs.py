@@ -70,7 +70,7 @@ clone={
     'max_cloning':19,
 
     # Minimum cloning frequency (ie how many timesteps since last cloning is new cloning event allowed)
-    'clon_freq':1000,
+    'clon_freq':750,
 
     #Quantum Superposition Cloning exclusion paramter between the two child trajectories should >= ??? and < ???
     'QSC_epsilon':'0.1d0' 

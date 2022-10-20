@@ -150,7 +150,7 @@ contains
 
     deallocate(dnew, stat=ierr)
     if (ierr/=0) then
-      write (0,"(a)"),"Error deallocating dnew arrays in reloc"
+      write (0,"(a)") "Error deallocating dnew arrays in reloc"
       errorflag = 1
       return
     end if

@@ -371,7 +371,7 @@ Program avrgnorm
         read(n,*,iostat=ierr)time(i),nrm(i),rlacf(i),imacf(i),abacf(i),rlex(i),&
                       imex(i),abex(i),ehr(i),pop1(i),pop2(i),popsum(i),popdiff(i)
         if (time(i).ne.time(1)) then
-          write (0,"(a,a,es16.8e3,a,i0)"),"File synchronisation error when reading",&
+          write (0,"(a,a,es16.8e3,a,i0)") "File synchronisation error when reading",&
                                " at time ", time(1) ," in unit ", n
           write (0,"(a,i0,a,i0,a,i0)") "i = ", i, " n = ", n
           stop

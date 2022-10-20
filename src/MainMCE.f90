@@ -128,6 +128,8 @@ Program MainMCE
   use Chks       ! A set of checks which ensure the program is running correctly
   use propMCE    ! The time propagation controller
   use redirect   ! Module which directs functions to the system specific variants
+  use clonecondense ! Module which recombines clones for MCEv1
+
 
   implicit none
   !Private variables
@@ -158,7 +160,7 @@ Program MainMCE
   integer:: tnum, cols, genflg, istat, intvl, rprj, n, nsame, nchange, rerun
   character(LEN=100) :: LINE, CWD
   character(LEN=1) :: genloc
-  integer(kind=4)  :: cnum_start, repchanger, newrep, resnum, norestart, tf, te
+  integer(kind=4)  :: cnum_start, repchanger, newrep, resnum, norestart, tf, te, orgreps
 
   call CPU_TIME(starttime) !used to calculate the runtime, which is output at the end
 
@@ -232,6 +234,8 @@ Program MainMCE
   rprj=10
   genflg=0
   cnum_start=reptot
+  orgreps = reptot
+
   repchanger=0
   resnum=0
   norestart=0
@@ -700,7 +704,7 @@ Program MainMCE
             deallocate(ovrlp)
 
             call outbs(bset, reps, mup, muq, time,x)
-            if (mod(x,100)==0) then 
+            if (mod(x,10)==0) then 
               call outbscont(bset, reps, mup, muq, time,x)
             end if 
             if ((cloneflg == "YES").or.(cloneflg == "BLIND+").or.(cloneflg == "QSC")) then
@@ -790,7 +794,7 @@ Program MainMCE
   
 
   write(6,"(a)") "Finished Propagation"
-
+  
   if (prop=="Y") then
     if ((step=="S").and.(errorflag==0)) then    !Outputs data to file
       pops = pops/dble(reptot)
@@ -875,7 +879,9 @@ Program MainMCE
   else
     write(6,"(a,es12.5,a)") 'Time taken : ', runtime, ' seconds'
   end if
-
+  if (cloneflg=="V1") then
+    call clone_condense(dt,tf, nbf, reptot, timeend,orgreps)
+  end if
 
   call flush(6)
   call flush(0)

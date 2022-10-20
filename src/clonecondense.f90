@@ -1,163 +1,227 @@
-Program clonecondense 
-    use, intrinsic :: iso_fortran_env
+module clonecondense
+  use alarrays
+  use outputs
+  use readpars
+
+!*****************************************************************
+!*   First attempt at translating the python file clonecombine.py into fortran to be called automatically
+!*   and interact with bases much easier, as well as using pre-written functions.
+!*
+!*    Contains subroutines for:
+!*    
+!*     1) Recondensing the clones that are created through version 1 propagation
+!*
+!*
+!*****************************************************************
+
+contains 
+  
+
+  subroutine clone_condense(dt,timesteps, nbf, repeats, time_end,orgreps)
     implicit none
-    integer::ierr, j=1, k=1, l=1, n, m, tot=0, reps, cols, folreps, totreps, nlines, i, timestep
-    real(kind=8), dimension (:,:), allocatable :: pops
-    real(kind=8),dimension(:),allocatable::pop1o, pop2o, popsumo, popdiffo, nrmo, rlacfo, popsav
-    real(kind=8),dimension(:),allocatable::imacfo, abacfo, ehro, timeo, rlexo, imexo, abexo
-    real(kind=8),dimension(:),allocatable::pop1p, pop2p, popsump, popdiffp, nrmp, rlacfp, popsavp
-    real(kind=8),dimension(:),allocatable::imacfp, abacfp, ehrp, timep, rlexp, imexp, abexp
-    real(kind=8),dimension(:),allocatable::pop1n, pop2n, popsumn, popdiffn, nrmn, rlacfn
-    real(kind=8),dimension(:),allocatable::imacfn, abacfn, ehrn, timen, rlexn, imexn, abexn
-    real(kind=8)::pop1av, pop2av, popsumav, popdiffav, nrmav, rlacfav, imacfav
-    real(kind=8)::abacfav, rlexav, imexav, abexav, ehrav, timeav
-    character(LEN=100)::LINE, filenameo, filenamep, filenamet, original, pair, arg3
-    character(LEN=19)::myfmt
-    character(LEN=6)::repstr, lstr, timestp
-    character(LEN=5000)::lngchar, lngchar2
-    integer, dimension(:),allocatable::valid, lines
-    logical :: file_exists
-    character(LEN=18) :: arg11
-    character(LEN=22) :: arg10
-    character(len=45) :: command
-    call getarg(1,original)
-    call getarg(2,pair)
-    call getarg(3, arg3)
-    read(arg3,*) timestep
-   
-    
 
-    filenameo =  "normpop-000"//trim(original)//".out"
-    filenamep =  "normpop-000"//trim(pair)//".out"
-    open(unit=4567, file=trim(filenameo), status='old',iostat=ierr)
-    if (ierr .ne. 0) then
-      write (0,"(3a)") 'Error in opening ', trim(filenameo), ' file'
-      stop
-    end if
-    open(unit=4568, file=trim(filenamep), status='old',iostat=ierr)
-    if (ierr .ne. 0) then
-      write (0,"(3a)") 'Error in opening ', trim(filenamep), ' file'
-      stop
-    end if
+    type(basisfn), dimension(:), allocatable :: bs1, bs2
+    character:: exdir, normpopfile !needs lengths
+    character(len=12) clonedir
+    character(len=4) repstr
+    real, dimension(13) :: temparr
+    real, allocatable,  dimension(:,:) :: normp, normweighting! combining all the norm files into this one matrix
+    real, allocatable, dimension(:):: parent, child, time_clone, normWP, normWC, timestep_clone
+    real, allocatable, dimension(:,:) :: shift
+    integer(kind=4), intent(in):: nbf, timesteps, orgreps
+    real(kind=8), intent(in):: dt, time_end
+    real :: hold, crossterm1, crossterm2
+    integer:: repeats, iostat, nlines, ierr, n, row1, row2, d, j, m
+
+    ! Defining value of varibles
+    ierr = 0
     nlines = 0
+    crossterm1 = 0
+    crossterm2 = 0
+    ! Retrieving the working directory and finding the clone tag file
+    ! ierr = getcwd(exdir)
+    ! if (ierr.ne.0) stop 'getcwd:error'
+    
+
+
+    ! Opening the clone tag file and then reads in the different arrays
+    clonedir = 'clonetag.out'
+    open(11202,file=clonedir,status='old')
+    
     DO
-       READ(4567,*,iostat=ierr)
+      READ(11202,*,iostat=ierr)
        IF (ierr/=0) EXIT
-       nlines = nlines + 1
+      nlines = nlines + 1
     END DO
-    write(6,*) nlines
-    tot = nlines-2
-   
-    allocate(timeo(tot-1))
-    allocate(nrmo(tot-1))
-    allocate(rlacfo(tot-1))
-    allocate(imacfo(tot-1))
-    allocate(abacfo(tot-1))
-    allocate(rlexo(tot-1))
-    allocate(imexo(tot-1))
-    allocate(abexo(tot-1))
-    allocate(ehro(tot-1))
-    allocate(pop1o(tot-1))
-    allocate(pop2o(tot-1))
-    allocate(popsumo(tot-1))
-    allocate(popdiffo(tot-1))
-
-    allocate(timep(tot-1))
-    allocate(nrmp(tot-1))
-    allocate(rlacfp(tot-1))
-    allocate(imacfp(tot-1))
-    allocate(abacfp(tot-1))
-    allocate(rlexp(tot-1))
-    allocate(imexp(tot-1))
-    allocate(abexp(tot-1))
-    allocate(ehrp(tot-1))
-    allocate(pop1p(tot-1))
-    allocate(pop2p(tot-1))
-    allocate(popsump(tot-1))
-    allocate(popdiffp(tot-1))
-
-    
-    allocate(nrmn(tot-1))
-    allocate(rlacfn(tot-1))
-    allocate(imacfn(tot-1))
-    allocate(abacfn(tot-1))
-    allocate(rlexn(tot-1))
-    allocate(imexn(tot-1))
-    allocate(abexn(tot-1))
-    allocate(ehrn(tot-1))
-    allocate(pop1n(tot-1))
-    allocate(pop2n(tot-1))
-    allocate(popsumn(tot-1))
-    allocate(popdiffn(tot-1))
-    
-    filenamet = "tempnormpop-000"//trim(original)//".out"
-    open(unit=8383, file=filenamet,status='replace')
-    write (8383,"(2a)") "Time Norm Re(ACF(t)) Im(ACF(t) |ACF(t)| Re(Extra) Im(Extra)", &
-                           " |Extra| Sum(HEhr) Pop1 Pop2 Pop1+Pop2 Pop2-Pop1"
-    write (8383,*)""
-    write (8383,*)""
-    rewind(4567)
-    do i=1, tot
-      read(4567,*,iostat=ierr) timeo(i-1),nrmo(i-1),rlacfo(i-1),imacfo(i-1),abacfo(i-1),rlexo(i-1),&
-                        imexo(i-1),abexo(i-1),ehro(i-1),pop1o(i-1),pop2o(i-1),popsumo(i-1),popdiffo(i-1)
-    end do 
-    
-    do i=1, tot
-      read(4568,*,iostat=ierr) timep(i-1),nrmp(i-1),rlacfp(i-1),imacfp(i-1),abacfp(i-1),rlexp(i-1),&
-                        imexp(i-1),abexp(i-1),ehrp(i-1),pop1p(i-1),pop2p(i-1),popsump(i-1),popdiffp(i-1)
-    end do 
-     
-    do i=1, timestep
-      write(8383,("(13(1x,es16.8e3))"), iostat=ierr) timeo(i),nrmo(i),rlacfo(i),imacfo(i),abacfo(i),rlexo(i),&
-                             imexo(i),abexo(i),ehro(i),pop1o(i),pop2o(i),popsumo(i),popdiffo(i)
+    ! write(6,*) nlines
+    allocate(parent(nlines))
+    allocate(child(nlines))
+    allocate(time_clone(nlines))
+    allocate(timestep_clone(nlines))
+    allocate(normWP(nlines))
+    allocate(normWC(nlines))
+    rewind(11202)
+    do n=1, nlines
+      read(11202,*) parent(n), child(n), time_clone(n), normWP(n), normWC(n)
     end do
-    j= timestep +1
-    write(6,*)
-    do i=timestep, tot-2
-      
-      nrmn(i) = nrmo(j) + nrmp(j)
-      rlacfn(i) = (rlacfo(j)+rlacfp(j))/2
-      imacfn(i) =  (imacfo(j)+ imacfp(j))/2
-      abacfn(i) = (abacfo(j)+ abacfp(j))/2
-      rlexn(i) = (rlexo(j)+ rlexp(j))/2
-      imexn(i) = (imexo(j)+ imexp(j))/2
-      abexn(i) = (abexo(j)+ abexp(j))/2
-      ehrn(i) = (ehro(j) + ehrp(j))/2
-      pop1n(i) = pop1o(j) + pop2p(j)
-      pop2n(i) = pop2o(j) + pop2p(j)
-      write(6,*) "popsum of original = ", popsumo(j)
-      write(6,*) "popsum of pair = ", popsump(j)
-      popsumn(i) = popsumo(j) + popsump(j)
-      write(6,*) "new popsum = ", popsumn(i)
-      popdiffn(i) = popdiffo(j) + popdiffp(j)
-      j=j+1
+    ! write(6,*) parent
+    ! write(6,*) child
+    ! write(6,*) time_clone
+    
+    timestep_clone = time_clone/time_end*timesteps
+    write(6,*) timesteps
+    ! write(6,*) timestep_clone
+    ! write(6,*) normWP
+    ! write(6,*) normWC
+    
+    ! Creates the norm weightings through information from the clone tag file.
+    
+    allocate(normweighting(timesteps+1,int(child(nlines))))
+    allocate(normp(13,Timesteps+1))
+    do n =1, int(child(nlines))
+     do j =1, timesteps
+      normweighting(j,n) = 1
+     end do 
+    end do
+    do n =1, 13
+      do j = 1, timesteps+1
+       normp(n,j) = 0
+      end do 
+    end do
+
+    ! write(6,*) size(normweighting), shape(normweighting)
+    
+    ! write(6,*) normweighting(1,:)
+    do n=1, nlines
+      ! write(6,*) 'here', n
+      row1 = int(parent(n))
+      ! write(6,*) row1
+      row2 = int(child(n))
+      ! write(6,*) row2
+      hold = normweighting(int(timestep_clone(n)-1), row1)
+      do m = int(timestep_clone(n)), timesteps+1
+        ! write(6,*) 'here', n, m
+        normweighting(m,row1) = normweighting(m,row1) * normWP(n)
+        normweighting(m,row2) = hold * normWC(n)
+      end do 
+      do m =1, int(timestep_clone(n)-1)
+        normweighting(m,row2) = 0
+      end do
     end do 
-   
-    do i=timestep, tot-2
-      write(8383, ("(13(1x,es16.8e3))"),iostat=ierr) timeo(i+1),nrmn(i),rlacfn(i),imacfn(i),abacfn(i),rlexn(i),&
-                              imexn(i),abexn(i),ehrn(i),pop1n(i),pop2n(i),popsumn(i),popdiffn(i)
+    do n = 1, orgreps
+      normweighting(2001,n) = normweighting(2000,n)
+    end do
+    
+    ! write(6,*) normweighting(1,:)
+    ! write(6,*) normweighting(1,:)
+    ! write(6,*) normweighting(749,:)
+    ! write(6,*) normweighting(750,:)
+    ! write(6,*) normweighting(1499,:)
+    ! write(6,*) normweighting(1500,:)
+    write(6,*) normweighting(2000,:)
+    write(6,*) normweighting(2001,:)
+
+    ! Opening the different normpop files and collating them with their weighting attached. 
+
+    do n=1, int(child(nlines))
+      write(repstr,"(i4.4)") n
+      normpopfile = 'normpop-'//trim(repstr)//'.out'
+      write(6,*) 'normpop-'//trim(repstr)//'.out'
+      open(11203, file = 'normpop-'//trim(repstr)//'.out')
+      rewind(11203)
+      read(11203,*)
+      read(11203,*)
+      read(11203,*)
+      do j=1, timesteps+1
+        read(11203,*) temparr(1), temparr(2), temparr(3), temparr(4), temparr(5), temparr(6), temparr(7), temparr(8), &
+                      temparr(9), temparr(10), temparr(11), temparr(12), temparr(13)
+        do m = 1, 13
+          if (m.le.9) then
+           normp(m,j) = normp(m,j) + temparr(m)
+          end if
+          if (m.ge.10) then
+            normp(m,j) = normp(m,j) + temparr(m)*normweighting(j,n)
+          end if 
+
+        end do 
+      end do 
+      close(11203)
+      ! write(6,*) normp
+    end do
+
+    ! Rescaling the weighted population matrix. 
+    normp(1,:) = normp(1,:)/repeats
+    normp(2,:) = normp(2,:)/repeats
+    normp(3,:) = normp(3,:)/repeats
+    normp(4,:) = normp(4,:)/repeats
+    normp(5,:) = normp(5,:)/repeats
+    normp(6,:) = normp(6,:)/repeats
+    normp(7,:) = normp(7,:)/repeats
+    normp(8,:) = normp(8,:)/repeats
+    normp(9,:) = normp(9,:)/repeats
+    normp(10,:) = normp(10,:)/orgreps
+    normp(11,:) = normp(11,:)/orgreps
+    normp(12,:) = normp(12,:)/orgreps
+    normp(13,:) = normp(13,:)/orgreps
+    write(6,*) normp(:,1)
+    write(6,*) normp(:,100)
+    write(6,*) normp(:,1000)
+    write(6,*) normp(:,2000)
+    write(6,*) normp(:,2001)
+
+    ! Now to put that the population matrix into a collated output file.
+
+    open(11204, file = 'normpop.out')
+    write (11204,"(2a)") "Time Norm Re(ACF(t)) Im(ACF(t) |ACF(t)| Re(Extra) Im(Extra)", &
+                           " |Extra| Sum(HEhr) Pop1 Pop2 Pop1+Pop2 Pop2-Pop1"
+    write(11204,*)
+    write(11204,*)
+    do n = 1, timesteps+1
+     write (11204,"(13(1x,es16.8e3))") normp(:,n)
     end do 
+    close(11204)
+  end subroutine
+
+  subroutine cross_terms(filename1,filename2,normw1,normw2,nbf, crossterm1, crossterm2)
+    type(basisfn), dimension (:), allocatable :: bs1, bs2
+    real(kind=8), intent(inout) ::  crossterm1, crossterm2
+    integer :: j, k, ierr
+    complex(kind=8) :: sumamps1, sumamps2, ovrlp
+    character(len=100), intent(in) :: filename1, filename2
+    integer, intent(in) :: nbf
+    real, intent(in) :: normw1, normw2
+
+
+
+    sumamps1 = (0.0d0, 0.0d0)
+    sumamps2 = (0.0d0, 0.0d0)
+    crossterm1 = 0
+    crossterm2 = 0
+
+    ! Now to read in the basis sets themselves.
+    call allocbs(bs1,nbf)
+    ! call readcontbasis(bs1,trim(filename1),nbf)
+
+    call allocbs(bs2,nbf)
+    ! call readcontbasis(bs2,trim(filename2), nbf)
+
+    !Calculating the overlap between the basis sets and summing over amplitudes
+
+    do j=1,nbf
+      do k=1,nbf
+        ovrlp = ovrlp + ovrlpij(bs1(k)%z(:), bs2(j)%z(:))
+        sumamps1 = sumamps1 + (dconjg(bs1(j)%a_pes(1))*bs2(k)%a_pes(1))
+        sumamps2 = sumamps2 + (dconjg(bs1(j)%a_pes(2))*bs2(k)%a_pes(2))
+      end do
+    end do
+
+    ! Calculating the cross terms
+
+    crossterm1 = 2*real(sqrt((1-normw1)*normw2)*sumamps1*ovrlp)
+    crossterm2 = 2*real(sqrt(normw1*(1-normw2))*sumamps2*ovrlp)
+
+
+  end subroutine
 
     
-   
-
-    close(4567)
-    close(4568, status= 'delete')
-   
-    arg10 = "tempnormpop-000"//trim(original)//".out"
-    arg11 = "normpop-000"//trim(original)//".out"
-    command = "cp "//arg10//arg11
-    write(6,*) arg10, arg11, command
-    call system(command)
-    close(8383)
-   
-
-
-! Can copy from subavrg.f90 for a good starting point?
-
-
-
-
-
-    
-end program 
+end module

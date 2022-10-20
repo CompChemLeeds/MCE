@@ -142,13 +142,13 @@ contains
     write(bsunit,"(a,1x,i4)"       ) 'initial_PES', in_pes
     write(bsunit,"(a,1x,es25.17e3)") 'time'       , t
     
-    write(bsunit,*),""
+    write(bsunit,*) ""
     do m=1,ndim
       write(bsunit,"(a,1x,i3,2(1x,es25.17e3))") 'zinit', m, muq(m), mup(m)
     end do
 
     do j=1,size(bs)
-      write(bsunit,*),""
+      write(bsunit,*) ""
       write(bsunit,"(a,1x,i5)")'basis', j
       write(bsunit,"(a,2(1x,es25.17e3))") "D", dble(bs(j)%D_big), dimag(bs(j)%D_big)
       do r=1,npes
@@ -240,12 +240,12 @@ contains
       if (npes==2) then 
         write(fileun,"(a,a)") "Time Norm Re(ACF(t)) Im(ACF(t)) |ACF(t)| Re(Extra) Im(Extra) |Extra| ",&
                         "Sum(HEhr) Pop1 Pop2 Pop1+Pop2 Pop2-Pop1"
-        write(fileun,*), ""
-        write(fileun,*), ""
+        write(fileun,*) ""
+        write(fileun,*) ""
       else
         write(fileun,"(a)") "Time Norm Re(ACF(t)) Im(ACF(t) |ACF(t)| Re(Extra) Im(Extra) |Extra| Sum(HEhr) Pops(1...n)"
-        write(fileun,*), ""
-        write(fileun,*), ""
+        write(fileun,*) ""
+        write(fileun,*) ""
       end if
 
       close(fileun)
@@ -382,7 +382,7 @@ contains
                      dble(extra), dimag(extra), abs(extra), ehr, &
                      popt(1), popt(2), popt(1)+popt(2), popt(1)-popt(2)
     else
-       write(fileun,myfmt), time, norm, dble(acft), dimag(acft), abs(acft), &
+       write(fileun,myfmt) time, norm, dble(acft), dimag(acft), abs(acft), &
                      dble(extra), dimag(extra), abs(extra), ehr, popt(:)
     end if
     
@@ -421,12 +421,12 @@ contains
     if (npes==2) then 
       write(150,"(a,a)") "Time Norm Re(ACF(t)) Im(ACF(t) |ACF(t)| Re(Extra) Im(Extra) |Extra| ", &
                     "Sum(HEhr) Pop1 Pop2 Pop1+Pop2 Pop2-Pop1"
-      write(150,*), ""
-      write(150,*), ""
+      write(150,*) ""
+      write(150,*) ""
     else
       write(150,"(a)") "Time Norm Re(ACF(t)) Im(ACF(t) |ACF(t)| Re(Extra) Im(Extra) |Extra| Sum(HEhr) Pops(1...n)"
-      write(150,*), ""
-      write(150,*), ""
+      write(150,*) ""
+      write(150,*) ""
       write(myfmt,'(a,i0,a)') '(', 9+npes, '(1x,e16.8e3))'
     end if
     
@@ -442,7 +442,7 @@ contains
     else
       do t=1,arrend
         time = dtinit * (t-1)
-        write(150,myfmt), time, norm(t), dble(acft(t)), dimag(acft(t)), abs(acft(t)), &
+        write(150,myfmt) time, norm(t), dble(acft(t)), dimag(acft(t)), abs(acft(t)), &
               dble(extra(t)), dimag(extra(t)), abs(extra(t)), ehr(t), pops(t,:)
       end do
     end if
@@ -613,9 +613,9 @@ contains
    
     OPEN(UNIT=501, FILE="normpop.out",STATUS='new', iostat=ierr)
    
-    write (501,*), LINE2
-    write (501,*), ""
-    write (501,*), ""
+    write (501,*) LINE2
+    write (501,*) ""
+    write (501,*) ""
    
     allocate (output2(cols,timesteps))
    
@@ -958,7 +958,8 @@ contains
     real(kind=8), dimension(:), intent(in) :: mup, muq
     real(kind=8), intent(in) :: t
     integer::m, j, r, k, ierr, bsunit, fileun
-    character(LEN=28)::filename, filenm, filenm2, myfmt
+    character(LEN=28)::filenm, filenm2, myfmt
+    character(LEN=31):: filename
     integer, intent(in) :: reps, x
     character(LEN=4):: rep
     character(LEN=5)::step
@@ -988,7 +989,7 @@ contains
     end if
     path = "bscontinuous/"
     if (errorflag.eq.0) then
-     filename = path//"Outbs-"//trim(rep)//"-"//trim(tstep)//".out"
+     filename = path//"Outbscon-"//trim(rep)//"-"//trim(tstep)//".out"
     else
      filename = path//"Errbs-"//trim(rep)//"-"//trim(tstep)//".out" 
     end if
@@ -1011,13 +1012,13 @@ contains
     write(bsunit,"(a,1x,i4)"       ) 'initial_PES', in_pes
     write(bsunit,"(a,1x,es25.17e3)") 'time'       , t
     
-    write(bsunit,*),""
+    write(bsunit,*) ""
     do m=1,ndim
       write(bsunit,"(a,1x,i3,2(1x,es25.17e3))") 'zinit', m, muq(m), mup(m)
     end do
 
     do j=1,size(bs)
-      write(bsunit,*),""
+      write(bsunit,*) ""
       write(bsunit,"(a,1x,i5)")'basis', j
       write(bsunit,"(a,2(1x,es25.17e3))") "D", dble(bs(j)%D_big), dimag(bs(j)%D_big)
       do r=1,npes

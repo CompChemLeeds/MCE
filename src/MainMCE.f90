@@ -160,7 +160,7 @@ Program MainMCE
   integer:: tnum, cols, genflg, istat, intvl, rprj, n, nsame, nchange, rerun
   character(LEN=100) :: LINE, CWD
   character(LEN=1) :: genloc
-  integer(kind=4)  :: cnum_start, repchanger, newrep, resnum, norestart, tf, te, orgreps
+  integer(kind=4)  :: cnum_start, repchanger, newrep, resnum, norestart, tf, te, orgreps, nbfv1
 
   call CPU_TIME(starttime) !used to calculate the runtime, which is output at the end
 
@@ -235,6 +235,7 @@ Program MainMCE
   genflg=0
   cnum_start=reptot
   orgreps = reptot
+  nbfv1 = in_nbf
 
   repchanger=0
   resnum=0
@@ -704,9 +705,7 @@ Program MainMCE
             deallocate(ovrlp)
 
             call outbs(bset, reps, mup, muq, time,x)
-            if (mod(x,10)==0) then 
-              call outbscont(bset, reps, mup, muq, time,x)
-            end if 
+            call outbscont(bset, reps, mup, muq, time,x)
             if ((cloneflg == "YES").or.(cloneflg == "BLIND+").or.(cloneflg == "QSC")) then
               call outclones(clonenum, reps, clone)
             end if
@@ -756,9 +755,10 @@ Program MainMCE
         else
           exit
         end if
-
+   
         call flush(6)
         call flush(0)
+        
 
       end do !conjugate repeat
 
@@ -779,9 +779,10 @@ Program MainMCE
     !$omp end do
     !$omp end parallel
     if (repchanger.eq.0) then
-      norestart=1
+      norestart = 1
       write(6,*) "no new restarts needed, repeat number now", reptot
     end if 
+
     if (repchanger.ne.0) then
       newrep = reptot+repchanger
       repchanger = 0
@@ -856,6 +857,10 @@ Program MainMCE
     end if
   end if
 
+  if (cloneflg=="V1") then
+    call clone_condense(dt,tf, in_nbf, reptot, timeend,orgreps)
+  end if
+
   if (errorflag .ne. 0) then
     write(6,"(a)") "Program terminated early."
     write(6,"(a,i0)") "errorflag value is ", errorflag
@@ -879,9 +884,7 @@ Program MainMCE
   else
     write(6,"(a,es12.5,a)") 'Time taken : ', runtime, ' seconds'
   end if
-  if (cloneflg=="V1") then
-    call clone_condense(dt,tf, nbf, reptot, timeend,orgreps)
-  end if
+  
 
   call flush(6)
   call flush(0)

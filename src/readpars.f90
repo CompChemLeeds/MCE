@@ -1274,28 +1274,34 @@ contains
     real(kind=8) :: t
     integer, intent(inout) :: nbf
     character(LEN=100)::LINE
-    character(LEN=14)::filename
-    character(len=19) ::name
+    character(LEN=18)::filename
+    character(len=18) ::name
     real(kind=8)::rl, im
     complex(kind = 8) :: dsum1
+    character(LEN=13):: path
+    character(LEN=31):: fn
+
 
     if (errorflag .ne. 0) return
 
     ierr = 0
     n = 0
     cflg = 0
+    path = "bscontinuous/"
 
-    write(6,"(a)")"Starting read subroutine"
+    ! write(6,"(a)")"Starting read subroutine"
     call flush(6)
 
     write(filename,"(a,i4.4,a)") name
 
-    write(6,"(a,a)") "Opening file ", trim(filename)
+    ! write(6,"(a,a)") "Opening file ", trim(filename)
     call flush(6)
 
     bsunit = 7171
-
-    open(unit=bsunit, file=filename, status="old", iostat=ierr)
+    fn = path//filename
+    write(6,*) 
+    open(unit=bsunit, file=fn, status="old", iostat=ierr)
+    rewind(bsunit)
 
     if (ierr .ne. 0) then
       write(0,"(3a)") 'Error in opening ', trim(filename),' file'
@@ -1317,7 +1323,7 @@ contains
           errorflag = 1
           return
         end if
-        write(6,"(a,i0)") "ndim    = ", ndim
+        ! write(6,"(a,i0)") "ndim    = ", ndim
         call flush(6)
         n = n+1
       else if (LINE=="nconf") then
@@ -1329,7 +1335,7 @@ contains
           errorflag = 1
           return
         end if
-        write(6,"(a,i0)") "npes    = ", npes
+        ! write(6,"(a,i0)") "npes    = ", npes
         call flush(6)
         n = n+1
       else if (LINE=="nbasisfns") then
@@ -1341,7 +1347,7 @@ contains
           errorflag = 1
           return
         end if
-        write(6,"(a,i0)") "nbf     = ", nbf
+        ! write(6,"(a,i0)") "nbf     = ", nbf
         call flush(6)
         n = n+1
       else if (LINE=="initial_PES") then
@@ -1353,7 +1359,7 @@ contains
           errorflag = 1
           return
         end if
-        write(6,"(a,i0)") "in_pes  = ", in_pes
+        ! write(6,"(a,i0)") "in_pes  = ", in_pes
         call flush(6)
         n = n+1
       else if (LINE=="time") then
@@ -1365,7 +1371,7 @@ contains
           errorflag = 1
           return
         end if
-        write(6,"(a,es16.8e3)") "time =", t
+        ! write(6,"(a,es16.8e3)") "time =", t
         call flush(6)
         n = n+1
       end if

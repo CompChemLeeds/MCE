@@ -17,6 +17,7 @@ MODULE globvars
     real   (kind=8), dimension(:), allocatable::s_pes    ! Classical action - 1 value per electronic state
     complex(kind=8), dimension(:), allocatable::a_pes    ! Electronic state amplitude - 1 value per state and =de^(iS)
     real(kind=8) :: normweight
+    integer, dimension(:), allocatable :: carray
   end type basisfn
 
   type hamiltonian                  ! a matrix of size nbf x nbf of this type hold the hamiltonian

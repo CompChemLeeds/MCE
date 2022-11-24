@@ -107,12 +107,12 @@ contains
     integer::m, j, r, k, ierr, bsunit, fileun
     character(LEN=22)::filename, filenm, filenm2, myfmt
     integer, intent(in) :: reps, x
-    character(LEN=4):: rep
+    character(LEN=4):: rep, or
     character(LEN=5)::step
     character(LEN=1)::rkstp
 
-    ierr = 0
 
+    ierr = 0
     write(rep,"(i4.4)") reps
     if (x.lt.0) then
       write(step,"(i5.4)") x
@@ -141,6 +141,7 @@ contains
     write(bsunit,"(a,1x,i4)"       ) 'nbasisfns'  , size(bs)
     write(bsunit,"(a,1x,i4)"       ) 'initial_PES', in_pes
     write(bsunit,"(a,1x,es25.17e3)") 'time'       , t
+    write(bsunit,"(a,1x,i4)"       ) 'carray ',  bs(1)%carray(1)
     
     write(bsunit,*) ""
     do m=1,ndim
@@ -923,12 +924,13 @@ contains
   
   end subroutine copynorm
   
-  subroutine clonetag(reps,cnum_start,time, tf, te, norm1, norm2)
+  subroutine clonetag(reps,cnum_start,time, tf, te,bs)
      integer :: ierr, timestep, fileun
      integer(kind=4), intent(in) :: cnum_start
      integer, intent(in) ::  reps, te, tf
      character(LEN=12) :: filenm
-     real(kind=8), intent(in) :: norm1, norm2,time
+     real(kind=8), intent(in) :: time
+     type(basisfn), dimension(:), allocatable, intent(inout) :: bs
 
 
      
@@ -945,7 +947,7 @@ contains
     !if (ierr.ne.0) then 
     !  errorflag=1
     !end if
-    write(321, *) reps, cnum_start, time, norm1, norm2
+    write(321, *) reps, cnum_start, time, bs(1)%carray(1)
     
     close(321)
 
@@ -961,7 +963,7 @@ contains
     character(LEN=28)::filenm, filenm2, myfmt
     character(LEN=31):: filename
     integer, intent(in) :: reps, x
-    character(LEN=4):: rep
+    character(LEN=4):: rep, or
     character(LEN=5)::step
     character(LEN=1)::rkstp
     character(LEN=13):: path
@@ -979,7 +981,7 @@ contains
     end if  
 
     ierr = 0
-
+   
     write(rep,"(i4.4)") reps
     write(tstep, "(i4.4)") x
     if (x.lt.0) then

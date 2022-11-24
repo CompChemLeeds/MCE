@@ -29,7 +29,7 @@ systems={
 
 parameters={
     # Number of dimensions
-    'ndim':10,
+    'ndim':5,
 
     # Number of basis functions 
     'in_nbf':3,
@@ -61,7 +61,7 @@ Train={
 
 clone={
     # Flag for cloning basis functions (yes/no/blind/blind+/QSC/v1)
-    'Cloning':'V1',
+    'Cloning':'no',
 
     # Cloning threshold (value of |sum_r(a_{r,k})|) - must be >= 0.05 and < 0.25, default 0.249
     'Threshold':'0.249d0',
@@ -70,7 +70,7 @@ clone={
     'max_cloning':19,
 
     # Minimum cloning frequency (ie how many timesteps since last cloning is new cloning event allowed)
-    'clon_freq':750,
+    'clon_freq':1000,
 
     #Quantum Superposition Cloning exclusion paramter between the two child trajectories should >= ??? and < ???
     'QSC_epsilon':'0.1d0' 
@@ -98,9 +98,9 @@ prop={
     #Maximum stepsize - used in adaptive stepsize
     'dtmax':'500.d0',
     #Starting stepsize of adaptive / Constant stepsize for Static stepsize
-    'dtinit':'7.5d-3',
+    'dtinit':'5.0d-3',
     #End Time of propagation
-    'time_end':'1.5d+1', #1.00d+1
+    'time_end':'1.0d+1', #1.00d+1
     #Start time of propagation
     'time_start':'0.0d+00',
     #Propagation size - either "static" or "adaptive"

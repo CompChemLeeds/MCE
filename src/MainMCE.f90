@@ -289,6 +289,7 @@ Program MainMCE
       trspace = trainsp
       hc=0.d0
       
+      
 
       if (restrtflg==1) then
         call restartnum(k,genloc,restart)
@@ -331,7 +332,7 @@ Program MainMCE
         else
           errorflag=1
         end if
-
+       
         if (conjflg==1) then
           conjrep = conjrep + 1
         else
@@ -615,12 +616,7 @@ Program MainMCE
               nchange = nchange + 1
             end if
             
-            !if ((allocated(clone)).and.(cloneflg.ne."BLIND").and.(time.le.timeend).and.(cloneflg.ne."V1")) then
-            !  call cloning (bset, nbf, x, time, clone, clonenum, reps)
-            !elseif ((cloneflg=="V1").and.(x==1000)) then 
-            !  write(6,'(a)') "trying to clone for v1"
-            !  call v1cloning(bset,nbf,x,reps,muq,mup,time, cnum_start, reptot)
-            !end if
+            
             
             if (abs(time+dtdone-timeend_loc).le.1.0d-10) then   ! if time is close enough to end time, set as end time
               time=timeend_loc
@@ -645,8 +641,8 @@ Program MainMCE
             if ((allocated(clone)).and.(cloneflg.ne."BLIND").and.(time.le.timeend).and.(cloneflg.ne."V1")) then
               call cloning (bset, nbf, x, time, clone, clonenum, reps)
             elseif ((cloneflg=="V1").and.((mod(x,clonefreq)==0)).and.(x.ne.int(real(abs((timeend_loc-timestrt_loc)/dt))))) then
-              !$omp critical 
-               call v1cloning(bset,nbf,x,reps,muq,mup,time,cnum_start,reptot,repchanger,tf, te,v1clonenum)
+              !$omp critical
+              call v1cloning(bset,nbf,x,reps,muq,mup,time,cnum_start,reptot,repchanger,tf, te,v1clonenum)
               !$omp end critical 
             end if
 
@@ -676,13 +672,7 @@ Program MainMCE
 
 
 
-            ! if ((allocated(clone)).and.(cloneflg.ne."BLIND").and.(time.le.timeend).and.(cloneflg.ne."V1")) then
-            !   call cloning (bset, nbf, x, time, clone, clonenum, reps)
-            !   elseif ((cloneflg=="V1").and.((mod(x,clonefreq)==0)).and.(x.ne.int(real(abs((timeend_loc-timestrt_loc)/dt))))) then
-            !   !$omp critical 
-            !    call v1cloning(bset,nbf,x,reps,muq,mup,time,cnum_start,reptot,repchanger,tf, te)
-            !   !$omp end critical 
-            ! end if
+            
 
             if ((step == "S").and.(time.le.timeend)) then
               do r=1,npes
@@ -705,6 +695,7 @@ Program MainMCE
             deallocate(ovrlp)
 
             call outbs(bset, reps, mup, muq, time,x)
+            
             call outbscont(bset, reps, mup, muq, time,x)
             if ((cloneflg == "YES").or.(cloneflg == "BLIND+").or.(cloneflg == "QSC")) then
               call outclones(clonenum, reps, clone)
@@ -858,7 +849,7 @@ Program MainMCE
   end if
 
   if (cloneflg=="V1") then
-    call clone_condense(dt,tf, in_nbf, reptot, timeend,orgreps)
+    call clone_condense(dt,tf, in_nbf, reptot, timeend,orgreps, clonefreq)
   end if
 
   if (errorflag .ne. 0) then

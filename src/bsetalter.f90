@@ -211,7 +211,6 @@ contains
       if (clone(k).lt.x-clonefreq) clone(k)=0
       clonehere(k) = 0
     end do
-
     ! Build the map of which trajectories to clone, done on the basis function by basis function level (clonetype=1),
     ! or the entire basis set at once (clonetype=2)
 
@@ -676,7 +675,6 @@ contains
     write(crrntrep,"(i4.4)") reps
     write(ranomintV1char,"(i4.4)") randomintV1
     call execute_command_line('cp normpop-'//trim(crrntrep)//'.out normpop-'//trim(ranomintV1char)//'.out')
-    
     call deallocbs(bsnew2)
 
     do k=1,nbf
@@ -706,13 +704,14 @@ contains
     type(basisfn), dimension(:), allocatable ::clone, clone2 
     integer, intent(inout) :: nbf, v1clonenum
     integer, intent(in) :: x, reps, reptot, tf, te
-    integer :: nbfold, k, m, r, nbfnew, ierr, l, j, cloneload, i_seed
+    integer :: nbfold, k, m, r, nbfnew, ierr, l, j, cloneload, i_seed, n
     complex(kind=8), dimension(:), allocatable :: dz
     real(kind=8), dimension(:), intent(in)::mup,muq
     real(kind=8), intent(in) :: time
     integer(kind=4), intent(inout) :: cnum_start, repchanger
     INTEGER, DIMENSION(:), ALLOCATABLE :: a_seed
     INTEGER, DIMENSION(1:8) :: dt_seed
+    integer, dimension(10) :: index0
     real(kind=8) :: brforce, normar, sumamps, trackav
     complex(kind=8), dimension(size(bs),size(bs))::cloneovrlp, clone2ovrlp, bsovrlp
     complex(kind=8) :: clonenorm, clonenorm2, asum1, asum2, bsnorm
@@ -727,23 +726,11 @@ contains
       return
     end if
 
-    ! trackav = 0.d0
-    ! do k=1,nbf
-    !   normar = 0.0d0
-    !   do r=1,npes
-    !     normar = normar + dconjg(bs(k)%a_pes(r))*bs(k)%a_pes(r)
-    !   end do
-    !   !!!!! The line below needs changing to acount for multiple PESs
-    !   brforce = ((abs(bs(k)%a_pes(1)*bs(k)%a_pes(2))**2.0)/(normar**2.0))
-    !   write(6,*) 'brforce = ', brforce
-    !   if (brforce.gt.thresh) then
-    !     trackav=trackav+1
-    !     write(6,*) trackav
-    !   end if 
-    ! end do 
+  
+    
 
     ! need to clone the entire basis set 
-    !if (trackav.gt.(nbf/2)) then
+ 
     write(6,*) "Starting new V1 cloning subroutine"
     call allocbs(clone, nbf)
     call allocbs(clone2, nbf)
@@ -751,6 +738,14 @@ contains
       write(0,'(a)') "error in allocating first MCEv1 cloning array"
     end if
     
+    ! Clone array tracking 
+    do k=1,nbf
+      if (bs(k)%carray(1)==0) then
+        bs(k)%carray(1) = reps
+      end if
+    end do
+
+
     v1clonenum =v1clonenum + 1
     cnum_start =  cnum_start + 1
     !manipulating the child amplitudes 
@@ -787,18 +782,25 @@ contains
 
 
     do k=1, nbf
-      clone(k)%d_pes(in_pes) = clone(k)%d_pes(in_pes)/sqrt(clonenorm)!exp(-i*clone(k)%s_pes(r)) ! it's easier to set all the first child to the preclone value and change later 
+      
       clone(k)%normweight = clone(k)%normweight * normc1
       clone2(k)%normweight = clone2(k)%normweight * normc2
+      do n=1, 5
+        clone(k)%carray(n) = bs(k)%carray(n)
+        clone2(k)%carray(n) = bs(k)%carray(n)
+        ! write(6,*) clone(k)%carray(n)
+      end do 
       do r=1, npes
-        if(r.ne.in_pes) then 
-          clone2(k)%d_pes(r) = clone2(k)%d_pes(r)/sqrt(clonenorm2)!exp(-i*clone(k)%s_pes(r)) ! clone 2 will be non zero only when not on the pes
-        end if 
+        clone2(k)%d_pes(r) = clone2(k)%d_pes(r)!/sqrt(clonenorm2)!exp(-i*clone(k)%s_pes(r)) ! clone 2 will be non zero only when not on the pes
+        clone(k)%d_pes(r) = clone(k)%d_pes(r)!/sqrt(clonenorm)!exp(-i*clone(k)%s_pes(r)) ! it's easier to set all the first child to the preclone value and change later 
         clone(k)%a_pes(r) = clone(k)%d_pes(r) * exp(i*clone(k)%s_pes(r))
         clone2(k)%a_pes(r) = clone2(k)%d_pes(r) * exp(i*clone2(k)%s_pes(r))
-     
       end do 
     end do 
+
+
+
+
 
     cloneovrlp = ovrlpmat(clone)
     clone2ovrlp = ovrlpmat(clone2)
@@ -810,61 +812,37 @@ contains
     write(6,*) "cnum_start = ", cnum_start
     ! call reloc_basis(clone, bs, x)
     ! call reloc_basis(clone2, bs, x)
+    
+
+    index0 = findloc(bs(1)%carray, 0, dim= 1)
+    write(6,*) index0(1)
+    
+
+    do k=1, nbf
+      bs(k)%D_big = (1.0d0,0.0d0)
+      clone(k)%carray(index0) = reps
+      clone2(k)%carray(index0) = cnum_start
+      do m=1, ndim
+       bs(k)%z(m) = clone(k)%z(m)
+      end do 
+      do r = 1, npes
+        bs(k)%d_pes(r) = clone(k)%d_pes(r)
+        bs(k)%s_pes(r) = clone(k)%s_pes(r)
+        bs(k)%a_pes(r) = clone(k)%d_pes(r) * exp(i*clone(k)%s_pes(r))
+      end do 
+      do n=1, 5
+        bs(k)%carray(n) = clone(k)%carray(n)
+      end do
+    end do 
+    write(6,*) 'clone 1: ', bs(1)%carray
+    write(6,*) 'clone 2: ', clone2(1)%carray
+  
     call outbs(clone2, cnum_start, mup, muq, time, x)
     call copynorm(reps,cnum_start)
-    call clonetag(reps,cnum_start, time, tf, te, normc1, normc2)
+    call clonetag(reps,cnum_start, time, tf, te, bs)
    
     repchanger = repchanger + 1
-
-
-
-  !   CALL RANDOM_SEED(size=i_seed)
-  !   ALLOCATE(a_seed(1:i_seed))
-  !   CALL RANDOM_SEED(get=a_seed)
-  !   CALL DATE_AND_TIME(values=dt_seed)
-  !   a_seed(i_seed)=dt_seed(8); a_seed(1)=dt_seed(8)*dt_seed(7)*dt_seed(6)
-  !   CALL RANDOM_SEED(put=a_seed)
-  !   DEALLOCATE(a_seed)
-  !   call random_number(choice)
-  !   write(6,*) "choice =", choice
-  !   if (choice.lt.normc1) then
-  !     cloneload = 1 
-  !     write(6,*) cloneload
-  !   else 
-  !     cloneload = 2
-  !     write(6,*) cloneload
-  !   end if
-
-  !   if (cloneload==1) then 
-  !     do k=1, nbf
-  !         bs(k)%D_big = clone(k)%D_big ! not sure if have to reassign separately or together?
-  !         bs(k)%normweight = clone(k)%normweight
-  !         do r=1,npes
-  !           bs(k)%a_pes(r) = clone(k)%a_pes(r)
-  !           bs(k)%d_pes(r) = clone(k)%d_pes(r)
-  !           bs(k)%s_pes(r) = clone(k)%s_pes(r)
-  !         end do
-  !         do m=1, ndim
-  !           bs(k)%z(m) = clone(k)%z(m)
-  !         end do 
-  !     end do 
-  !   end if
-  ! if (cloneload==2) then 
-  !   do k=1, nbf
-  !     bs(k)%D_big = clone2(k)%D_big ! not sure if have to reassign separately or together?
-  !     bs(k)%normweight = clone(k)%normweight
-  !     do r=1,npes
-  !       bs(k)%a_pes(r) = clone2(k)%a_pes(r)
-  !       bs(k)%d_pes(r) = clone2(k)%d_pes(r)
-  !       bs(k)%s_pes(r) = clone2(k)%s_pes(r)
-  !     end do
-  !     do m=1, ndim
-  !       bs(k)%z(m) = clone2(k)%z(m)
-  !     end do 
-  !   end do 
-  ! end if 
-
-
+  
     
     bsovrlp = ovrlpmat(bs)
     bsnorm = norm(bs,bsovrlp)

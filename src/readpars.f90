@@ -802,7 +802,7 @@ contains
 
     implicit none
     type(basisfn), dimension (:), allocatable, intent(inout) :: bs
-    integer::ierr, n, j, k, m, r, cflg, bsunit
+    integer::ierr, n, j, k, m, r, cflg, bsunit, orgrep
     real(kind=8), dimension(:), allocatable, intent(out) :: mup, muq
     real(kind=8), intent(inout) :: t
     integer, intent(inout) :: nbf
@@ -811,6 +811,8 @@ contains
     character(LEN=14)::filename
     real(kind=8)::rl, im
     complex(kind = 8) :: dsum1
+    integer(kind=8):: or
+
 
     if (errorflag .ne. 0) return
 
@@ -901,14 +903,27 @@ contains
         write(6,"(a,es16.8e3)") "time =", t
         call flush(6)
         n = n+1
+        else if (LINE=="carray") then
+        backspace(bsunit)
+        read(bsunit,*,iostat=ierr)LINE,or
+        if(ierr.ne.0) then
+          write(0,"(a)")  "Error reading time"
+          call flush(0)
+          errorflag = 1
+          return
+        end if
+        write(6,"(a,i4)") "original =", or
+        call flush(6)
+        n = n+1
       end if
+
       read(bsunit,*,iostat=ierr)LINE
     end do
 
     call flush(6)
     call flush(0)
 
-    if (n.ne.5) then
+    if (n.ne.6) then
       write(0,"(a,i0,a)") "Error in reading parameters. Only ", n, " of 6 parameters read."
       errorflag = 1
       return
@@ -958,6 +973,7 @@ contains
     end if
 
     do j=1,nbf
+      bs(j)%carray(1) = or
       read(bsunit,*,iostat=ierr)LINE,k
       if(k.ne.j) then
         write(0,"(a,i2,a,i2)") "Error. Expected basis function ", j, " but got ", k
@@ -1269,7 +1285,7 @@ contains
 
     implicit none
     type(basisfn), dimension (:), allocatable, intent(inout) :: bs
-    integer::ierr, n, j, k, m, r, cflg, bsunit
+    integer::ierr, n, j, k, m, r, cflg, bsunit, orgrep
     real(kind=8), dimension(:), allocatable :: mup, muq
     real(kind=8) :: t
     integer, intent(inout) :: nbf
@@ -1280,6 +1296,7 @@ contains
     complex(kind = 8) :: dsum1
     character(LEN=13):: path
     character(LEN=31):: fn
+    character(LEN=3) :: or
 
 
     if (errorflag .ne. 0) return
@@ -1299,7 +1316,6 @@ contains
 
     bsunit = 7171
     fn = path//filename
-    write(6,*) 
     open(unit=bsunit, file=fn, status="old", iostat=ierr)
     rewind(bsunit)
 

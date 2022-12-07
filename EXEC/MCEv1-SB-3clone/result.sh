@@ -1,1 +1,0 @@
-python /Users/ryanbrook/Desktop/MCE/run/collate.py $PWD 2 1 'MCEv1-SB-3clone' 0 'YES'

@@ -28,17 +28,18 @@ contains
     character(len=4) repstr1, repstr2, repstr3, repstr4, repstr5
     real, dimension(13) :: temparr
     real, allocatable,  dimension(:,:) :: normp_final ! combining all the norm files into this one matrix
-    real, allocatable, dimension(:):: parent, child, time_clone, initrep, timestep_clone, clone_event
-    real, allocatable, dimension(:,:) :: shift
+    real, allocatable, dimension(:):: parent, child, time_clone, initrep, timestep_clone, clone_event,  normWP, normWC 
+    real, allocatable, dimension(:,:) :: shift, normweighting
     integer, dimension(:,:), allocatable :: tree
+    integer,dimension(:), allocatable :: normwplace
     integer(kind=4), intent(in):: timesteps, orgreps, clonefreq
     integer(kind=4), intent(inout):: nbf
     real(kind=8)::crossterm1, crossterm2
     real(kind=8), intent(in):: dt, time_end
-    integer, dimension(:), allocatable :: index0, farray, clonestep, tree_hold, index_clone
+    integer, dimension(:), allocatable :: index0, farray, clonestep, tree_hold, index_clone 
     real :: hold,  timestep_parent, nw1,nw2, real_timestep, ct1, ct2, num_events, rescale
     integer:: repeats, iostat, nlines, ierr, n, row1, row2, d, j, m, place, jump, timestep, parent_rep, k, l, npunit, npunit2
-    integer:: h, f, i, e, ix
+    integer:: h, f, i, e, ix, normflg, mthflg
 
 
     ! Defining value of varibles
@@ -52,7 +53,9 @@ contains
     ! ierr = getcwd(exdir)
     ! if (ierr.ne.0) stop 'getcwd:error'
     
-
+    ! FLAGS FOR METHODS (0 for mine, 1 for Oliver's)
+    normflg = 1.0d0
+    mthflg = 1.0d0
 
     ! Opening the clone tag file and then reads in the different arrays
     clonedir = 'clonetag.out'
@@ -71,18 +74,23 @@ contains
     allocate(time_clone(nlines))
     allocate(timestep_clone(nlines))
     allocate(initrep(nlines))
+    allocate(normWC(nlines))
+    allocate(normWP(nlines))
     allocate(populations(nlines,timesteps,2))
     allocate(ctarray(repeats,timesteps,2))
     allocate(normpfs(13,timesteps,repeats))
     allocate(condreps(orgreps,13,timesteps))
+    
+    allocate(normwplace(repeats))
 
     if (mod(timesteps,clonefreq).eq.0) then
       num_events = timesteps/clonefreq - 1 
     else 
       num_events = timesteps/clonefreq 
     end if 
-    ! write(6,*) num_events
+    write(6,*) 'number of cloning events is, ', num_events
     allocate(clone_event(num_events+1))
+    allocate(normweighting(repeats,num_events+1))
 
     
     do n =1, size(clone_event)-1
@@ -97,12 +105,14 @@ contains
 
     rewind(11202)
     do n=1, nlines
-      read(11202,*) parent(n), child(n), time_clone(n), initrep(n)
+      read(11202,*) parent(n), child(n), time_clone(n), initrep(n), normWP(n), normWC(n)
     end do
     ! write(6,*) parent
     ! write(6,*) child
     ! write(6,*) time_clone
     ! write(6,*) initrep
+    ! write(6,*) normWP
+    ! write(6,*) normWC
     close(11202)
     write(6,*) '*********clonetag read********'
     timestep_clone = time_clone/time_end*timesteps
@@ -119,7 +129,7 @@ contains
     allocate(tree_hold(2**num_events))
     allocate(clonestep(2**num_events))
     allocate(farray(2**num_events))
-    allocate(index0(10))
+    
 
     ! Initialising the matrices to their starting values before calculations
 
@@ -129,18 +139,20 @@ contains
     farray = 0.d00
     condreps = 0.d00
     ctarray = 0.0d0
-
-    ! Creating the shift matrix 
+    normweighting = 1.0d0
+    normwplace = 2.0d0
     
+    ! Creating the shift matrix 
+   
     do n = 1, repeats
       shift(n,1) = n
       ! write(6,*) shift(n,1)
       if (any(n == child)) then 
-        place = findloc(child, n, dim= 1)
-        ! write(6,*) 'place for ', n, 'is', place
-        ! write(6,*) timestep_clone(place), parent(place)
-        shift(n,2) = timestep_clone(place)
-        shift(n,3) = parent(place)
+        index0 = minloc((child-n)**2)
+        ! write(6,*) 'back up place for ', n, 'is', index0(1)
+        ! write(6,*) timestep_clone(index0(1)), parent(index0(1))
+        shift(n,2) = timestep_clone(index0(1))
+        shift(n,3) = parent(index0(1))
       end if 
     end do 
     do n = 1, repeats
@@ -161,20 +173,20 @@ contains
       end do
       m = n+ orgreps
       ! write(6,*) 'fake array = ', farray
-      index0 = findloc(farray, 0, dim = 1)
+      index0 = minloc(farray)
       ! write(6,*) 'here index = ', initrep(n), index0(1), ' and input is = ', child (n)
       
       tree(initrep(n), index0(1)) = child(n)
     end do 
 
 
-    do n=1,orgreps
-     write(6,*) tree(n,:)
-    end do
+    ! do n=1,orgreps
+    !  write(6,*) tree(n,:)
+    ! end do
 
     write(6,*) '***** Tree matrix made ******'
-
-    deallocate(index0)
+    
+    
     do f=1,orgreps
       tree_hold = 0
       tree_hold(1) = tree(f,1)
@@ -183,21 +195,21 @@ contains
       do m=1,2**num_events
         clonestep(m) = shift(tree(f,m),2)
       end do 
+      ! write(6,*) 'cloning events ', clonestep
       do n=1,size(clone_event)-1
         ! write(6,*) 'clonestep = ', clone_event(n)
-        allocate(index_clone(k))
+        
         index_clone = pack([(ix,ix=1,size(clonestep))],clonestep==clone_event(n))
         ! write(6,*) 'indices for the clone  ', index_clone
-        allocate(index0(2**num_events-e))
-        index0 = findloc(tree_hold, 0)
+        
+        index0 = minloc(tree_hold)
         ! write(6,*) 'indices for temp array ', index0
         do m = 1, size(index_clone)
           tree_hold(index0(1)+(m-1)) = tree(f,index_clone(m))
         end do
         e = e + k
         k=k*2
-        deallocate(index_clone)
-        deallocate(index0)
+        
       end do 
       tree(f,:) = tree_hold(:)
 
@@ -207,9 +219,39 @@ contains
     end do
 
     write(6,*) '***** Tree matrix ordered ******'
+    
+    ! Creates the norm weightings through information from the clone tag file.
+    
+  
+
+   
 
     
+
+    normweighting = 1.0d0
+    do n = 1, nlines
+      row1 = int(parent(n))
+      write(6,*) 'row1 is ', row1
+      row2 = int(child(n))
+      write(6,*) 'row 2 is, ', row2
+      normweighting(row2, normwplace(row1)) = normweighting(row2,normwplace(row1)-1) * normWC(n)
+      normweighting(row1, normwplace(row1)) = normweighting(row1,normwplace(row1)-1) * normWP(n)
+      normwplace(row1) = normwplace(row1) + 1
+      normwplace(row2) = normwplace(row1)
+    end do 
+
+    do l=1, repeats
+      write(6,*) normweighting(l,1), normweighting(l,2)
+    end do
     
+    
+   
+    
+
+  
+   
+    
+    write(6,*) '***** Normweighting matrix made *****' 
 
     do l=1, repeats
       write(repstr1,"(i4.4)") l
@@ -234,7 +276,7 @@ contains
     n=1
     do k=1, size(clone_event)-1
       n = n*2
-      do j=clone_event(k)+1, clone_event(k+1)
+      do j=clone_event(k), clone_event(k+1)-1
         do i=1,orgreps
           ! write(6,*) '********i = ', i, '*********'
           do h=1, n    
@@ -247,17 +289,32 @@ contains
               fn2 = 'outbscon-'//repstr3//'-'//repstr4
               ! write(6,*) tree(i,h), int(j-shift(tree(i,h),2)), tree(i,f), int(j-shift(tree(i,f),2))
               ! write(6,*) fn1, ' ', fn2
-              call cross_terms(fn1,fn2, nbf, crossterm1,crossterm2)
+              if (normflg==1) then 
+                if (j==clone_event(k)) then 
+                  nw1 = normweighting(tree(i,h),k+1)
+                  nw2 = normweighting(tree(i,f),k+1)
+                else 
+                  nw1 = normweighting(tree(i,h),k+1)
+                  nw2 = normweighting(tree(i,f),k+1)
+                end if
+              else 
+                nw1 = 1.0d0
+                nw2 = 1.0d0
+              end if 
+              call cross_terms(fn1,fn2, nbf, crossterm1,crossterm2,nw1,nw2)
               ! write(6,*) crossterm1, crossterm2
               ! write(6,*) '****************'
               ctarray(i,j,1) = ctarray(i,j,1) + crossterm1
               ctarray(i,j,2) = ctarray(i,j,2) + crossterm2
+              ! write(6,*) ctarray(i,j,1), ctarray(i,j,2)
             end do
           end do
           ! write(6,*) 'crossterms, ', i, j, ctarray(i,j,1) , ctarray(i,j,2)
         end do
+        
       end do
     end do
+    
     
 
 
@@ -269,31 +326,33 @@ contains
       end do !2
       e=2
       do n=1, size(clone_event)-1 !3
+        ! write(6,*) clone_event(n)+1, clone_event(n+1)
         do j=clone_event(n)+1, clone_event(n+1) !4
           do f=1,e !5
-            condreps(i,1,j) = condreps(i,1,j) + normpfs(1,j,tree(i,f))/e
-            condreps(i,2,j) = condreps(i,2,j) + normpfs(2,j,tree(i,f))
-            condreps(i,3,j) = condreps(i,3,j) + normpfs(3,j,tree(i,f))/e
-            condreps(i,4,j) = condreps(i,4,j) + normpfs(4,j,tree(i,f))/e
-            condreps(i,5,j) = condreps(i,5,j) + normpfs(5,j,tree(i,f))/e
-            condreps(i,6,j) = condreps(i,6,j) + normpfs(6,j,tree(i,f))/e
-            condreps(i,7,j) = condreps(i,7,j) + normpfs(7,j,tree(i,f))/e
-            condreps(i,8,j) = condreps(i,8,j) + normpfs(8,j,tree(i,f))/e
-            condreps(i,9,j) = condreps(i,9,j) + normpfs(9,j,tree(i,f))/e
-            condreps(i,10,j) = condreps(i,10,j) + normpfs(10,j,tree(i,f))
-            condreps(i,11,j) = condreps(i,11,j) + normpfs(11,j,tree(i,f))
+            condreps(i,1,j) = condreps(i,1,j) + normweighting(tree(i,f),n+1)*normpfs(1,j,tree(i,f))
+            condreps(i,2,j) = condreps(i,2,j) + normweighting(tree(i,f),n+1)*normpfs(2,j,tree(i,f))
+            condreps(i,3,j) = condreps(i,3,j) + normweighting(tree(i,f),n+1)*normpfs(3,j,tree(i,f))
+            condreps(i,4,j) = condreps(i,4,j) + normweighting(tree(i,f),n+1)*normpfs(4,j,tree(i,f))
+            condreps(i,5,j) = condreps(i,5,j) + normweighting(tree(i,f),n+1)*normpfs(5,j,tree(i,f))
+            condreps(i,6,j) = condreps(i,6,j) + normweighting(tree(i,f),n+1)*normpfs(6,j,tree(i,f))
+            condreps(i,7,j) = condreps(i,7,j) + normweighting(tree(i,f),n+1)*normpfs(7,j,tree(i,f))
+            condreps(i,8,j) = condreps(i,8,j) + normweighting(tree(i,f),n+1)*normpfs(8,j,tree(i,f))
+            condreps(i,9,j) = condreps(i,9,j) + normweighting(tree(i,f),n+1)*normpfs(9,j,tree(i,f))
+            condreps(i,10,j) = condreps(i,10,j) + normweighting(tree(i,f),n+1)*normpfs(10,j,tree(i,f))
+            condreps(i,11,j) = condreps(i,11,j) + normweighting(tree(i,f),n+1)*normpfs(11,j,tree(i,f))
           end do ! 5
+          write(6,*) 'pops 1&2 with ct 1&2', condreps(i,10,j), condreps(i,11,j), ctarray(i,j,1), ctarray(i,j,2)
           condreps(i,10,j) = condreps(i,10,j) + ctarray(i,j,1)
           condreps(i,11,j) = condreps(i,11,j) + ctarray(i,j,2) 
-          ! write(6,*) 't =, ', j, 'tot pops with crossterms ', condreps(i,10,j), condreps(i,11,j)
+          write(6,*) 't =, ', j, 'tot pops with crossterms ', condreps(i,10,j), condreps(i,11,j)
           rescale = condreps(i,10,j) + condreps(i,11,j)
           condreps(i,10,j) = condreps(i,10,j)/rescale
           condreps(i,11,j) = condreps(i,11,j)/rescale
           condreps(i,12,j) = condreps(i,10,j) + condreps(i,11,j)
           condreps(i,13,j) = condreps(i,10,j) - condreps(i,11,j)
-          ! write(6,*) 'tot pops with crossterms rescaled', condreps(i,10,j), condreps(i,11,j)
-          ! write(6,*) 'orgrep =, ', i, 't = ', j, 'p1+p2 ', condreps(i,12,j), 'p1-p2 ', condreps(i,13,j)
-          ! write(6,*) '********************'
+          write(6,*) 'tot pops with crossterms rescaled', condreps(i,10,j), condreps(i,11,j)
+          write(6,*) 'orgrep =, ', i, 't = ', j, 'p1+p2 ', condreps(i,12,j), 'p1-p2 ', condreps(i,13,j)
+          write(6,*) '********************'
         end do ! 4
         e =e*2
       end do !3
@@ -316,160 +375,24 @@ contains
                            " |Extra| Sum(HEhr) Pop1 Pop2 Pop1+Pop2 Pop2-Pop1"
     write(11204,*)
     write(11204,*)
-    do n = 1, timesteps+1
+    do n = 1, timesteps
      write (11204,"(13(1x,es16.8e3))") normp_final(:,n)
     end do 
     close(11204)
 
-    
-
-
-    
-    ! do n = repeats, orgreps + 1, -1
-    !   m=1 
-    !   real_timestep = 0
-    !   ! write(6,*) 'n, ', n
-    !   do while (real_timestep.lt.timesteps)
-    !     ! write(6,*) 'm, ', m 
-    !     real_timestep = shift(n,2) + (m*jump) 
-    !     parent_rep = shift(n,3)
-    !     timestep_parent = real_timestep - shift(parent_rep,2)
-    !     ! write(6,*) 'real_timestep, ', real_timestep
-    !     write(repstr1,"(i4.4)") n
-    !     write(repstr2,"(i4.4)") int(shift(n,3))
-    !     write(repstr3,"(i4.4)") int(m*jump)
-    !     write(repstr4,"(i4.4)") int(timestep_parent)
-    !     fn1 = 'outbscon-'//repstr1//'-'//repstr3 
-    !     fn2 = 'outbscon-'//repstr2//'-'//repstr4
-    !     nw1=1.0d0
-    !     nw2=1.0d0
-    !     call cross_terms(fn1,fn2,nw1,nw2, nbf, crossterm1,crossterm2)
-    !     ! write(6,*) 'crossterms, ', crossterm1, crossterm2
-    !     ! write(6,*) '****************'
-    !     ctarray(n,real_timestep,1) = crossterm1
-    !     ctarray(n,real_timestep,2) = crossterm2
-    !     ! write(6,*) 'crossterm1 is, ', crossterm1, 'and so adjust1(n,j) = ', ctarray(n,real_timestep,1)
-    !     ! write(6,*) 'crossterm2 is, ', crossterm2, 'and so adjust2(n,j) = ', ctarray(n,real_timestep,2)
-    !     if ((timestep_clone(n)+m*jump).eq.timesteps) then
-    !       call cross_terms(fn1,fn2,nw1,nw2, nbf, crossterm1,crossterm2)
-    !       ctarray(n,real_timestep,1) = crossterm1
-    !       ctarray(n,real_timestep,2) = crossterm2
-    !     else 
-    !       ctarray(n,real_timestep,1) = crossterm1
-    !       ctarray(n,real_timestep,2) = crossterm2
-    !     end if 
-    !     m = m+1
-    !   end do  
-    ! end do
-    ! ! write(6,*) 'adjust1 at 0, ', adjust1(:,0)
-    ! ! write(6,*) 'adjust1 at 751, ', adjust1(:,751)
-    ! ! write(6,*) 'adjust2 at 0, ', adjust2(:,0) 
-    ! ! write(6,*) 'adjust2 at 751, ', adjust2(:,751)
-
-    ! ! Opening the different normpop files and reading them into a big tensor. 
-
-    ! do n=1, int(child(nlines))
-    !   write(repstr5,"(i4.4)") n
-    !   write(6,*) 'normpop-'//trim(repstr5)//'.out'
-    !   open(11203, file = 'normpop-'//trim(repstr5)//'.out')
-    !   rewind(11203)
-    !   read(11203,*)
-    !   read(11203,*)
-    !   read(11203,*)
-    !   do j=1, timesteps+1
-    !     read(11203,*) temparr(1), temparr(2), temparr(3), temparr(4), temparr(5), temparr(6), temparr(7), temparr(8), &
-    !                   temparr(9), temparr(10), temparr(11), temparr(12), temparr(13)
-    !     do m = 1, 13
-    !      normp_final(m,j) =  normp_final(m,j) + temparr(m)
-    !     end do 
-    !   end do 
-    !   close(11203)
-    ! end do
-
-
-    ! ! do n = orgreps+1, repeats
-    ! !   write(6,*) n
-    ! !   do m = int(shift(n,2))+1,timesteps+1
-    ! !     ct1 = ctarray(n,m,1)
-    ! !     ct2 = ctarray(n,m,2)
-    ! !     populations(n,m,1) = (nw1+ct1)/(nw1+nw2+ct1+ct2)
-    ! !     populations(n,m,2) = (nw2+ct2)/(nw1+nw2+ct1+ct2)
-    ! !     ! write(6,*) n, 'm, ', m, 'nw1 ,', nw1, 'nw2', nw2, 'ct1', ct1, 'ct2', ct2,  populations(n,m,1), populations(n,m,2)
-    ! !   end do
-    ! ! end do 
-    
-    
-
-
-
-    
-
-    ! ! Rescaling the weighted population matrix. 
-    ! normp_final(1,:) = normp_final(1,:)/repeats
-    ! ! normp(2,:) = normp(2,:)/orgreps
-    ! normp_final(3,:) = normp_final(3,:)/orgreps
-    ! normp_final(4,:) = normp_final(4,:)/orgreps
-    ! normp_final(5,:) = normp_final(5,:)/orgreps
-    ! normp_final(6,:) = normp_final(6,:)/orgreps
-    ! normp_final(7,:) = normp_final(7,:)/repeats
-    ! normp_final(8,:) = normp_final(8,:)/repeats
-    ! normp_final(9,:) = normp_final(9,:)/repeats
-    ! normp_final(10,:) = normp_final(10,:)/repeats
-    ! normp_final(11,:) = normp_final(11,:)/repeats
-    ! normp_final(12,:) = normp_final(12,:)/repeats
-    ! normp_final(13,:) = normp_final(13,:)/repeats
-    ! normp_final(2,:) = 1.0d0
-    ! ! write(6,*) normp(:,1)
-    ! ! write(6,*) normp(:,100)
-    ! ! write(6,*) normp(:,1000)
-    ! ! write(6,*) normp(:,2000)
-    ! ! write(6,*) normp(:,2001)
-
-    ! do m =timestep_clone(1)+1, timesteps
-    !   normp_final(10,m) = 0
-    !   normp_final(11,m) = 0
-    ! end do 
-    ! do n = orgreps+1, repeats
-    !   write(6,*) n 
-    !   do m = timestep_clone(1)+1, timesteps+1
-    !     ! write(6,*) 'rescaled populations at timestep, ', m, 'are, ', populations(2,m,1), populations(2,m,2)
-    !     normp_final(10,m) = normp_final(10,m) + populations(n,m,1)
-    !     normp_final(11,m) = normp_final(11,m) + populations(n,m,2)
-    !     normp_final(12,m) = normp_final(10,m) + normp_final(11,m)
-    !     normp_final(13,m) = normp_final(10,m) - normp_final(11,m)
-    !   end do 
-    ! end do 
-    ! do m = timestep_clone(1)+1, timesteps+1 
-    !   normp_final(10,m) = normp_final(10,m)/orgreps
-    !   normp_final(11,m) = normp_final(11,m)/orgreps
-    !   normp_final(12,m) = normp_final(12,m)/orgreps
-    !   normp_final(13,m) = normp_final(13,m)/orgreps
-    ! end do 
-    
-
-    ! ! Time to use the adjust matrices to, well, adjust. (comment this out if no crossterms)
-
-    ! ! do n=1, repeats
-    ! !  do m = 1, timesteps
-    ! !    normp(10,m) = normp(10,m) + adjust1(n,m)
-    ! !    normp(11,m) = normp(11,m) + adjust2(n,m)
-    ! !   end do 
-    ! ! end do 
-    
-    ! ! do m = 1, timesteps
-    ! !   rescale(m) = normp(10,m)+normp(11,m)
-    ! !   normp(10,m) = normp(10,m)/rescale(m)
-    ! !   normp(11,m) = normp(11,m)/rescale(m)
-    ! !   normp(12,m) = normp(10,m)+normp(11,m)
-    ! !   normp(13,m) = normp(10,m)-normp(11,m)
-    ! ! end do 
-
-
-
-
-   
-
-
+    do i =1, orgreps
+      write(repstr1,"(i4.4)") i 
+      ! npunit = 1020 + i 
+      open(11203, file = 'condnorm-'//trim(repstr1)//'.out')
+      write (11203,"(2a)") "Time Norm Re(ACF(t)) Im(ACF(t) |ACF(t)| Re(Extra) Im(Extra)", &
+                           " |Extra| Sum(HEhr) Pop1 Pop2 Pop1+Pop2 Pop2-Pop1"
+      write(11203,*)
+      write(11203,*)
+      do n = 1, timesteps
+        write (11203,"(13(1x,es16.8e3))") condreps(i,:,n)
+      end do 
+      close(11203)
+    end do 
 
   end subroutine
 
@@ -479,9 +402,10 @@ contains
 
 
 
-  subroutine cross_terms(filename1,filename2,nbf, crossterm1, crossterm2)
+  subroutine cross_terms(filename1,filename2,nbf, crossterm1, crossterm2,nw1,nw2)
     type(basisfn), dimension (:), allocatable :: bs1, bs2
     real(kind=8), intent(inout) ::  crossterm1, crossterm2
+    real(kind=4), intent(in):: nw1, nw2
     integer :: j, k, ierr
     complex(kind=8), dimension(nbf,nbf) ::ovrlp12, ovrlp21
     complex(kind=8) :: sumamps1, sumamps2, ovrlp1, ovrlp2, cpop11, cpop12, cpop21,cpop22
@@ -553,8 +477,8 @@ contains
       end do
     end do
 
-    crossterm1 = real(cpop11+cpop12) 
-    crossterm2 = real(cpop21+cpop22)
+    crossterm1 = sqrt(nw1*nw2)*real(cpop11+cpop12) 
+    crossterm2 = sqrt(nw1*nw2)*real(cpop21+cpop22)
 
     ! write(6,*) 'pops'
     ! print*,cpop11 

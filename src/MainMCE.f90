@@ -636,7 +636,7 @@ Program MainMCE
             end if 
             te = int(real(abs((timeend_loc-timestrt_loc)/dt)))
 
-
+            
            
             if ((allocated(clone)).and.(cloneflg.ne."BLIND").and.(time.le.timeend).and.(cloneflg.ne."V1")) then
               call cloning (bset, nbf, x, time, clone, clonenum, reps)
@@ -695,7 +695,6 @@ Program MainMCE
             deallocate(ovrlp)
 
             call outbs(bset, reps, mup, muq, time,x)
-            
             call outbscont(bset, reps, mup, muq, time,x)
             if ((cloneflg == "YES").or.(cloneflg == "BLIND+").or.(cloneflg == "QSC")) then
               call outclones(clonenum, reps, clone)
@@ -847,7 +846,7 @@ Program MainMCE
       end if
     end if
   end if
-
+  
   if (cloneflg=="V1") then
     call clone_condense(dt,tf, in_nbf, reptot, timeend,orgreps, clonefreq)
   end if

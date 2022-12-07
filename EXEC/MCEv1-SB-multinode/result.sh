@@ -1,1 +1,0 @@
-python /Users/ryanbrook/Desktop/MCE/run/collate.py $PWD 4 2 'MCEv1-SB-multinode' 0 'YES'

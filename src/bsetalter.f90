@@ -709,9 +709,8 @@ contains
     real(kind=8), dimension(:), intent(in)::mup,muq
     real(kind=8), intent(in) :: time
     integer(kind=4), intent(inout) :: cnum_start, repchanger
-    INTEGER, DIMENSION(:), ALLOCATABLE :: a_seed
+    INTEGER, DIMENSION(:), ALLOCATABLE :: a_seed, loc0
     INTEGER, DIMENSION(1:8) :: dt_seed
-    integer, dimension(10) :: index0
     real(kind=8) :: brforce, normar, sumamps, trackav
     complex(kind=8), dimension(size(bs),size(bs))::cloneovrlp, clone2ovrlp, bsovrlp
     complex(kind=8) :: clonenorm, clonenorm2, asum1, asum2, bsnorm
@@ -791,8 +790,8 @@ contains
         ! write(6,*) clone(k)%carray(n)
       end do 
       do r=1, npes
-        clone2(k)%d_pes(r) = clone2(k)%d_pes(r)!/sqrt(clonenorm2)!exp(-i*clone(k)%s_pes(r)) ! clone 2 will be non zero only when not on the pes
-        clone(k)%d_pes(r) = clone(k)%d_pes(r)!/sqrt(clonenorm)!exp(-i*clone(k)%s_pes(r)) ! it's easier to set all the first child to the preclone value and change later 
+        clone2(k)%d_pes(r) = clone2(k)%d_pes(r)/sqrt(clonenorm2)!exp(-i*clone(k)%s_pes(r)) ! clone 2 will be non zero only when not on the pes
+        clone(k)%d_pes(r) = clone(k)%d_pes(r)/sqrt(clonenorm)!exp(-i*clone(k)%s_pes(r)) ! it's easier to set all the first child to the preclone value and change later 
         clone(k)%a_pes(r) = clone(k)%d_pes(r) * exp(i*clone(k)%s_pes(r))
         clone2(k)%a_pes(r) = clone2(k)%d_pes(r) * exp(i*clone2(k)%s_pes(r))
       end do 
@@ -814,14 +813,15 @@ contains
     ! call reloc_basis(clone2, bs, x)
     
 
-    index0 = findloc(bs(1)%carray, 0, dim= 1)
-    write(6,*) index0(1)
+    
+    loc0 = minloc(bs(1)%carray)
+    write(6,*) loc0
     
 
     do k=1, nbf
       bs(k)%D_big = (1.0d0,0.0d0)
-      clone(k)%carray(index0) = reps
-      clone2(k)%carray(index0) = cnum_start
+      clone(k)%carray(loc0) = reps
+      clone2(k)%carray(loc0) = cnum_start
       do m=1, ndim
        bs(k)%z(m) = clone(k)%z(m)
       end do 
@@ -838,8 +838,10 @@ contains
     write(6,*) 'clone 2: ', clone2(1)%carray
   
     call outbs(clone2, cnum_start, mup, muq, time, x)
+    write(6,*)'outputting the continous 0 *********************'
+    call outbscont(clone2, cnum_start, mup, muq, time, 0)
     call copynorm(reps,cnum_start)
-    call clonetag(reps,cnum_start, time, tf, te, bs)
+    call clonetag(reps,cnum_start, time, tf, te, bs, normc1, normc2)
    
     repchanger = repchanger + 1
   

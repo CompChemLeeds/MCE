@@ -924,13 +924,14 @@ contains
   
   end subroutine copynorm
   
-  subroutine clonetag(reps,cnum_start,time, tf, te,bs)
+  subroutine clonetag(reps,cnum_start,time, tf, te,bs, norm1, norm2)
      integer :: ierr, timestep, fileun
      integer(kind=4), intent(in) :: cnum_start
      integer, intent(in) ::  reps, te, tf
      character(LEN=12) :: filenm
      real(kind=8), intent(in) :: time
      type(basisfn), dimension(:), allocatable, intent(inout) :: bs
+     real(kind=8), intent(in) :: norm1, norm2
 
 
      
@@ -947,7 +948,7 @@ contains
     !if (ierr.ne.0) then 
     !  errorflag=1
     !end if
-    write(321, *) reps, cnum_start, time, bs(1)%carray(1)
+    write(321, *) reps, cnum_start, time, bs(1)%carray(1), norm1, norm2
     
     close(321)
 
@@ -995,6 +996,7 @@ contains
     else
      filename = path//"Errbs-"//trim(rep)//"-"//trim(tstep)//".out" 
     end if
+  
     open(unit=3181, file = ('bscontinoustrack.out'), status='unknown', POSITION='APPEND', iostat= ierr)
     write(3181,"(a,1x,i4)"       ) filename
     close(3181)

@@ -29,10 +29,10 @@ systems={
 
 parameters={
     # Number of dimensions
-    'ndim':50,
+    'ndim':5,
 
     # Number of basis functions 
-    'in_nbf':50,
+    'in_nbf':5,
 
     # Random Number generation function (ZBQL - using ZBQLNOR subroutine, GAUS - using function based on numerical recipes)
     'randfunc':'ZBQL',

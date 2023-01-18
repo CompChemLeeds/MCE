@@ -42,15 +42,15 @@ import inputs
 #########################################################################################
 
 # Number of repeats 
-repeats=32
+repeats=16
 # Number of nodes/folders
-nodes=1
+nodes=4
 #Number of parallel cores per folder/node (max 8)
 cores=1
 # Name of running folder 
 # Default : <method>-<system>-<random number> ie CCS-HP-31254
 # Otherwise:  <method>-<system>-<runfolder string>
-Runfolder='normweighting-real1000'
+Runfolder='condense'
 # Generate Basis Set? YES/NO
 gen='YES'
 # Propagate Basis Set? YES/NO
@@ -61,6 +61,8 @@ restart='NO'
 # Seed value for doing the random number routine- if you do not specify it 
 # (leave default value of 0) will automatically generate one
 SEED=0
+# V1 cloning value for creating correct result file 
+V1cloning='YES'
 #########################################################################################
 #                                   END OF INPUTS                                       #
 #########################################################################################
@@ -142,10 +144,22 @@ if __name__=="__main__":
 
         mcerunf=os.getcwd()
         #Builds result file
-        result=open(EXDIR1+"/result.sh","w")
-        result.write("python "+mcerunf+"/collate.py $PWD "+(str(repeats))+" "+str(nodes)+" '"+Runfolder+"' "+(str(HPCFLG))+" '"+prop+"'")
-        result.close()
-        subprocess.run(['chmod', 'u+x', EXDIR1+'/result.sh'])
+        if(V1cloning)=='YES':
+            result=open(EXDIR1+"/result.sh","w")
+            result.write("python "+mcerunf+"/v1result.py $PWD "+(str(repeats))+" "+str(nodes)+" '"+Runfolder+"' "+(str(HPCFLG))+" '"+prop+"'")
+            result.close()
+            subprocess.run(['chmod', 'u+x', EXDIR1+'/result.sh'])
+        else:
+            result=open(EXDIR1+"/result.sh","w")
+            result.write("python "+mcerunf+"/collate.py $PWD "+(str(repeats))+" "+str(nodes)+" '"+Runfolder+"' "+(str(HPCFLG))+" '"+prop+"'")
+            result.close()
+            subprocess.run(['chmod', 'u+x', EXDIR1+'/result.sh'])
+            
+        
+        #Builds information for v1 cloning
+        runinfo=open(EXDIR1+"/v1info.out","w")
+        runinfo.write(mcerunf+(str(repeats))+" "+str(nodes)+" '"+Runfolder+"' "+(str(HPCFLG)))
+        runinfo.close()
 
         #Copies input files
         shutil.copy2("inham.py",EXDIR1)
@@ -153,6 +167,8 @@ if __name__=="__main__":
         shutil.copy2("run.py",EXDIR1)
         shutil.copy2("combine.py",EXDIR1)
         shutil.copy2("clonecombine.py",EXDIR1)
+        shutil.copy2("v1result.py",EXDIR1)
+
 
 
         

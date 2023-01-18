@@ -91,7 +91,7 @@ contains
     write(6,*) 'number of cloning events is, ', num_events
     allocate(clone_event(num_events+1))
     allocate(normweighting(repeats,num_events+1))
-
+    write(6,*) 'size of nw = ,', size(normweighting)
     
     do n =1, size(clone_event)-1
       clone_event(n) = n*clonefreq
@@ -234,15 +234,17 @@ contains
       write(6,*) 'row1 is ', row1
       row2 = int(child(n))
       write(6,*) 'row 2 is, ', row2
-      normweighting(row2, normwplace(row1)) = normweighting(row2,normwplace(row1)-1) * normWC(n)
+      normweighting(row2, normwplace(row1)) = normweighting(row1,normwplace(row1)-1) * normWC(n)
       normweighting(row1, normwplace(row1)) = normweighting(row1,normwplace(row1)-1) * normWP(n)
       normwplace(row1) = normwplace(row1) + 1
       normwplace(row2) = normwplace(row1)
     end do 
 
     do l=1, repeats
-      write(6,*) normweighting(l,1), normweighting(l,2)
+      write(6,*) normweighting(l,:)
     end do
+    
+    
     
     
    
@@ -317,6 +319,53 @@ contains
     
     
 
+    !!$omp parallel
+    !!$omp do  &
+    !!$omp private(i,j,m,n,rescale) &
+    !!$omp shared(condreps,normweighting,normpfs,tree,normp_final)
+    ! do i =1, orgreps ! 1
+    !   do j=1, clone_event(1) !2
+    !     do m =1, 13 !6 
+    !       condreps(i,m,j) = normpfs(m,j,i)
+    !     end do !6
+    !   end do !2
+    !   e=2
+    !   do n=1, size(clone_event)-1 !3
+    !     ! write(6,*) clone_event(n)+1, clone_event(n+1)
+    !     do j=clone_event(n)+1, clone_event(n+1) !4
+    !       do f=1,e !5
+    !         condreps(i,1,j) = condreps(i,1,j) + normweighting(tree(i,f),n+1)*normpfs(1,j,tree(i,f))
+    !         condreps(i,2,j) = condreps(i,2,j) + normweighting(tree(i,f),n+1)*normpfs(2,j,tree(i,f))
+    !         condreps(i,3,j) = condreps(i,3,j) + normweighting(tree(i,f),n+1)*normpfs(3,j,tree(i,f))
+    !         condreps(i,4,j) = condreps(i,4,j) + normweighting(tree(i,f),n+1)*normpfs(4,j,tree(i,f))
+    !         condreps(i,5,j) = condreps(i,5,j) + normweighting(tree(i,f),n+1)*normpfs(5,j,tree(i,f))
+    !         condreps(i,6,j) = condreps(i,6,j) + normweighting(tree(i,f),n+1)*normpfs(6,j,tree(i,f))
+    !         condreps(i,7,j) = condreps(i,7,j) + normweighting(tree(i,f),n+1)*normpfs(7,j,tree(i,f))
+    !         condreps(i,8,j) = condreps(i,8,j) + normweighting(tree(i,f),n+1)*normpfs(8,j,tree(i,f))
+    !         condreps(i,9,j) = condreps(i,9,j) + normweighting(tree(i,f),n+1)*normpfs(9,j,tree(i,f))
+    !         condreps(i,10,j) = condreps(i,10,j) + normweighting(tree(i,f),n+1)*normpfs(10,j,tree(i,f))
+    !         condreps(i,11,j) = condreps(i,11,j) + normweighting(tree(i,f),n+1)*normpfs(11,j,tree(i,f))
+    !       end do ! 5
+    !       write(6,*) 'pops 1&2 with ct 1&2', condreps(i,10,j), condreps(i,11,j), ctarray(i,j,1), ctarray(i,j,2)
+    !       condreps(i,10,j) = condreps(i,10,j) + ctarray(i,j,1)
+    !       condreps(i,11,j) = condreps(i,11,j) + ctarray(i,j,2) 
+    !       write(6,*) 't =, ', j, 'tot pops with crossterms ', condreps(i,10,j), condreps(i,11,j)
+    !       rescale = condreps(i,10,j) + condreps(i,11,j)
+    !       condreps(i,10,j) = condreps(i,10,j)/rescale
+    !       condreps(i,11,j) = condreps(i,11,j)/rescale
+    !       condreps(i,12,j) = condreps(i,10,j) + condreps(i,11,j)
+    !       condreps(i,13,j) = condreps(i,10,j) - condreps(i,11,j)
+    !       write(6,*) 'tot pops with crossterms rescaled', condreps(i,10,j), condreps(i,11,j)
+    !       write(6,*) 'orgrep =, ', i, 't = ', j, 'p1+p2 ', condreps(i,12,j), 'p1-p2 ', condreps(i,13,j)
+    !       write(6,*) '********************'
+    !     end do ! 4
+    !     e =e*2
+    !   end do !3
+    ! end do !1
+    !!$omp end do
+
+    !!$omp do collapse(2)
+
 
     do i =1, orgreps ! 1
       do j=1, clone_event(1) !2
@@ -341,31 +390,32 @@ contains
             condreps(i,10,j) = condreps(i,10,j) + normweighting(tree(i,f),n+1)*normpfs(10,j,tree(i,f))
             condreps(i,11,j) = condreps(i,11,j) + normweighting(tree(i,f),n+1)*normpfs(11,j,tree(i,f))
           end do ! 5
-          write(6,*) 'pops 1&2 with ct 1&2', condreps(i,10,j), condreps(i,11,j), ctarray(i,j,1), ctarray(i,j,2)
+          !write(6,*) 'pops 1&2 with ct 1&2', condreps(i,10,j), condreps(i,11,j), ctarray(i,j,1), ctarray(i,j,2)
           condreps(i,10,j) = condreps(i,10,j) + ctarray(i,j,1)
           condreps(i,11,j) = condreps(i,11,j) + ctarray(i,j,2) 
-          write(6,*) 't =, ', j, 'tot pops with crossterms ', condreps(i,10,j), condreps(i,11,j)
+          !write(6,*) 't =, ', j, 'tot pops with crossterms ', condreps(i,10,j), condreps(i,11,j)
           rescale = condreps(i,10,j) + condreps(i,11,j)
           condreps(i,10,j) = condreps(i,10,j)/rescale
           condreps(i,11,j) = condreps(i,11,j)/rescale
           condreps(i,12,j) = condreps(i,10,j) + condreps(i,11,j)
           condreps(i,13,j) = condreps(i,10,j) - condreps(i,11,j)
-          write(6,*) 'tot pops with crossterms rescaled', condreps(i,10,j), condreps(i,11,j)
-          write(6,*) 'orgrep =, ', i, 't = ', j, 'p1+p2 ', condreps(i,12,j), 'p1-p2 ', condreps(i,13,j)
-          write(6,*) '********************'
+          ! write(6,*) 'tot pops with crossterms rescaled', condreps(i,10,j), condreps(i,11,j)
+          ! write(6,*) 'orgrep =, ', i, 't = ', j, 'p1+p2 ', condreps(i,12,j), 'p1-p2 ', condreps(i,13,j)
+          ! write(6,*) '********************'
         end do ! 4
         e =e*2
       end do !3
     end do !1
-    
     do i =1, orgreps
       do j=1, timesteps
         do m=1,13
           normp_final(m,j) = normp_final(m,j) + condreps(i,m,j)/orgreps
         end do 
       end do
-    end do 
+    end do
+    !!$omp end do 
 
+  !!$omp end parallel 
       
 
     ! Now to put that the population matrix into a collated output file.
@@ -394,6 +444,9 @@ contains
       close(11203)
     end do 
 
+
+    write(6,*) 'CONDENSING FINISHED'
+    
   end subroutine
 
 

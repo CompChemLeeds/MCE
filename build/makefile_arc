@@ -3,7 +3,7 @@
 
 F90=gfortran
 FFLAGS=-fopenmp -O3
-FLINKS=-Wl,--start-group -lmkl_gf_lp64 -lmkl_sequential -lmkl_core -Wl,--end-group -lpthread
+FLINKS=$(ARC_LINALG_FFLAGS)
 VPATH=../src
 
 # Link step

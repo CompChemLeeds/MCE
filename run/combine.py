@@ -38,7 +38,7 @@ size=len(dtinit)
 dtinit=float(dtinit[:-3])*10**-3
 clone_freq=float(inputs.clone['clon_freq'])
 
-if(inputs.clone["Cloning"]=='v1'):
+if(inputs.clone["Cloning"]=='V1'):
     roar=2**(((time_end/dtinit)/clone_freq)-1)
     repeats=run.repeats*roar
 else:

@@ -1281,10 +1281,11 @@ contains
 
 !*************************************************************************************************!
 
-  subroutine readcontbasis(bs, name ,nbf)   !   Level 1 Subroutine
+  subroutine readcontbasis(bs, i1, i2 ,nbf)   !   Level 1 Subroutine
 
     implicit none
     type(basisfn), dimension (:), allocatable, intent(inout) :: bs
+    integer, intent(in) :: i1,i2
     integer::ierr, n, j, k, m, r, cflg, bsunit, orgrep
     real(kind=8), dimension(:), allocatable :: mup, muq
     real(kind=8) :: t
@@ -1295,9 +1296,9 @@ contains
     real(kind=8)::rl, im
     complex(kind = 8) :: dsum1
     character(LEN=13):: path
-    character(LEN=31):: fn
+    character(LEN=40):: fn
     character(LEN=3) :: or
-
+    character(len=4) :: s1, s2
 
     if (errorflag .ne. 0) return
 
@@ -1310,17 +1311,20 @@ contains
     call flush(6)
 
     write(filename,"(a,i4.4,a)") name
+    write(s1,"(i4.4)") i1
+    write(s2,"(i4.4)") i2
 
     ! write(6,"(a,a)") "Opening file ", trim(filename)
     call flush(6)
 
-    bsunit = 7171
-    fn = path//filename
+    bsunit = 2001+(i1+10)*(i2*100)
+    fn = "bscontinuous/"//'outbscon-'//s1//'-'//s2//".out"
+    ! write(6,*) fn
     open(unit=bsunit, file=fn, status="old", iostat=ierr)
     rewind(bsunit)
 
     if (ierr .ne. 0) then
-      write(0,"(3a)") 'Error in opening ', trim(filename),' file'
+      write(0,"(3a)") 'Error in opening ', trim(fn),' file'
       call flush(0)
       errorflag = 1
       return

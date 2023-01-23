@@ -962,7 +962,7 @@ contains
     real(kind=8), intent(in) :: t
     integer::m, j, r, k, ierr, bsunit, fileun
     character(LEN=28)::filenm, filenm2, myfmt
-    character(LEN=31):: filename
+    character(LEN=35):: filename
     integer, intent(in) :: reps, x
     character(LEN=4):: rep, or
     character(LEN=5)::step
@@ -992,9 +992,9 @@ contains
     end if
     path = "bscontinuous/"
     if (errorflag.eq.0) then
-     filename = path//"Outbscon-"//trim(rep)//"-"//trim(tstep)//".out"
+     filename = path//"Outbscon-"//rep//"-"//trim(tstep)//".out"
     else
-     filename = path//"Errbs-"//trim(rep)//"-"//trim(tstep)//".out" 
+     filename = path//"Errbs-"//rep//"-"//tstep//".out" 
     end if
   
     open(unit=3181, file = ('bscontinoustrack.out'), status='unknown', POSITION='APPEND', iostat= ierr)

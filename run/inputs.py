@@ -13,6 +13,13 @@ cmprss='YES'
 # of the previous runs initial position. Not compatible with V1 cloning [YES/NO]
 Conjugate_Repeats='NO'
 
+# V1 cloning type. Determines the type of the cloning used for V1, using 1s and 0s or trig functions.
+# 1 is the rigid type, 2 is the angular version. [1,2]
+# V1cloning = 1
+
+# # Normweighting flag for whether or not normweighting is used in the cloning procedure. [YES/NO]
+# V1normweighting='YES'
+
 systems={
     # System (Currently can be SB [Spin Boson], HP [Harmonic Potential], FP [Free Particle], MP [Morse Potential])
     #  SB works only with MCE, all others with CCS.

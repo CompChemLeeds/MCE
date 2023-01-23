@@ -42,15 +42,15 @@ import inputs
 #########################################################################################
 
 # Number of repeats 
-repeats=16
+repeats=4
 # Number of nodes/folders
-nodes=4
+nodes=2
 #Number of parallel cores per folder/node (max 8)
 cores=1
 # Name of running folder 
 # Default : <method>-<system>-<random number> ie CCS-HP-31254
 # Otherwise:  <method>-<system>-<runfolder string>
-Runfolder='condense'
+Runfolder='aaaa'
 # Generate Basis Set? YES/NO
 gen='YES'
 # Propagate Basis Set? YES/NO
@@ -103,7 +103,7 @@ if __name__=="__main__":
         else:
             print("Arguments checked")
             Hostname=socket.gethostname()
-            if(Hostname==("login1.arc4.leeds.ac.uk")):
+            if(Hostname==("login1.arc4.leeds.ac.uk")or(Hostname==("login2.arc4.leeds.ac.uk"))):
                 HPCFLG=1
             else:
                 HPCFLG=0
@@ -169,7 +169,7 @@ if __name__=="__main__":
         shutil.copy2("clonecombine.py",EXDIR1)
         shutil.copy2("v1result.py",EXDIR1)
 
-
+        
 
         
         #Makes the program input file

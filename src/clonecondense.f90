@@ -24,7 +24,7 @@ contains
     real, dimension(:,:,:), allocatable :: populations, ctarray, normpfs, condreps
     character:: exdir !needs lengths
     character(len=12) clonedir
-    character(len=18) fn1, fn2, fn
+    character(len=18) fn
     character(len=4) repstr1, repstr2, repstr3, repstr4, repstr5
     real, dimension(13) :: temparr
     real, allocatable,  dimension(:,:) :: normp_final ! combining all the norm files into this one matrix
@@ -39,7 +39,8 @@ contains
     integer, dimension(:), allocatable :: index0, farray, clonestep, tree_hold, index_clone 
     real :: hold,  timestep_parent, nw1,nw2, real_timestep, ct1, ct2, num_events, rescale
     integer:: repeats, iostat, nlines, ierr, n, row1, row2, d, j, m, place, jump, timestep, parent_rep, k, l, npunit, npunit2
-    integer:: h, f, i, e, ix, normflg, mthflg
+    integer:: h, f, i, e, ix, normflg, i1,i2,i3,i4
+
 
 
     ! Defining value of varibles
@@ -49,13 +50,13 @@ contains
     crossterm2 = 0
     jump = 1
     
+    
     ! Retrieving the working directory and finding the clone tag file
     ! ierr = getcwd(exdir)
     ! if (ierr.ne.0) stop 'getcwd:error'
     
     ! FLAGS FOR METHODS (0 for mine, 1 for Oliver's)
     normflg = 1.0d0
-    mthflg = 1.0d0
 
     ! Opening the clone tag file and then reads in the different arrays
     clonedir = 'clonetag.out'
@@ -98,6 +99,7 @@ contains
     end do
     clone_event(num_events+1) = timesteps 
     write(6,*) clone_event
+    
     
    
     
@@ -283,12 +285,10 @@ contains
           ! write(6,*) '********i = ', i, '*********'
           do h=1, n    
             do f = h+1, n 
-              write(repstr1,"(i4.4)") tree(i,h)
-              write(repstr2,"(i4.4)") int(j-shift(tree(i,h),2))
-              write(repstr3,"(i4.4)") tree(i,f)
-              write(repstr4,"(i4.4)") int(j-shift(tree(i,f),2))
-              fn1 = 'outbscon-'//repstr1//'-'//repstr2 
-              fn2 = 'outbscon-'//repstr3//'-'//repstr4
+              i1 = tree(i,h)
+              i2 = int(j-shift(tree(i,h),2))
+              i3 = tree(i,f)
+              i4 = int(j-shift(tree(i,f),2))
               ! write(6,*) tree(i,h), int(j-shift(tree(i,h),2)), tree(i,f), int(j-shift(tree(i,f),2))
               ! write(6,*) fn1, ' ', fn2
               if (normflg==1) then 
@@ -303,7 +303,7 @@ contains
                 nw1 = 1.0d0
                 nw2 = 1.0d0
               end if 
-              call cross_terms(fn1,fn2, nbf, crossterm1,crossterm2,nw1,nw2)
+              call cross_terms(i1,i2,i3,i4,nbf, crossterm1,crossterm2,nw1,nw2)
               ! write(6,*) crossterm1, crossterm2
               ! write(6,*) '****************'
               ctarray(i,j,1) = ctarray(i,j,1) + crossterm1
@@ -455,14 +455,14 @@ contains
 
 
 
-  subroutine cross_terms(filename1,filename2,nbf, crossterm1, crossterm2,nw1,nw2)
+  subroutine cross_terms(i1,i2,i3,i4,nbf, crossterm1, crossterm2,nw1,nw2)
     type(basisfn), dimension (:), allocatable :: bs1, bs2
     real(kind=8), intent(inout) ::  crossterm1, crossterm2
     real(kind=4), intent(in):: nw1, nw2
+    integer, intent(in):: i1,i2,i3,i4
     integer :: j, k, ierr
     complex(kind=8), dimension(nbf,nbf) ::ovrlp12, ovrlp21
     complex(kind=8) :: sumamps1, sumamps2, ovrlp1, ovrlp2, cpop11, cpop12, cpop21,cpop22
-    character(len=18), intent(in) :: filename1, filename2
     integer, intent(inout) :: nbf
     
 
@@ -479,15 +479,15 @@ contains
     cpop21 = (0.d0,0.0d0)
     cpop22 = (0.d0,0.0d0)
 
-  
+
 
     ! Now to read in the basis sets themselves.
     call allocbs(bs1,nbf)
-    call readcontbasis(bs1,trim(filename1),nbf)
+    call readcontbasis(bs1,i1,i2,nbf)
     
 
     call allocbs(bs2,nbf)
-    call readcontbasis(bs2,trim(filename2), nbf)
+    call readcontbasis(bs2,i3,i4, nbf)
     
   
     !Calculating the overlap between the basis sets and summing over amplitudes

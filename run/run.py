@@ -42,15 +42,15 @@ import inputs
 #########################################################################################
 
 # Number of repeats 
-repeats=4
+repeats=32
 # Number of nodes/folders
-nodes=2
+nodes=1
 #Number of parallel cores per folder/node (max 8)
 cores=1
 # Name of running folder 
 # Default : <method>-<system>-<random number> ie CCS-HP-31254
 # Otherwise:  <method>-<system>-<runfolder string>
-Runfolder='aaaa'
+Runfolder='Case1-no'
 # Generate Basis Set? YES/NO
 gen='YES'
 # Propagate Basis Set? YES/NO
@@ -143,17 +143,10 @@ if __name__=="__main__":
         EXDIR1=EXDIR+"/"+Runfolder  
 
         mcerunf=os.getcwd()
-        #Builds result file
-        if(V1cloning)=='YES':
-            result=open(EXDIR1+"/result.sh","w")
-            result.write("python "+mcerunf+"/v1result.py $PWD "+(str(repeats))+" "+str(nodes)+" '"+Runfolder+"' "+(str(HPCFLG))+" '"+prop+"'")
-            result.close()
-            subprocess.run(['chmod', 'u+x', EXDIR1+'/result.sh'])
-        else:
-            result=open(EXDIR1+"/result.sh","w")
-            result.write("python "+mcerunf+"/collate.py $PWD "+(str(repeats))+" "+str(nodes)+" '"+Runfolder+"' "+(str(HPCFLG))+" '"+prop+"'")
-            result.close()
-            subprocess.run(['chmod', 'u+x', EXDIR1+'/result.sh'])
+        result=open(EXDIR1+"/result.sh","w")
+        result.write("python "+mcerunf+"/collate.py $PWD "+(str(repeats))+" "+str(nodes)+" '"+Runfolder+"' "+(str(HPCFLG))+" '"+prop+"'")
+        result.close()
+        subprocess.run(['chmod', 'u+x', EXDIR1+'/result.sh'])
             
         
         #Builds information for v1 cloning

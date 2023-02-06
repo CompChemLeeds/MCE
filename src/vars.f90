@@ -24,6 +24,10 @@ MODULE globvars
     complex(kind=8), dimension(:,:), allocatable::Hjk      ! matrix of size npes x npes
   end type hamiltonian
 
+  type basisset
+      type(basisfn),dimension(:),allocatable::bs
+  end type basisset
+
   integer:: in_nbf     ! number of basis functions
   integer:: ndim       ! number of dimensions/degrees of freedom
   integer:: npes       ! determines n.o configurations

@@ -435,7 +435,7 @@ contains
       return
     end if  
     n=n+1
-    read(140,*,iostat=ierr)LINE1, LINE2, LINE3, LINE4,LINE5
+    read(140,*,iostat=ierr)LINE1, LINE2, LINE3, LINE4,LINE5,LINE6
     if (ierr .ne. 0) then
       write(0,"(a)") 'Error reading cloning data'
       errorflag = 1
@@ -488,6 +488,7 @@ contains
       return
     end if
     n = n+1
+   
 
     if ((in_pes.gt.npes).or.(in_pes.le.0)) then
       write(0,"(a)") "Initial PES does not exist"

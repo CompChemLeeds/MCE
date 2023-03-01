@@ -39,7 +39,7 @@ parameters={
     'ndim':50,
 
     # Number of basis functions 
-    'in_nbf':50,
+    'in_nbf':200,
 
     # Random Number generation function (ZBQL - using ZBQLNOR subroutine, GAUS - using function based on numerical recipes)
     'randfunc':'ZBQL',
@@ -68,7 +68,7 @@ Train={
 
 clone={
     # Flag for cloning basis functions (yes/no/blind/blind+/QSC/v1)
-    'Cloning':'no',
+    'Cloning':'V1',
 
     # Cloning threshold (value of |sum_r(a_{r,k})|) - must be >= 0.05 and < 0.25, default 0.249
     'Threshold':'0.249d0',
@@ -77,7 +77,7 @@ clone={
     'max_cloning':19,
 
     # Minimum cloning frequency (ie how many timesteps since last cloning is new cloning event allowed)
-    'clon_freq':750,
+    'clon_freq':1000,
 
     #Quantum Superposition Cloning exclusion paramter between the two child trajectories should >= ??? and < ???
     'QSC_epsilon':'0.1d0'

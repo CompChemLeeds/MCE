@@ -18,11 +18,11 @@ module clonecondense
 contains 
   
 
-  subroutine clone_condense(bsetarr,dt,tsstart,tsend,reps,nclones,nbf,absnorm,acf_t,extra,absehr,pops,mup,muq)
+  subroutine clone_condense(bsetarr,dt,tsstart,tsend,reps,nclones,nbf,absnorm,acf_t,extra,absehr,pops,mup,muq,normw)
     implicit none
 
     type(basisset), dimension(:,:), intent(inout) :: bsetarr
-    real(kind=8), dimension(:), intent(inout)  :: absnorm, absehr
+    real(kind=8), dimension(:), intent(inout)  :: absnorm, absehr, normw
     complex(kind=8), dimension (:), intent(inout):: acf_t, extra
     real(kind=8), dimension (:,:), intent(inout) :: pops
     real(kind=8), dimension(:,:), allocatable :: populations, ctarray, normpfs
@@ -43,7 +43,7 @@ contains
     crossterm2 = 0
     ! time = dt * tsstart
     range = tsend-tsstart
-  
+    write(6,*) normw
     allocate(normpfs(13,range))
     allocate(populations(range,2))
     allocate(ctarray(range,2))
@@ -72,11 +72,11 @@ contains
         absehr(t+tsstart) = absehr(t+tsstart) + ehrtmp
         nrmtmp = 1/nclones !sqrt(dble(normtemp*dconjg(normtemp)))
         absnorm(t+tsstart) = absnorm(t+tsstart) + nrmtmp
-        populations(t,1) = populations(t,1) + pophold1
-        populations(t,2) = populations(t,2) + pophold2
+        populations(t,1) = populations(t,1) + pophold1*normw(i)
+        populations(t,2) = populations(t,2) + pophold2*normw(i)
         !write(6,*) 'at time', t, 'populations are', pop(bsetarr(i,t)%bs,1,ovrlp),pop(bsetarr(i,t)%bs,2,ovrlp)
         do j=i+1,nclones
-          call cross_terms(bsetarr(i,t)%bs,bsetarr(j,t)%bs, crossterm1,crossterm2,nbf)
+          call cross_terms(bsetarr(i,t)%bs,bsetarr(j,t)%bs, crossterm1,crossterm2,nbf,normw(i),normw(j))
           ctarray(t,1) = ctarray(t,1) + crossterm1
           ctarray(t,2) = ctarray(t,2) + crossterm2
         end do 
@@ -97,7 +97,13 @@ contains
       normpfs(10,t) = normpfs(10,t)/rescale
       normpfs(11,t) = normpfs(11,t)/rescale
       open(21061,file='popfromcc.out',access='append')
-      write(21061,*) populations(t,1),populations(t,2), ctarray(t,1), ctarray(t,2), rescale, normpfs(10,t), normpfs(11,t)
+      write(21061,*) '****************************************'
+      write(21061,*) 'time = ', t+tsstart
+      write(21061,*) 'populations 1&2 from clones, ', populations(t,1),populations(t,2)
+      write(21061,*) 'crossterms 1&2, ', ctarray(t,1), ctarray(t,2)
+      write(21061,*) 'rescaling factor, ', rescale
+      write(21061,*) 'rescaled populations, ', normpfs(10,t), normpfs(11,t)
+      write(21061,*) '*****************************************'
       close(21061)
       pops(t+tsstart+1,1) = pops(t+tsstart+1,1) + normpfs(10,t)
       pops(t+tsstart+1,2) = normpfs(11,t) + pops(t+tsstart+1,2)
@@ -120,9 +126,9 @@ contains
     
   end subroutine
 
-  subroutine cross_terms(bs1,bs2, crossterm1, crossterm2,nbf)
+  subroutine cross_terms(bs1,bs2, crossterm1, crossterm2,nbf,nw1,nw2)
     type(basisfn), dimension (:), intent(in):: bs1, bs2
-    real(kind=8), intent(inout) ::  crossterm1, crossterm2
+    real(kind=8), intent(inout) ::  crossterm1, crossterm2, nw1,nw2
     integer, intent(in) :: nbf
     integer :: j, k, ierr
     complex(kind=8), dimension(nbf,nbf) ::ovrlp12, ovrlp21
@@ -182,8 +188,8 @@ contains
       end do
     end do
 
-    crossterm1 = real(cpop11+cpop12) 
-    crossterm2 = real(cpop21+cpop22)
+    crossterm1 = sqrt(nw1*nw2)*real(cpop11+cpop12) 
+    crossterm2 = sqrt(nw1*nw2)*real(cpop21+cpop22)
 
     ! write(6,*) 'pops'
     ! print*,cpop11 

@@ -607,12 +607,13 @@ contains
   end subroutine cloning
 
 
-  subroutine v1cloning(bs,nbf,clone1,clone2)
+  subroutine v1cloning(bs,nbf,clone1,clone2,normw,h,p)
     implicit none 
 
     type(basisfn), dimension(:), allocatable, intent(inout) :: bs
     type(basisfn), dimension(:), intent(inout) ::clone1, clone2 
-    integer, intent(in) :: nbf
+    integer, intent(in) :: nbf, h, p
+    real(kind=8), dimension(:), intent(inout) :: normw
     integer :: nbfold, k, m, r, nbfnew, ierr, l, j, cloneload, i_seed, n
     INTEGER, DIMENSION(:), ALLOCATABLE :: a_seed, loc0
     INTEGER, DIMENSION(1:8) :: dt_seed
@@ -622,23 +623,13 @@ contains
     real(kind=8) :: normc1, normc2, normc0, choice
 
     
-    !error catchers 
-    if(errorflag==1) return
-    if (npes.ne.2) then
-      write(6,*) "Error. Cloning currently only valid for npes=2"
-      errorflag = 1
-      return
-    end if
+   
 
   
-    
 
-    ! need to clone the entire basis set 
  
     write(6,*) "Starting new V1 cloning subroutine"
-    if(ierr/=0) then 
-      write(0,'(a)') "error in allocating first MCEv1 cloning array"
-    end if
+   
     !manipulating the child amplitudes 
     do k=1, nbf
       do m=1, ndim
@@ -663,6 +654,8 @@ contains
       end do 
     end do 
     
+    write(6,*) bs(1)%z(1), clone1(1)%z(1), clone2(1)%z(1)
+
     bsovrlp = ovrlpmat(bs)
     bsnorm = norm(bs,bsovrlp)
     cloneovrlp = ovrlpmat(clone1)
@@ -671,24 +664,25 @@ contains
     clonenorm2 = norm(clone2,clone2ovrlp)
     normc1 = sqrt(clonenorm*dconjg(clonenorm))
     normc2 = sqrt(clonenorm2*dconjg(clonenorm2))
+    write(6,*) "basenorm = ", bsnorm
+    write(6,*) "clonenorm = ", clonenorm
+    write(6,*) "clonenorm2 = ", clonenorm2
+    normw(p) = normw(h) * clonenorm2
+    normw(h) = normw(h) * clonenorm
 
 
     do k=1, nbf
       clone1(k)%normweight = clone1(k)%normweight * normc1
       clone2(k)%normweight = clone2(k)%normweight * normc2
-      do n=1, 5
-        clone1(k)%carray(n) = bs(k)%carray(n)
-        clone2(k)%carray(n) = bs(k)%carray(n)
-        ! write(6,*) clone(k)%carray(n)
-      end do 
       do r=1, npes
-        clone2(k)%d_pes(r) = clone2(k)%d_pes(r)!/sqrt(clonenorm2)!exp(-i*clone(k)%s_pes(r)) ! clone 2 will be non zero only when not on the pes
-        clone1(k)%d_pes(r) = clone1(k)%d_pes(r)!/sqrt(clonenorm)!exp(-i*clone(k)%s_pes(r)) ! it's easier to set all the first child to the preclone value and change later 
+        clone2(k)%d_pes(r) = clone2(k)%d_pes(r)/sqrt(clonenorm2)!exp(-i*clone(k)%s_pes(r)) ! clone 2 will be non zero only when not on the pes
+        clone1(k)%d_pes(r) = clone1(k)%d_pes(r)/sqrt(clonenorm)!exp(-i*clone(k)%s_pes(r)) ! it's easier to set all the first child to the preclone value and change later 
         clone1(k)%a_pes(r) = clone1(k)%d_pes(r) * exp(i*clone1(k)%s_pes(r))
         clone2(k)%a_pes(r) = clone2(k)%d_pes(r) * exp(i*clone2(k)%s_pes(r))
       end do 
     end do 
 
+    
 
 
 
@@ -700,13 +694,10 @@ contains
     write(6,*) "basenorm = ", bsnorm
     write(6,*) "clonenorm new= ", clonenorm
     write(6,*) "clonenorm2 new= ", clonenorm2
-    ! call reloc_basis(clone, bs, x)
-    ! call reloc_basis(clone2, bs, x)
+  
     
 
-    
-    loc0 = minloc(bs(1)%carray)
-    write(6,*) loc0  
+   
     
 
    

@@ -15,7 +15,7 @@ SB={
     #Kondo Paramter
     'SBEkondo':'0.09d0',
     #wmax exponential cutoff
-    'SBEwmaxfact':'12.5d0',
+    'SBEwmaxfact':'5.0d0',
 
     #wc drude lorentz cutoff
     'SBDwc':'0.05d0',

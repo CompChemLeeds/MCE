@@ -148,7 +148,8 @@ Program MainMCE
   integer :: ierr, timestpunit, stepback, dum_in1, dum_in2, dum_in3, finbf, v1check,loop, e, l, nclones, p
   character(LEN=3):: rep
   integer :: clone_instance, range, g, a, b
-  type(basisfn), dimension(:), allocatable ::clone1, clone2 
+  type(basisfn), dimension(:), allocatable ::clone1, clone2
+  real(kind=8), dimension(:), allocatable :: normw
   real, dimension(:,:), allocatable :: populations, ctarray, normpfs
   real(kind=8) ::  crossterm1, crossterm2
 
@@ -256,18 +257,18 @@ Program MainMCE
     end if 
     allocate(cloneblock(num_events+1))
     allocate(timeblock(num_events+1))
+    allocate(normw(2**num_events))
     do n =1, size(cloneblock)-1
         cloneblock(n) = n*clonefreq
         timeblock(n) = dtinit*cloneblock(n)
     end do
+
     cloneblock(num_events+1) = tnum-2
     timeblock(num_events+1) =dtinit*cloneblock(num_events+1)
     two_to_num_events=int(2**num_events)
     call allocbs_alt(bsetarr,two_to_num_events,clonefreq,in_nbf) !allocate(bsetarr(2**num_events,clonefreq))
   end if
-  write(6,*) cloneblock
-  write(6,*) timeblock
-  
+
 
   
 
@@ -286,7 +287,7 @@ Program MainMCE
   !$omp                    reps, ierr, timestpunit, stepback, dum_in1, dum_in2,     &
   !$omp                    finbf, dum_in3, dum_re1, dum_re2, rep, genloc, h,        &
   !$omp                    nclones, clone1, clone2, populations, ctarray, normpfs,  &
-  !$omp                    range, rescale, i, p, g, clonememflg, e                  )
+  !$omp                    range, rescale, i, p, g, clonememflg, e, normw           )
 
   !$omp do reduction (+:acf_t, extra, pops, absnorm, absnorm2, absehr)
 
@@ -306,6 +307,7 @@ Program MainMCE
     trspace = trainsp
     hc=0.d0
     clonememflg=0
+    normw=1.0d0
     
     ! allocate(bsetarr(2**num_events,tnum-2))
     ! write(6,*) 'bset array is size', size(bsetarr)
@@ -634,10 +636,12 @@ Program MainMCE
                 write(6,*) 'cloneblock hit for repeat', reps
                 if (clonememflg==0) then
                   write(6,*) 'and its the first time for repeat', reps 
+                  write(6,*) normw
                   !$omp critical
-                  call v1cloning(bset,nbf,bsetarr(1,1)%bs,bsetarr(2,1)%bs)
+                  call v1cloning(bset,nbf,bsetarr(1,1)%bs,bsetarr(2,1)%bs,normw,1,2)
                   !$omp end critical 
                   call bstransfer(bset,bsetarr(1,1)%bs,nbf,npes)
+                  write(6,*) normw
                   nclones = 2 
                   clonememflg = 1 
                   e=e+1
@@ -653,11 +657,11 @@ Program MainMCE
                   end do 
                   write(6,*) 'condensing clones for rep', reps
                   call clone_condense(bsetarr,dt,cloneblock(e-1),cloneblock(e),reps,nclones,nbf,&
-                                    absnorm,acf_t,extra,absehr,pops,mup,muq)
+                                    absnorm,acf_t,extra,absehr,pops,mup,muq,normw)
                   if (cloneblock(e).ne.(tnum-2)) then 
                     p=nclones+1
                     do n=1,nclones
-                      call v1cloning(bsetarr(n,clonefreq)%bs,nbf,bsetarr(n,1)%bs,bsetarr(p,1)%bs)
+                      call v1cloning(bsetarr(n,clonefreq)%bs,nbf,bsetarr(n,1)%bs,bsetarr(p,1)%bs,normw,n,p)
                       p=p+1
                     end do
                     call bstransfer(bset,bsetarr(1,1)%bs,nbf,npes) 

@@ -3,7 +3,7 @@
 #!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
 # Propagation method [can be CCS, MCEv1, MCEv2, or MCE12 (uses both MCE methods)]
-method='MCEv1'
+method='MCEv2'
 
 # Flag for adaptive altering of the compression parameter in 
 # swarms/grid-swarms/train-swarms or the grid spacing for grids. [YES/NO]
@@ -36,10 +36,10 @@ systems={
 
 parameters={
     # Number of dimensions
-    'ndim':50,
+    'ndim':5,
 
     # Number of basis functions 
-    'in_nbf':200,
+    'in_nbf':5,
 
     # Random Number generation function (ZBQL - using ZBQLNOR subroutine, GAUS - using function based on numerical recipes)
     'randfunc':'ZBQL',
@@ -68,7 +68,7 @@ Train={
 
 clone={
     # Flag for cloning basis functions (yes/no/blind/blind+/QSC/v1)
-    'Cloning':'V1',
+    'Cloning':'no',
 
     # Cloning threshold (value of |sum_r(a_{r,k})|) - must be >= 0.05 and < 0.25, default 0.249
     'Threshold':'0.249d0',

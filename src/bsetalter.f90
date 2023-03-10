@@ -607,13 +607,12 @@ contains
   end subroutine cloning
 
 
-  subroutine v1cloning(bs,nbf,clone1,clone2,normw,h,p)
+  subroutine v1cloning(bs,nbf,clone1,clone2)
     implicit none 
 
     type(basisfn), dimension(:), allocatable, intent(inout) :: bs
     type(basisfn), dimension(:), intent(inout) ::clone1, clone2 
-    integer, intent(in) :: nbf, h, p
-    real(kind=8), dimension(:), intent(inout) :: normw
+    integer, intent(in) :: nbf
     integer :: nbfold, k, m, r, nbfnew, ierr, l, j, cloneload, i_seed, n
     INTEGER, DIMENSION(:), ALLOCATABLE :: a_seed, loc0
     INTEGER, DIMENSION(1:8) :: dt_seed
@@ -654,7 +653,6 @@ contains
       end do 
     end do 
     
-    write(6,*) bs(1)%z(1), clone1(1)%z(1), clone2(1)%z(1)
 
     bsovrlp = ovrlpmat(bs)
     bsnorm = norm(bs,bsovrlp)
@@ -667,41 +665,19 @@ contains
     write(6,*) "basenorm = ", bsnorm
     write(6,*) "clonenorm = ", clonenorm
     write(6,*) "clonenorm2 = ", clonenorm2
-    normw(p) = normw(h) * clonenorm2
-    normw(h) = normw(h) * clonenorm
+
 
 
     do k=1, nbf
       clone1(k)%normweight = clone1(k)%normweight * normc1
       clone2(k)%normweight = clone2(k)%normweight * normc2
       do r=1, npes
-        clone2(k)%d_pes(r) = clone2(k)%d_pes(r)/sqrt(clonenorm2)!exp(-i*clone(k)%s_pes(r)) ! clone 2 will be non zero only when not on the pes
-        clone1(k)%d_pes(r) = clone1(k)%d_pes(r)/sqrt(clonenorm)!exp(-i*clone(k)%s_pes(r)) ! it's easier to set all the first child to the preclone value and change later 
+        clone2(k)%d_pes(r) = clone2(k)%d_pes(r)!/sqrt(clonenorm2)!exp(-i*clone(k)%s_pes(r)) ! clone 2 will be non zero only when not on the pes
+        clone1(k)%d_pes(r) = clone1(k)%d_pes(r)!/sqrt(clonenorm)!exp(-i*clone(k)%s_pes(r)) ! it's easier to set all the first child to the preclone value and change later 
         clone1(k)%a_pes(r) = clone1(k)%d_pes(r) * exp(i*clone1(k)%s_pes(r))
         clone2(k)%a_pes(r) = clone2(k)%d_pes(r) * exp(i*clone2(k)%s_pes(r))
       end do 
-    end do 
-
-    
-
-
-
-
-    cloneovrlp = ovrlpmat(clone1)
-    clone2ovrlp = ovrlpmat(clone2)
-    clonenorm = norm(clone1,cloneovrlp)
-    clonenorm2 = norm(clone2,clone2ovrlp)
-    write(6,*) "basenorm = ", bsnorm
-    write(6,*) "clonenorm new= ", clonenorm
-    write(6,*) "clonenorm2 new= ", clonenorm2
-  
-    
-
-   
-    
-
-   
-  
+    end do  
       
   end subroutine v1cloning
 
@@ -732,6 +708,40 @@ contains
 
 
   end subroutine bstransfer
+
+  subroutine Renorm_clones(bs, PES, nbf)
+    ! inputted variables
+    type(basisfn), dimension(:),  allocatable, intent(inout):: bs
+    integer, intent(in) :: PES, nbf
+
+    ! internal variables
+    complex(kind=8), dimension(size(bs),size(bs)):: bsovrlp
+    complex(kind=8) :: bsnorm
+    integer :: not_PES
+
+    ! counters
+    integer :: k,r
+
+    if (PES==1) then
+      not_pes = 2
+    else if (PES==2) then
+      not_PES = 1
+    end if
+
+
+    do k=1,nbf
+      bs(k)%d_pes(not_PES) = 0.0d0
+      bs(k)%a_pes(not_PES) = 0.0d0
+    end do 
+    bsovrlp = ovrlpmat(bs)
+    bsnorm = norm(bs,bsovrlp)
+    do k = 1, nbf 
+      bs(k)%d_pes(PES) = bs(k)%d_pes(PES)/sqrt(bsnorm)
+      bs(k)%a_pes(PES) = bs(k)%d_pes(PES)*exp(i*bs(k)%s_pes(PES))
+    end do 
+  
+  end subroutine Renorm_clones
+
 
 !***********************************************************************************!
 end module bsetalter

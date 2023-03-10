@@ -135,7 +135,7 @@ Program MainMCE
   !Private variables
   type(basisfn), dimension (:), allocatable :: bset
   type(basisfn), dimension (:), allocatable :: dummybs
-  type(basisset), dimension (:,:), allocatable :: bsetarr
+  type(basisset), dimension (:), allocatable :: bsetarr
   type(basisset):: testset
   complex(kind=8), dimension (:,:), allocatable :: initgrid, ovrlp
   complex(kind=8)::normtemp, norm2temp, ehren, acft, extmp
@@ -149,7 +149,6 @@ Program MainMCE
   character(LEN=3):: rep
   integer :: clone_instance, range, g, a, b
   type(basisfn), dimension(:), allocatable ::clone1, clone2
-  real(kind=8), dimension(:), allocatable :: normw
   real, dimension(:,:), allocatable :: populations, ctarray, normpfs
   real(kind=8) ::  crossterm1, crossterm2
 
@@ -257,7 +256,6 @@ Program MainMCE
     end if 
     allocate(cloneblock(num_events+1))
     allocate(timeblock(num_events+1))
-    allocate(normw(2**num_events))
     do n =1, size(cloneblock)-1
         cloneblock(n) = n*clonefreq
         timeblock(n) = dtinit*cloneblock(n)
@@ -266,7 +264,7 @@ Program MainMCE
     cloneblock(num_events+1) = tnum-2
     timeblock(num_events+1) =dtinit*cloneblock(num_events+1)
     two_to_num_events=int(2**num_events)
-    call allocbs_alt(bsetarr,two_to_num_events,clonefreq,in_nbf) !allocate(bsetarr(2**num_events,clonefreq))
+    call allocbs_alt(bsetarr,two_to_num_events,in_nbf) !allocate(bsetarr(2**num_events,clonefreq))
   end if
 
 
@@ -287,7 +285,7 @@ Program MainMCE
   !$omp                    reps, ierr, timestpunit, stepback, dum_in1, dum_in2,     &
   !$omp                    finbf, dum_in3, dum_re1, dum_re2, rep, genloc, h,        &
   !$omp                    nclones, clone1, clone2, populations, ctarray, normpfs,  &
-  !$omp                    range, rescale, i, p, g, clonememflg, e, normw           )
+  !$omp                    range, rescale, i, p, g, clonememflg, e                  )
 
   !$omp do reduction (+:acf_t, extra, pops, absnorm, absnorm2, absehr)
 
@@ -307,10 +305,8 @@ Program MainMCE
     trspace = trainsp
     hc=0.d0
     clonememflg=0
-    normw=1.0d0
     
-    ! allocate(bsetarr(2**num_events,tnum-2))
-    ! write(6,*) 'bset array is size', size(bsetarr)
+    
     e=1
     
 
@@ -607,71 +603,54 @@ Program MainMCE
           
 
           if (cloneflg=="V1") then 
-            call propstep (bset, dt, dtnext, dtdone, time, genflg, timestrt_loc,x,reps)     ! This subroutine takes a single timestep
+            if (clonememflg==0) then ! main loop for if cloning has happened
+              call propstep (bset, dt, dtnext, dtdone, time, genflg, timestrt_loc,x,reps)     ! Takes a single timestep
 
-            if (dtdone.eq.dt) then   ! nsame and nchange are used to keep track of changes to the stepsize.
-              !$omp atomic           !atomic parameter used to ensure two threads do not write to the same
-              nsame = nsame + 1      !memory address simultaneously as these counts are taken over all repeats.
-            else
-              !$omp atomic
-              nchange = nchange + 1
-            end if
-            
-            if (abs(time+dtdone-timeend_loc).le.1.0d-10) then   ! if time is close enough to end time, set as end time
-              time=timeend_loc
-            else
-              time = time + dtdone                         ! increment time
-            end if
-            dt = dtnext      ! dtnext is set by the adaptive step size system. If static, dtnext = dt already
-
-            if (clonememflg==0) then
+              if (dtdone.eq.dt) then   ! nsame and nchange are used to keep track of changes to the stepsize.
+                !$omp atomic           !atomic parameter used to ensure two threads do not write to the same
+                nsame = nsame + 1      !memory address simultaneously as these counts are taken over all repeats.
+              else
+                !$omp atomic
+                nchange = nchange + 1
+              end if
+              if (abs(time+dtdone-timeend_loc).le.1.0d-10) then   ! if time is close enough to end time, set as end time
+                time=timeend_loc
+              else
+                time = time + dtdone                         ! increment time
+              end if
+              dt = dtnext      ! dtnext is set by the adaptive step size system. If static, dtnext = dt already
               call postprop(bset,nbf,x,y,reps,muq,mup,time,popt,pops,timestrt_loc,timeend_loc,dt,absehr, &
                  absnorm,absnorm2,acf_t,extra,clonememflg)
+            
             else if (clonememflg==1) then
-              call bstransfer(bsetarr(1,x-cloneblock(e-1))%bs,bset,nbf,npes)
+              do j=1,nclones
+                call propstep (bsetarr(j)%bs, dt, dtnext, dtdone, time, genflg, timestrt_loc,x,reps)
+              end do
+              if (abs(time+dtdone-timeend_loc).le.1.0d-10) then   ! if time is close enough to end time, set as end time
+                time=timeend_loc
+              else
+                time = time + dtdone                         ! increment time
+              end if
+
+              call alt_clone_condense(bsetarr,dt,x,reps,nclones,nbf,absnorm,acf_t,extra,absehr,pops,mup,muq,time)
             end if
 
-            if (cloneflg=='V1') then 
-              if (x==cloneblock(e)) then
-                write(6,*) 'cloneblock hit for repeat', reps
-                if (clonememflg==0) then
-                  write(6,*) 'and its the first time for repeat', reps 
-                  write(6,*) normw
+  
+            if (x==cloneblock(e)) then
+              write(6,*) 'cloneblock hit for repeat', reps
+              if (cloneblock(e).ne.(tnum-2)) then 
+                p = nclones+1
+                do j=1,nclones
                   !$omp critical
-                  call v1cloning(bset,nbf,bsetarr(1,1)%bs,bsetarr(2,1)%bs,normw,1,2)
+                  call v1cloning(bset,nbf,bsetarr(j)%bs,bsetarr(p)%bs)
                   !$omp end critical 
-                  call bstransfer(bset,bsetarr(1,1)%bs,nbf,npes)
-                  write(6,*) normw
-                  nclones = 2 
-                  clonememflg = 1 
-                  e=e+1
-                else 
-                  range = cloneblock(e)-cloneblock(e-1)
-                  do j=2,nclones
-                    call bstransfer(bset,bsetarr(j,1)%bs,nbf,npes)
-                    time = timeblock(e)
-                    do l = cloneblock(e-1)+1, cloneblock(e)
-                      call propstep(bset, dt, dtnext, dtdone, time, genflg, timestrt_loc,l,reps)
-                      call bstransfer(bsetarr(j,l-cloneblock(e-1))%bs,bset,nbf,npes)
-                    end do 
-                  end do 
-                  write(6,*) 'condensing clones for rep', reps
-                  call clone_condense(bsetarr,dt,cloneblock(e-1),cloneblock(e),reps,nclones,nbf,&
-                                    absnorm,acf_t,extra,absehr,pops,mup,muq,normw)
-                  if (cloneblock(e).ne.(tnum-2)) then 
-                    p=nclones+1
-                    do n=1,nclones
-                      call v1cloning(bsetarr(n,clonefreq)%bs,nbf,bsetarr(n,1)%bs,bsetarr(p,1)%bs,normw,n,p)
-                      p=p+1
-                    end do
-                    call bstransfer(bset,bsetarr(1,1)%bs,nbf,npes) 
-                    time =timeblock(e)
-                    nclones= nclones*2
-                    e=e+1
-                  end if
-                end if
+                  p = p+1
+                end do 
+                nclones = nclones*2
+                clonememflg = 1 
+                e=e+1
               end if
-            end if  
+            end if
           end if
           if (cloneflg.ne."V1") then
 

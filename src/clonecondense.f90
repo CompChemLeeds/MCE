@@ -76,7 +76,7 @@ contains
         populations(t,2) = populations(t,2) + pophold2*normw(i)
         !write(6,*) 'at time', t, 'populations are', pop(bsetarr(i,t)%bs,1,ovrlp),pop(bsetarr(i,t)%bs,2,ovrlp)
         do j=i+1,nclones
-          call cross_terms(bsetarr(i,t)%bs,bsetarr(j,t)%bs, crossterm1,crossterm2,nbf,normw(i),normw(j))
+          call cross_terms(bsetarr(i,t)%bs,bsetarr(j,t)%bs, crossterm1,crossterm2,nbf)
           ctarray(t,1) = ctarray(t,1) + crossterm1
           ctarray(t,2) = ctarray(t,2) + crossterm2
         end do 
@@ -126,28 +126,137 @@ contains
     
   end subroutine
 
-  subroutine cross_terms(bs1,bs2, crossterm1, crossterm2,nbf,nw1,nw2)
+  subroutine alt_clone_condense(bsetarr,dt,t,reps,nclones,nbf,absnorm,acf_t,extra,absehr,pops,mup,muq,time)
+    implicit none
+
+    type(basisset), dimension(:), intent(inout) :: bsetarr
+    real(kind=8), dimension(:), intent(inout)  :: absnorm, absehr
+    complex(kind=8), dimension (:), intent(inout):: acf_t, extra
+    real(kind=8), dimension (:,:), intent(inout) :: pops
+    integer(kind=4), intent(inout) :: t
+    real(kind=8), intent(inout) :: time
+
+    real(kind=8), dimension(:), allocatable :: populations, ctarray, normpfs
+    real(kind=8) :: pophold1, pophold2, ehrtmp
+    integer(kind=4), intent(in):: nclones, reps, nbf
+    real(kind=8), dimension(:), intent(inout) :: mup,muq
+    real(kind=8)::crossterm1, crossterm2, rescale, nrmtmp
+    real(kind=8), intent(in):: dt
+    integer:: h, f, i, e, j, n
+    complex(kind=8), dimension(:,:), allocatable :: ovrlp
+    character(LEN=4):: rep
+    complex(kind=8)::normtemp,acft, ehren, extmp 
+    
+    ! need to have a do loop for each time a bset is passed between the array and an actionable basis set.?????
+
+    ! Defining value of varibles
+    crossterm1 = 0
+    crossterm2 = 0
+    
+    allocate(normpfs(13))
+    allocate(populations(2))
+    allocate(ctarray(2))
+    allocate(ovrlp(nbf,nbf))  
+    ovrlp = 0.0
+    populations = 0.0
+    ctarray = 0.0
+    normpfs = 0.0
+    
+
+
+    ehren = (0.0d0,0.0d0)
+    do i=1, nclones
+      ovrlp=ovrlpmat(bsetarr(i)%bs)
+      pophold1 = pop(bsetarr(i)%bs,1,ovrlp)
+      pophold2 = pop(bsetarr(i)%bs,2,ovrlp)
+      normtemp = norm(bsetarr(i)%bs,ovrlp)
+      acft = acf(bsetarr(i)%bs,mup,muq)
+      acf_t(t+1) = acf_t(t+1) + acft
+      call extras(extmp, bsetarr(i)%bs)
+      extra(t+1) = extra(t+1) + extmp
+      do j = 1,nbf
+        ehren = ehren + HEhr(bsetarr(i)%bs(j), time, reps)
+      end do
+      ehrtmp = abs(ehren)
+      absehr(t+1) = absehr(t) + ehrtmp
+      nrmtmp = 1/nclones !sqrt(dble(normtemp*dconjg(normtemp)))
+      absnorm(t+1) = absnorm(t+1) + nrmtmp
+      populations(1) = populations(1) + pophold1
+      populations(2) = populations(2) + pophold2
+      !write(6,*) 'at time', t, 'populations are', pop(bsetarr(i,t)%bs,1,ovrlp),pop(bsetarr(i,t)%bs,2,ovrlp)
+      do j=i+1,nclones
+        call cross_terms(bsetarr(i)%bs,bsetarr(j)%bs, crossterm1,crossterm2,nbf)
+        ctarray(1) = ctarray(1) + crossterm1
+        ctarray(2) = ctarray(2) + crossterm2
+      end do 
+    end do   
+      
+    normpfs(1) = time
+    normpfs(2) = 1
+    normpfs(3) = dble(acf_t(t+1))
+    normpfs(4) = dimag(acf_t(t+1))
+    normpfs(5) = abs(acf_t(t+1))
+    normpfs(6) = dble(extra(t+1)) 
+    normpfs(7) = dimag(extra(t+1))
+    normpfs(8) = abs(extra(t+1))
+    normpfs(9) = absehr(t+1)
+    normpfs(10) = populations(1) + ctarray(1)
+    normpfs(11) = populations(2) + ctarray(2)
+    rescale = normpfs(10) + normpfs(11)
+    normpfs(10) = normpfs(10)/rescale
+    normpfs(11) = normpfs(11)/rescale 
+    open(21061,file='popfromcc-new.out',access='append')
+    
+    write(21061,*) '****************************************'
+    write(21061,*) 'time = ', t, time
+    write(21061,*) 'populations 1&2 from clones, ', populations(1),populations(2)
+    write(21061,*) 'crossterms 1&2, ', ctarray(1), ctarray(2)
+    write(21061,*) 'rescaling factor, ', rescale
+    write(21061,*) 'rescaled populations, ', normpfs(10), normpfs(11)
+    write(21061,*) '*****************************************'
+    close(21061)
+    pops(t+1,1) = pops(t+1,1) + normpfs(10)
+    pops(t+1,2) = normpfs(11) + pops(t+1,2)
+    normpfs(12) = normpfs(10) + normpfs(11)
+    normpfs(13) = normpfs(10) - normpfs(11)
+  
+      
+    normpfs(2) = 1
+    
+    ! Now to put that the population matrix into a collated output file.
+    write(rep,"(i4.4)") reps
+    open(11204, file = "normpop-"//trim(rep)//".out",access='append')
+    write (11204,"(13(1x,es16.8e3))") normpfs(:)
+  
+    close(11204)
+
+
+    
+    
+  end subroutine
+
+  
+  subroutine cross_terms(bs1,bs2, crossterm1, crossterm2,nbf)
     type(basisfn), dimension (:), intent(in):: bs1, bs2
-    real(kind=8), intent(inout) ::  crossterm1, crossterm2, nw1,nw2
+    real(kind=8), intent(inout) ::  crossterm1, crossterm2
     integer, intent(in) :: nbf
     integer :: j, k, ierr
     complex(kind=8), dimension(nbf,nbf) ::ovrlp12, ovrlp21
     complex(kind=8) :: sumamps1, sumamps2, ovrlp1, ovrlp2, cpop11, cpop12, cpop21,cpop22
+    complex(kind=8) :: hold1,hold2,hold3,hold4
     
-
-
 
     sumamps1 = (0.0d0, 0.0d0)
     sumamps2 = (0.0d0, 0.0d0)
     crossterm1 = 0
     crossterm2 = 0
     ovrlp1 = (0.0d0,0.0d0)
-    ovrlp2 = (0.d0,0.0d0)
-    cpop11 = (0.d0,0.0d0)
-    cpop12 = (0.d0,0.0d0)
-    cpop21 = (0.d0,0.0d0)
-    cpop22 = (0.d0,0.0d0)
-  
+    ovrlp2 = (0.0d0,0.0d0)
+    cpop11 = (0.0d0,0.0d0)
+    cpop12 = (0.0d0,0.0d0)
+    cpop21 = (0.0d0,0.0d0)
+    cpop22 = (0.0d0,0.0d0)
+
     !Calculating the overlap between the basis sets and summing over amplitudes
     
     ovrlp12 = ovrlpmatcross(bs1,bs2)
@@ -157,40 +266,31 @@ contains
 
     do k=1,nbf
       do j=1,nbf
-        cpop11 = cpop11 + dconjg(bs1(j)%D_big) * ovrlp12(j,k) * bs2(k)%D_big &
-                * dconjg(bs1(j)%d_pes(1)) * bs2(k)%d_pes(1) &
-                * cdexp(i*(bs1(k)%s_pes(1)-bs2(j)%s_pes(1)))
+        cpop11 = cpop11 + ovrlp12(j,k) * dconjg(bs1(j)%a_pes(1)) * bs2(k)%a_pes(1) 
       end do
     end do
     do k=1,nbf
       do j=1,nbf
-        cpop12 = cpop12 + dconjg(bs2(j)%D_big) * ovrlp21(j,k) * bs1(k)%D_big &
-                * dconjg(bs2(j)%d_pes(1)) * bs1(k)%d_pes(1) &
-                * cdexp(i*(bs2(k)%s_pes(1)-bs1(j)%s_pes(1)))
-       
+        cpop12 = cpop12 + ovrlp21(j,k) * dconjg(bs2(j)%a_pes(1)) * bs1(k)%a_pes(1)        
       end do
     end do
     do k=1,nbf
       do j=1,nbf
-        cpop21 = cpop21 + dconjg(bs1(j)%D_big) * ovrlp12(j,k) * bs2(k)%D_big &
-                * dconjg(bs1(j)%d_pes(2)) * bs2(k)%d_pes(2) &
-                * cdexp(i*(bs1(k)%s_pes(2)-bs2(j)%s_pes(2)))
-
+        cpop21 = cpop21 + ovrlp12(j,k) * dconjg(bs1(j)%a_pes(2))*bs2(k)%a_pes(2)
       end do
     end do
 
     do k=1,nbf
       do j=1,nbf
-        cpop22 = cpop22 + dconjg(bs2(j)%D_big) * ovrlp21(j,k) * bs1(k)%D_big &
-                * dconjg(bs2(j)%d_pes(2)) * bs1(k)%d_pes(2) &
-                * cdexp(i*(bs2(k)%s_pes(2)-bs1(j)%s_pes(2)))
-
+        cpop22 = cpop22 + ovrlp21(j,k) * dconjg(bs2(j)%a_pes(2)) * bs1(k)%a_pes(2) 
       end do
     end do
 
-    crossterm1 = sqrt(nw1*nw2)*real(cpop11+cpop12) 
-    crossterm2 = sqrt(nw1*nw2)*real(cpop21+cpop22)
+   
 
+    crossterm1 = real(cpop11+cpop12) 
+    crossterm2 = real(cpop21+cpop22)
+  
     ! write(6,*) 'pops'
     ! print*,cpop11 
     ! print*,cpop12

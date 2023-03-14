@@ -619,7 +619,7 @@ contains
     real(kind=8) :: brforce, normar, sumamps, trackav
     complex(kind=8), dimension(size(bs),size(bs))::cloneovrlp, clone2ovrlp, bsovrlp
     complex(kind=8) :: clonenorm, clonenorm2, asum1, asum2, bsnorm
-    real(kind=8) :: normc1, normc2, normc0, choice
+    real(kind=8) :: normc1, normc2, normc0, choice, pophold1, pophold2
 
     
    
@@ -628,41 +628,47 @@ contains
 
  
     write(6,*) "Starting new V1 cloning subroutine"
-   
+    bsovrlp = ovrlpmat(bs)
+    bsnorm = norm(bs,bsovrlp)
+    pophold1 = pop(bs,1,bsovrlp)
+    pophold2 = pop(bs,2,bsovrlp)
+    write(6,*) "basenorm1 = ", bsnorm, pophold1,pophold2
     !manipulating the child amplitudes 
     do k=1, nbf
       do m=1, ndim
         clone1(k)%z(m) = bs(k)%z(m)
         clone2(k)%z(m) = bs(k)%z(m)
       end do
-      clone1(k)%D_big = (1.0d0,0.00) ! the prefactor doesn't change through cloning 
+  
       clone2(k)%D_big = (1.0d0,0.00)
-      clone1(k)%d_pes(in_pes) = bs(k)%d_pes(in_pes) ! it's easier to set all the first child to the preclone value and change later 
-      clone2(k)%d_pes(in_pes) = (0.0d0,0.0d0) 
-      clone1(k)%normweight = bs(k)%normweight !normweight needs to be equal for both clones as it's 
-      clone2(k)%normweight = bs(k)%normweight
-      do r=1, npes
-        if(r.ne.in_pes) then ! should only happen once for a system with 2PES
-          clone1(k)%d_pes(r) = (0.0d0,0.0d0)
-          clone2(k)%d_pes(r) = bs(k)%d_pes(r) 
-        end if 
-        clone1(k)%s_pes(r) = bs(k)%s_pes(r) 
-        clone1(k)%a_pes(r) = clone1(k)%d_pes(r) * exp(i*clone1(k)%s_pes(r)) 
-        clone2(k)%s_pes(r) = bs(k)%s_pes(r)
-        clone2(k)%a_pes(r) = clone2(k)%d_pes(r) * exp(i*clone2(k)%s_pes(r))
-      end do 
+      clone2(k)%d_pes(1) = (0.0d0,0.0d0) 
+      clone2(k)%d_pes(2) = bs(k)%d_pes(2) 
+      clone2(k)%s_pes(1) = bs(k)%s_pes(1)
+      clone2(k)%s_pes(2) = bs(k)%s_pes(2)
+      clone2(k)%a_pes(1) = clone2(k)%d_pes(1) * exp(i*clone2(k)%s_pes(1))
+      clone2(k)%a_pes(2) = clone2(k)%d_pes(2) * exp(i*clone2(k)%s_pes(2))
+
+      clone1(k)%D_big = (1.0d0,0.00)
+      clone1(k)%d_pes(1) = bs(k)%d_pes(1) ! it's easier to set all the first child to the preclone value and change later 
+      clone1(k)%d_pes(2) = (0.0d0,0.0d0)
+      clone1(k)%s_pes(1) = bs(k)%s_pes(1)
+      clone1(k)%s_pes(2) = bs(k)%s_pes(2)
+      clone1(k)%a_pes(1) = clone1(k)%d_pes(1) * exp(i*clone1(k)%s_pes(1)) 
+      clone1(k)%a_pes(2) = clone1(k)%d_pes(2) * exp(i*clone1(k)%s_pes(2)) 
     end do 
     
 
     bsovrlp = ovrlpmat(bs)
     bsnorm = norm(bs,bsovrlp)
+    pophold1 = pop(bs,1,bsovrlp)
+    pophold2 = pop(bs,2,bsovrlp)
     cloneovrlp = ovrlpmat(clone1)
     clone2ovrlp = ovrlpmat(clone2)
     clonenorm = norm(clone1,cloneovrlp)
     clonenorm2 = norm(clone2,clone2ovrlp)
     normc1 = sqrt(clonenorm*dconjg(clonenorm))
     normc2 = sqrt(clonenorm2*dconjg(clonenorm2))
-    write(6,*) "basenorm = ", bsnorm
+    write(6,*) "basenorm2 = ", bsnorm, pophold1,pophold2
     write(6,*) "clonenorm = ", clonenorm
     write(6,*) "clonenorm2 = ", clonenorm2
 
@@ -681,27 +687,29 @@ contains
       
   end subroutine v1cloning
 
-  subroutine bstransfer(bsnew,bsold,nbf,npes)
+  subroutine bstransfer(bsnew,bsold,nbf)
     implicit none
 
     type(basisfn), dimension(:), allocatable, intent(inout) :: bsnew,bsold
-    integer, intent(in) :: nbf, npes
+    integer, intent(in) :: nbf
     integer :: k, m, r
 
 
 
     do k=1, nbf
       do m=1, ndim
+        write(6,*) m
         bsnew(k)%z(m) = bsold(k)%z(m)
       end do
       bsnew(k)%D_big = (1.0d0,0.00) ! the prefactor doesn't change through cloning 
-      bsnew(k)%normweight = bsold(k)%normweight !normweight needs to be equal for both clones as it's 
+      bsnew(k)%normweight = bsold(k)%normweight  
       bsnew(k)%normweight = bsold(k)%normweight
       do r=1, npes
         bsnew(k)%d_pes(r) = bsold(k)%d_pes(r) 
         bsnew(k)%s_pes(r) = bsold(k)%s_pes(r) 
-        bsnew(k)%a_pes(r) = bsnew(k)%d_pes(r) * exp(i*bsnew(k)%s_pes(r)) 
+        bsnew(k)%a_pes(r) = bsold(k)%a_pes(r)
       end do 
+
     end do 
 
 

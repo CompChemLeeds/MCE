@@ -137,7 +137,7 @@ Program MainMCE
   type(basisfn), dimension (:), allocatable :: dummybs
   type(basisset), dimension (:), allocatable :: bsetarr
   type(basisset):: testset
-  complex(kind=8), dimension (:,:), allocatable :: initgrid, ovrlp
+  complex(kind=8), dimension (:,:), allocatable :: initgrid, ovrlp,ovrlphold
   complex(kind=8)::normtemp, norm2temp, ehren, acft, extmp
   real(kind=8), dimension(:), allocatable :: mup, muq, popt, timeblock
   real(kind=8) :: nrmtmp, nrm2tmp, ehrtmp, gridsp, timestrt_loc
@@ -242,10 +242,10 @@ Program MainMCE
   genflg=0
   clonememflg=0
   nbfv1 = in_nbf
-
   resnum=0
   h=1
   ovrlpout=100
+ 
   if (cloneflg=='V1') then
     if (mod(tnum-2,clonefreq).eq.0) then
       num_events = int((tnum-2)/clonefreq - 1) 
@@ -285,7 +285,7 @@ Program MainMCE
   !$omp                    reps, ierr, timestpunit, stepback, dum_in1, dum_in2,     &
   !$omp                    finbf, dum_in3, dum_re1, dum_re2, rep, genloc, h,        &
   !$omp                    nclones, clone1, clone2, populations, ctarray, normpfs,  &
-  !$omp                    range, rescale, i, p, g, clonememflg, e                  )
+  !$omp                    range, rescale, i, p, g, clonememflg, e, ovrlphold       )
 
   !$omp do reduction (+:acf_t, extra, pops, absnorm, absnorm2, absehr)
 
@@ -305,7 +305,7 @@ Program MainMCE
     trspace = trainsp
     hc=0.d0
     clonememflg=0
-    
+    nclones =1
     
     e=1
     
@@ -631,24 +631,48 @@ Program MainMCE
               else
                 time = time + dtdone                         ! increment time
               end if
-
+              allocate(ovrlphold(size(bset),size(bset)))
+              open(21063,file='clonetraker.out',access='append')
+              write(21063,*) '****************************************'
+              write(21063,*) 'time = ', time, x
+              do j =1, nclones
+                ovrlphold=ovrlpmat(bsetarr(j)%bs)
+                normtemp = norm(bsetarr(j)%bs,ovrlphold)
+                pophold1 = pop(bsetarr(j)%bs,1,ovrlphold)
+                pophold2 = pop(bsetarr(j)%bs,2,ovrlphold)
+                write(21063,*) ' For CLONE ', j 
+                write(21063,*) 
+                write(21063,*) ' populations are, ', pophold1, pophold2
+                write(21063,*) 'norm is, ', normtemp
+                write(21063,*) 
+              end do 
+              write(21063,*) '****************************************'
+              close(21063)
+              deallocate(ovrlphold)
               call alt_clone_condense(bsetarr,dt,x,reps,nclones,nbf,absnorm,acf_t,extra,absehr,pops,mup,muq,time)
             end if
 
   
             if (x==cloneblock(e)) then
               write(6,*) 'cloneblock hit for repeat', reps
-              if (cloneblock(e).ne.(tnum-2)) then 
-                p = nclones+1
-                do j=1,nclones
-                  !$omp critical
-                  call v1cloning(bset,nbf,bsetarr(j)%bs,bsetarr(p)%bs)
-                  !$omp end critical 
-                  p = p+1
-                end do 
-                nclones = nclones*2
+              if (clonememflg==0) then
+                call v1cloning(bset,nbf,bsetarr(1)%bs,bsetarr(2)%bs)
                 clonememflg = 1 
+                nclones = 2
                 e=e+1
+              else
+                if (cloneblock(e).ne.(tnum-2)) then 
+                  p = nclones+1
+                  do j=1,nclones
+                    write(6,*) 'here j =, ', j, 'and p =, ', p
+                    !$omp critical
+                    call v1cloning(bsetarr(j)%bs,nbf,bsetarr(j)%bs,bsetarr(p)%bs)
+                    !$omp end critical 
+                    p = p+1
+                  end do 
+                  nclones = nclones*2
+                  e=e+1
+                end if
               end if
             end if
           end if

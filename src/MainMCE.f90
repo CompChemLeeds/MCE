@@ -656,23 +656,21 @@ Program MainMCE
             if (x==cloneblock(e)) then
               write(6,*) 'cloneblock hit for repeat', reps
               if (clonememflg==0) then
-                call v1cloning(bset,nbf,bsetarr(1)%bs,bsetarr(2)%bs)
-                clonememflg = 1 
-                nclones = 2
+                call bstransfer(bsetarr(1)%bs,bset,nbf)
+              end if
+        
+              if (cloneblock(e).ne.(tnum-2)) then 
+                p = nclones+1
+                do j=1,nclones
+                  write(6,*) 'here j =, ', j, 'and p =, ', p
+                  !$omp critical
+                  call v1cloning(bsetarr(j)%bs,nbf,bsetarr(j)%bs,bsetarr(p)%bs)
+                  !$omp end critical 
+                  p = p+1
+                end do 
+                clonememflg=1
+                nclones = nclones*2
                 e=e+1
-              else
-                if (cloneblock(e).ne.(tnum-2)) then 
-                  p = nclones+1
-                  do j=1,nclones
-                    write(6,*) 'here j =, ', j, 'and p =, ', p
-                    !$omp critical
-                    call v1cloning(bsetarr(j)%bs,nbf,bsetarr(j)%bs,bsetarr(p)%bs)
-                    !$omp end critical 
-                    p = p+1
-                  end do 
-                  nclones = nclones*2
-                  e=e+1
-                end if
               end if
             end if
           end if

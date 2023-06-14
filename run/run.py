@@ -42,7 +42,7 @@ import inputs
 #########################################################################################
 
 # Number of repeats 
-repeats=400
+repeats=32
 # Number of nodes/folders
 nodes=1
 #Number of parallel cores per folder/node (max 8)
@@ -50,7 +50,7 @@ cores=1
 # Name of running folder 
 # Default : <method>-<system>-<random number> ie CCS-HP-31254
 # Otherwise:  <method>-<system>-<runfolder string>
-Runfolder='clonetests_noclone'
+Runfolder='Case3'
 # Generate Basis Set? YES/NO
 gen='YES'
 # Propagate Basis Set? YES/NO
@@ -61,6 +61,8 @@ restart='NO'
 # Seed value for doing the random number routine- if you do not specify it 
 # (leave default value of 0) will automatically generate one
 SEED=0
+# V1 cloning value for creating correct result file 
+V1cloning='YES'
 #########################################################################################
 #                                   END OF INPUTS                                       #
 #########################################################################################
@@ -101,7 +103,7 @@ if __name__=="__main__":
         else:
             print("Arguments checked")
             Hostname=socket.gethostname()
-            if(Hostname==("login2.arc4.leeds.ac.uk")):
+            if(Hostname==("login1.arc4.leeds.ac.uk")or(Hostname==("login2.arc4.leeds.ac.uk"))):
                 HPCFLG=1
             else:
                 HPCFLG=0
@@ -141,17 +143,26 @@ if __name__=="__main__":
         EXDIR1=EXDIR+"/"+Runfolder  
 
         mcerunf=os.getcwd()
-        #Builds result file
         result=open(EXDIR1+"/result.sh","w")
         result.write("python "+mcerunf+"/collate.py $PWD "+(str(repeats))+" "+str(nodes)+" '"+Runfolder+"' "+(str(HPCFLG))+" '"+prop+"'")
         result.close()
         subprocess.run(['chmod', 'u+x', EXDIR1+'/result.sh'])
+            
+        
+        #Builds information for v1 cloning
+        runinfo=open(EXDIR1+"/v1info.out","w")
+        runinfo.write(mcerunf+(str(repeats))+" "+str(nodes)+" '"+Runfolder+"' "+(str(HPCFLG)))
+        runinfo.close()
 
         #Copies input files
         shutil.copy2("inham.py",EXDIR1)
         shutil.copy2("inputs.py",EXDIR1)
         shutil.copy2("run.py",EXDIR1)
         shutil.copy2("combine.py",EXDIR1)
+        shutil.copy2("clonecombine.py",EXDIR1)
+        shutil.copy2("v1result.py",EXDIR1)
+
+        
 
         
         #Makes the program input file
@@ -220,6 +231,7 @@ if __name__=="__main__":
         shutil.copy2("MCE.exe",EXDIR1)
         shutil.copy2("interpolate.exe",EXDIR1)
         shutil.copy2("subavrg.exe",EXDIR1)
+        
 
         if(inputs.systems['freqflg']==1):
             if os.path.exists(mcerunf+"/freq.dat"):

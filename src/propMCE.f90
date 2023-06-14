@@ -3,6 +3,10 @@ MODULE propMCE
    use alarrays
    use globvars
    use derivsMCE
+   use bsetalter
+   use outputs
+   use Ham
+
 
 !*************************************************************************************************!
 !*
@@ -39,6 +43,12 @@ contains
 
     call deriv(bs, dbs_dt1, 1, time, genflg, reps, x)
 
+    ! testing what the different values of the basis correspond to. 
+    ! if (x == 1) then 
+    !   write(6,*) size(dbs_dt1,2)
+    ! endif 
+
+
     if (step == "A") then
 
       call allocbs(bserr0,size(bs))
@@ -64,6 +74,7 @@ contains
     call deallocbs(dbs_dt1)
     call deallocbs(tempbs)
     if (step=="A") call deallocbs(bserr0)
+   
 
     return
 
@@ -353,7 +364,6 @@ contains
         call allocbf(dbs_dt(l,k))
       end do
     end do
-
     do k=1,size(dbs_dt,2)
       dbs_dt(1,k)=dbs_dt1(k)
     end do
@@ -405,5 +415,93 @@ contains
 
 !*************************************************************************************************!
 
+
+
+  subroutine postprop(bset,nbf,x,y,reps,muq,mup,time,popt, pops, timestrt_loc, timeend_loc, dt, &
+                                absehr,absnorm,absnorm2,acf_t,extra,clonememflg)
+    implicit none 
+    
+    type(basisfn), dimension(:), intent (inout) :: bset
+    real(kind=8), dimension(:), intent(inout) :: mup, muq, popt
+    real(kind=8), intent(inout) :: time, dt
+    real(kind=8), dimension (:,:), intent(inout) :: pops
+    complex(kind=8), dimension (:,:), allocatable :: ovrlp
+    complex(kind=8)::normtemp, norm2temp, ehren, acft, extmp
+    real(kind=8) :: nrmtmp, nrm2tmp, ehrtmp, gridsp
+    real(kind=8), intent(in) :: timestrt_loc, timeend_loc
+    integer, intent(in):: reps, nbf, x,y, clonememflg
+    integer :: timestpunit, ierr, j, i, n, r, istat
+    real(kind=8), dimension(:), intent(inout), allocatable :: absnorm, absnorm2, absehr
+    integer, dimension(:), allocatable :: clone, clonenum, dtdone
+    character(LEN=3):: rep
+    complex(kind=8), dimension (:), intent(inout) :: acf_t, extra
+
+
+
+    allocate(ovrlp(size(bset),size(bset)))
+    ovrlp=ovrlpmat(bset)
+    normtemp = norm(bset,ovrlp)
+    nrmtmp = sqrt(dble(normtemp*dconjg(normtemp)))
+    ehren = (0.0d0, 0.0d0)
+    if (method=="MCEv2") then
+      norm2temp = norm2(bset)
+      nrm2tmp=sqrt(dble(norm2temp*dconjg(norm2temp)))
+    end if
+    do j = 1,nbf
+      ehren = ehren + HEhr(bset(j), time, reps)
+    end do
+    ehrtmp = abs(ehren)
+    acft = acf(bset,mup,muq)
+    call extras(extmp, bset)
+    do r=1,npes
+      popt(r) = pop(bset, r, ovrlp)
+    end do
+    
+    
+    if ((step == "S").and.(time.le.timeend)) then
+      do r=1,npes
+        pops(y,r) = pops(y,r) + popt(r)
+      end do
+      absehr(y) = absehr(y) + ehrtmp
+      absnorm(y) = absnorm(y) + nrmtmp
+      if (method=="MCEv2") absnorm2(y) = absnorm2(y) + nrm2tmp
+      acf_t(y) = acf_t(y) + acft
+      extra(y) = extra(y) + extmp
+      if (clonememflg==0) then
+        call outnormpopadap(nrmtmp,acft,extmp,ehrtmp,popt,x,reps,time)
+      end if
+    else if (step == "A") then
+      timestpunit=1710+reps
+      write(rep,"(i3.3)") reps
+      open (unit=timestpunit,file="timesteps-"//trim(rep)//".out",status="old",access="append",iostat=istat)
+      write(timestpunit,"(e12.5)") dtdone
+      close (timestpunit)
+      call outnormpopadap(nrmtmp,acft,extmp,ehrtmp,popt,x,reps,time)
+    end if
+    deallocate(ovrlp)
+    if (clonememflg==0) then
+      call outbs(bset, reps, mup, muq, time,x)
+      if ((cloneflg == "YES").or.(cloneflg == "BLIND+").or.(cloneflg == "QSC")) then
+        call outclones(clonenum, reps, clone)
+      end if
+    end if
+  
+
+    !call conservchk(initehr, initnorm, ehrtmp, nrmtmp, reps)  !Checks that all conserved quantites are conserved.
+                                        !Disabled to ensure that small fluctuations aren't disruptive
+    if (mod(x,50)==0) then     !Status reports
+      if (step == "S") then
+        write(6,"(a,i8,a,i8,a,i0,a,i0)") "Completed step ", x, " of ", int(real(abs((timeend_loc-timestrt_loc)/dt))),&
+            " on rep ", reps, " of ", reptot
+      else
+        write(6,"(a,i8,a,i8,a,i0,a,i0)") "Completed step ", x, " of approximately ", &
+            int(real(abs(x*(timeend_loc-timestrt_loc)/(time-timestrt_loc)))), " on rep ", reps, " of ", reptot
+      end if
+    end if
+
+    call flush(6)
+    call flush(0)
+
+  end subroutine postprop
 end module propMCE
 

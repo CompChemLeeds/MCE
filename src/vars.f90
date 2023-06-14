@@ -16,11 +16,17 @@ MODULE globvars
     complex(kind=8), dimension(:), allocatable::d_pes    ! Electronic State pre-exponential - 1 value per state
     real   (kind=8), dimension(:), allocatable::s_pes    ! Classical action - 1 value per electronic state
     complex(kind=8), dimension(:), allocatable::a_pes    ! Electronic state amplitude - 1 value per state and =de^(iS)
+    real(kind=8) :: normweight
+    integer, dimension(:), allocatable :: carray
   end type basisfn
 
   type hamiltonian                  ! a matrix of size nbf x nbf of this type hold the hamiltonian
     complex(kind=8), dimension(:,:), allocatable::Hjk      ! matrix of size npes x npes
   end type hamiltonian
+
+  type basisset
+      type(basisfn),dimension(:),allocatable::bs
+  end type basisset
 
   integer:: in_nbf     ! number of basis functions
   integer:: ndim       ! number of dimensions/degrees of freedom

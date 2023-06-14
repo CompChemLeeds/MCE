@@ -205,9 +205,9 @@ Program Interpolate
 
   OPEN(UNIT=501, FILE="normpop.out",STATUS='new', iostat=ierr) 
 
-  write (501,*), LINE2
-  write (501,*), ""
-  write (501,*), ""
+  write (501,*) LINE2
+  write (501,*) ""
+  write (501,*) ""
 
   allocate (output2(cols,timesteps))
 

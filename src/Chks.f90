@@ -88,7 +88,7 @@ contains
         end if
       else
         if (absnorm.lt.lowlimnorm) then
-          write(6,'(a,es16.8e3)'), "Initial Norm too low with a value of ", absnorm
+          write(6,'(a,es16.8e3)') "Initial Norm too low with a value of ", absnorm
           if (loc_basis.eq."SWTRN") then
             write(6,"(a,i0)") "Reducing train spacing spacing to ", int(real(trspace) * 0.95)
             write(6,"(a)") ""
@@ -100,7 +100,7 @@ contains
           end if 
           restart = 1
         else if (absnorm.gt.uplimnorm) then
-          write(6,'(a,es16.8e3)'), "Initial Norm too high with a value of ", absnorm
+          write(6,'(a,es16.8e3)') "Initial Norm too high with a value of ", absnorm
           if (loc_basis.eq."GRID") then
             write(6,"(a,i0)") "Increasing train spacing to ", int(real(trspace) * 1.05)
             write(6,"(a)") ""
@@ -225,7 +225,7 @@ contains
       do m=1,ndim
         trajq = dble(z(m))*dsqrt(2.0d0/gam)
         if (abs(trajq).gt.20000) then
-          write(6,'(a,i0,a,i0,a,e16.8)'), "Trajectory ", j, " in dof ", m, &
+          write(6,'(a,i0,a,i0,a,e16.8)') "Trajectory ", j, " in dof ", m, &
                         " is equal to ", dble(z(m))*dsqrt(2.0d0)
           flag = flag + 1
         end if

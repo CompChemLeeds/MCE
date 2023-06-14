@@ -20,7 +20,7 @@ Program avrgnorm
   real(kind=8)::pop1av, pop2av, popsumav, popdiffav, nrmav, rlacfav, imacfav
   real(kind=8)::abacfav, rlexav, imexav, abexav, ehrav, timeav
   integer, dimension(:), allocatable :: valid, lines
-  integer::ierr, i=1, j=1, k=1, l=1, n, m, tot=0, folders, folreps, totreps, cols
+  integer::ierr, i=1, j=1, k=1, l=1, n, m, tot=0, folders, folreps, totreps, cols, v
   character(LEN=50000)::lngchar, lngchar2
   character(LEN=100)::LINE, filename
   character(LEN=19)::myfmt
@@ -144,15 +144,18 @@ Program avrgnorm
       write (0,"(3a,i0)") 'Error in opening ',trim(filename),' file. Ierr was ', ierr
       stop
     end if
-
+    v=1
     do
       read (n,*,iostat=ierr)LINE
+      write(6,*) v
+      v = v+1
       if (ierr.ne.0) then
+
         write (0,"(3a,i0)") "Read error in normpop_",trim(repstr),".out. Ierr was ",&
                             ierr
         stop
       end if
-      if (LINE=="0.00000000E+000") then
+      if ((LINE=="0.00000000E+000").or.(LINE=="0.000000000000000000e+00")) then
         backspace (n)
         exit
       else
@@ -161,7 +164,6 @@ Program avrgnorm
     end do
 
   end do
-
   ! Open the output files and write the headers
   do l=1,tot
 
@@ -369,7 +371,7 @@ Program avrgnorm
         read(n,*,iostat=ierr)time(i),nrm(i),rlacf(i),imacf(i),abacf(i),rlex(i),&
                       imex(i),abex(i),ehr(i),pop1(i),pop2(i),popsum(i),popdiff(i)
         if (time(i).ne.time(1)) then
-          write (0,"(a,a,es16.8e3,a,i0)"),"File synchronisation error when reading",&
+          write (0,"(a,a,es16.8e3,a,i0)") "File synchronisation error when reading",&
                                " at time ", time(1) ," in unit ", n
           write (0,"(a,i0,a,i0,a,i0)") "i = ", i, " n = ", n
           stop

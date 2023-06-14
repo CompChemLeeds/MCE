@@ -8,10 +8,10 @@ VPATH=../src
 
 # Link step
 
-all: Main avrgpops timehist subavrg interpolate integrator
+all: Main avrgpops timehist subavrg interpolate integrator 
 
-Main:BLAS.o zgesv_with_dpndnss.o zheev_with_dpndnss.o randgen.o vars.o alarrays.o sb.o hp.o mp.o outputs.o redirect.o Ham.o Chks.o bsetalter.o readpars.o derivsMCE.o propMCE.o bsetgen.o MainMCE.o 
-	 $(F90) $(FFLAGS) -o MCE.exe BLAS.o zgesv_with_dpndnss.o zheev_with_dpndnss.o randgen.o vars.o alarrays.o sb.o hp.o mp.o outputs.o redirect.o Ham.o Chks.o bsetalter.o readpars.o derivsMCE.o propMCE.o bsetgen.o MainMCE.o $(FLINKS)
+Main:BLAS.o zgesv_with_dpndnss.o zheev_with_dpndnss.o randgen.o vars.o alarrays.o sb.o hp.o mp.o outputs.o redirect.o Ham.o Chks.o bsetalter.o readpars.o derivsMCE.o propMCE.o bsetgen.o clonecondense.o MainMCE.o 
+	 $(F90) $(FFLAGS) -o MCE.exe BLAS.o zgesv_with_dpndnss.o zheev_with_dpndnss.o randgen.o vars.o alarrays.o sb.o hp.o mp.o outputs.o redirect.o Ham.o Chks.o bsetalter.o readpars.o derivsMCE.o propMCE.o bsetgen.o clonecondense.o MainMCE.o $(FLINKS)
 
 avrgpops:avrgpops.f90
 	 $(F90) -O3 -o avrgpops.exe $<
@@ -27,6 +27,9 @@ interpolate:neville.o interpolate.o
 
 integrator:integrator.f90
 	 $(F90) -O3 -o integrator.exe $<
+
+
+
 
 # Compile steps
 
@@ -93,6 +96,9 @@ neville.o:neville.f90
 interpolate.o:interpolate.f90 neville.o
 	 $(F90) -O2 -c $<
 
+clonecondense.o: clonecondense.f90 alarrays.o outputs.o readpars.o
+	 $(F90) $(FFLAGS) -c $<
+	 
 clean:
 	rm -rf f_{files,modd}* *.o *.mod *.exe *~ ../run/*.exe ../run/*~ ../src/*~
 

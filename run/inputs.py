@@ -13,6 +13,13 @@ cmprss='YES'
 # of the previous runs initial position. Not compatible with V1 cloning [YES/NO]
 Conjugate_Repeats='NO'
 
+# V1 cloning type. Determines the type of the cloning used for V1, using 1s and 0s or trig functions.
+# 1 is the rigid type, 2 is the angular version. [1,2]
+# V1cloning = 1
+
+# # Normweighting flag for whether or not normweighting is used in the cloning procedure. [YES/NO]
+# V1normweighting='YES'
+
 systems={
     # System (Currently can be SB [Spin Boson], HP [Harmonic Potential], FP [Free Particle], MP [Morse Potential])
     #  SB works only with MCE, all others with CCS.
@@ -31,8 +38,8 @@ parameters={
     # Number of dimensions
     'ndim':50,
 
-    # Number of basis functions
-    'in_nbf':2,
+    # Number of basis functions 
+    'in_nbf':50,
 
     # Random Number generation function (ZBQL - using ZBQLNOR subroutine, GAUS - using function based on numerical recipes)
     'randfunc':'ZBQL',
@@ -70,10 +77,13 @@ clone={
     'max_cloning':19,
 
     # Minimum cloning frequency (ie how many timesteps since last cloning is new cloning event allowed)
-    'clon_freq':500,
+    'clon_freq':1000,
 
     #Quantum Superposition Cloning exclusion paramter between the two child trajectories should >= ??? and < ???
-    'QSC_epsilon':'0.1d0' 
+    'QSC_epsilon':'0.1d0'
+
+    # Cloning block (the space between cloning events for MCEv1)
+    # 'Clon_block':1000
 
 }
 
@@ -98,9 +108,9 @@ prop={
     #Maximum stepsize - used in adaptive stepsize
     'dtmax':'500.d0',
     #Starting stepsize of adaptive / Constant stepsize for Static stepsize
-    'dtinit':'2.500d-3',
+    'dtinit':'5.0d-3',
     #End Time of propagation
-    'time_end':'0.5d+1', #1.00d+1
+    'time_end':'1.0d+1', #1.00d+1
     #Start time of propagation
     'time_start':'0.0d+00',
     #Propagation size - either "static" or "adaptive"

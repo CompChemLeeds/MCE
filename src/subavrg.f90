@@ -13,7 +13,7 @@ Program subavrg
   character(LEN=5000)::lngchar, lngchar2
   integer, dimension(:),allocatable::valid, lines
   logical :: file_exists
-        
+      
   call getarg(0,filename)
   call getarg(1,LINE)
   if (ierr==-1) then
@@ -66,7 +66,7 @@ Program subavrg
     close (128)
     lines(i) = lines(i) - 1
   end do
- 
+  write(6,*) tot
   call getcwd(LINE)
   do i=1,reps
     if ((lines(i).ne.lines(1)).and.(lines(i).ne.0)) then
@@ -166,7 +166,7 @@ Program subavrg
         stop
       end if
     end do
-
+    !write(6,*) tot
     timeav = sum(time(:))/tot
     nrmav = sum(nrm(:))/tot
     rlacfav = sum(rlacf(:))/tot

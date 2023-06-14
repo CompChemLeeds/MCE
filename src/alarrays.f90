@@ -80,7 +80,8 @@ contains
     allocate (bf%z(ndim), stat=ierr)                     
     if (ierr==0) allocate (bf%d_pes(npes), stat=ierr)    
     if (ierr==0) allocate (bf%s_pes(npes), stat=ierr)    
-    if (ierr==0) allocate (bf%a_pes(npes), stat=ierr)    
+    if (ierr==0) allocate (bf%a_pes(npes), stat=ierr)  
+    if (ierr==0) allocate (bf%carray(5), stat=ierr)  
     if (ierr/=0) then
       write(0,"(a,i0)") "Error in basis function allocation. ierr had value ", ierr
       errorflag=1
@@ -93,6 +94,7 @@ contains
     bf%a_pes(1:npes) = (0.0d0,0.0d0)
     bf%s_pes(1:npes) =  0.0d0
     bf%D_big         = (0.0d0,0.0d0)
+    bf%carray(1:5)  =  0.0d0
 
     return
 
@@ -121,6 +123,7 @@ contains
     if (ierr==0) deallocate (bf%d_pes, stat=ierr)
     if (ierr==0) deallocate (bf%s_pes, stat=ierr)
     if (ierr==0) deallocate (bf%a_pes, stat=ierr)
+    if (ierr==0) deallocate (bf%carray, stat=ierr)
     if (ierr/=0) then
       write(0,"(a,i0)") "Error in basis function deallocation. ierr had value ", ierr
       errorflag=1
@@ -297,5 +300,127 @@ contains
   end subroutine deallochamjk
 
 !***********************************************************************************!
+
+subroutine alloc_type_bs(bset,nbf)
+
+      implicit none
+      type(basisset),intent(inout)::bset
+      integer, intent (in) :: nbf
+    
+    integer:: j, ierr
+
+    if (errorflag .ne. 0) return
+
+    ierr=0
+   
+    allocate(bset%bs(nbf), stat=ierr) !allocate the top level of the defined type array 
+    if (ierr/=0) then
+      write(0,"(a,i0)") "Error in basis set allocation. ierr had value ", ierr
+        errorflag=1
+        return
+    end if
+   
+    do j=1,nbf
+      call allocbf(bset%bs(j))! this allocates each bf within bs
+    end do
+
+    return
+
+end subroutine alloc_type_bs
+
+subroutine dealloc_type_bs(bset,nbf)
+
+    implicit none
+    type(basisset),intent(inout)::bset
+    integer,intent(in) :: nbf
+      
+    integer:: j, ierr
+
+    if (errorflag .ne. 0) return
+
+    ierr=0
+
+    do j=1,nbf
+      call deallocbf(bset%bs(j))! this allocates each bf within bs
+    end do
+   
+    deallocate(bset%bs, stat=ierr) !allocate the top level of the defined type array 
+    if (ierr/=0) then
+      write(0,"(a,i0)") "Error in basis set allocation. ierr had value ", ierr
+        errorflag=1
+        return
+    end if
+   
+    
+
+    return
+
+end subroutine dealloc_type_bs
+
+subroutine allocbs_alt(bsetarr,clone_num,nbf)
+  
+    ! Allocates the top level of the variable of the basisfn defined type
+
+    implicit none
+    
+    type(basisset),dimension(:),allocatable, intent(inout)::bsetarr
+    integer, intent (in) :: clone_num,nbf
+    
+    integer:: j, ierr, k
+
+    if (errorflag .ne. 0) return
+
+    ierr=0
+    if (allocated(bsetarr).eqv..false.) then
+      allocate(bsetarr(clone_num), stat=ierr) !allocate the top level of the defined type array 
+      if (ierr/=0) then
+        write(0,"(a,i0)") "Error in basis set allocation. ierr had value ", ierr
+        errorflag=1
+        return
+      end if
+    end if
+
+    do j=1,clone_num
+      
+      call alloc_type_bs(bsetarr(j),nbf)
+       
+    end do
+
+    return
+
+  end subroutine allocbs_alt
+
+  subroutine deallocbs_alt(bsetarr,clone_num,timesteps,nbf)
+  
+    ! Allocates the top level of the variable of the basisfn defined type
+
+    implicit none
+    
+    type(basisset),dimension(:), ALLOCATABLE, intent(inout)::bsetarr
+    integer, intent (in) :: clone_num,timesteps,nbf
+    
+    integer:: j,k,l, ierr
+
+    if (errorflag .ne. 0) return
+
+    do j=1,clone_num
+       
+      call dealloc_type_bs(bsetarr(j),nbf)
+         
+    end do 
+
+    ierr=0
+    
+    deallocate(bsetarr, stat=ierr) !allocate the top level of the defined type array 
+    if (ierr/=0) then
+      write(0,"(a,i0)") "Error in basis set allocation. ierr had value ", ierr
+      errorflag=1
+      return
+    end if
+   
+
+    return
+
+  end subroutine deallocbs_alt
 
 END MODULE alarrays

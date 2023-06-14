@@ -11,9 +11,9 @@ SB={
     'SBBeta':'5.0d0',
 
     #Exponential cutoff    
-    'SBEwc':'7.5d0',
+    'SBEwc':'2.5d0',
     #Kondo Paramter
-    'SBEkondo':'0.1d0',
+    'SBEkondo':'0.09d0',
     #wmax exponential cutoff
     'SBEwmaxfact':'5.0d0',
 

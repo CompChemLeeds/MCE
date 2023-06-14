@@ -128,21 +128,29 @@ Program MainMCE
   use Chks       ! A set of checks which ensure the program is running correctly
   use propMCE    ! The time propagation controller
   use redirect   ! Module which directs functions to the system specific variants
+  use clonecondense ! Module which recombines clones for MCEv1
+
 
   implicit none
   !Private variables
   type(basisfn), dimension (:), allocatable :: bset
   type(basisfn), dimension (:), allocatable :: dummybs
-  complex(kind=8), dimension (:,:), allocatable :: initgrid, ovrlp
+  type(basisset), dimension (:), allocatable :: bsetarr
+  type(basisset):: testset
+  complex(kind=8), dimension (:,:), allocatable :: initgrid, ovrlp,ovrlphold
   complex(kind=8)::normtemp, norm2temp, ehren, acft, extmp
-  real(kind=8), dimension(:), allocatable :: mup, muq, popt
+  real(kind=8), dimension(:), allocatable :: mup, muq, popt, timeblock
   real(kind=8) :: nrmtmp, nrm2tmp, ehrtmp, gridsp, timestrt_loc
-  real(kind=8) :: timeend_loc, timeold, time, dt, dtnext, dtdone, initehr, nctmnd
-  real(kind=8) :: initnorm, initnorm2, alcmprss, dum_re1, dum_re2
+  real(kind=8) :: timeend_loc, timeold, time, dt, dtnext, dtdone, initehr, nctmnd, ctime
+  real(kind=8) :: initnorm, initnorm2, alcmprss, dum_re1, dum_re2, rescale, pophold1,pophold2
   integer, dimension(:), allocatable :: clone, clonenum
-  integer :: j, k, r, y, x, m, nbf, recalcs, conjrep, restart, reps, trspace
-  integer :: ierr, timestpunit, stepback, dum_in1, dum_in2, dum_in3, finbf, v1check,loop
+  integer :: j, k, r, y, x, m,nbf, recalcs, conjrep, restart, reps, trspace, v1clonenum, ovrlpout, num_events,two_to_num_events
+  integer :: ierr, timestpunit, stepback, dum_in1, dum_in2, dum_in3, finbf, v1check,loop, e, l, nclones, p
   character(LEN=3):: rep
+  integer :: clone_instance, range, g, a, b
+  type(basisfn), dimension(:), allocatable ::clone1, clone2
+  real, dimension(:,:), allocatable :: populations, ctarray, normpfs
+  real(kind=8) ::  crossterm1, crossterm2
 
   !Reduction Variables
   complex(kind=8), dimension (:), allocatable :: acf_t, extra
@@ -152,11 +160,13 @@ Program MainMCE
   !Public Variables
   real(kind=8), dimension(:), allocatable :: t
   real(kind=8) :: starttime, stoptime, up, down, runtime
-  real(kind=8) :: num1, num2
+  real(kind=8) :: num1, num2, hc
+  integer, dimension(:), allocatable :: cloneblock
   integer(kind=8) :: ranseed
-  integer:: tnum, cols, genflg, istat, intvl, rprj, n, nsame, nchange
+  integer:: tnum, cols, genflg, istat, intvl, rprj, n, nsame, nchange, rerun, clonememflg, h
   character(LEN=100) :: LINE, CWD
   character(LEN=1) :: genloc
+  integer(kind=4)  :: cnum_start, repchanger, newrep, resnum, norestart, tf, te, orgreps, nbfv1
 
   call CPU_TIME(starttime) !used to calculate the runtime, which is output at the end
 
@@ -199,6 +209,7 @@ Program MainMCE
   else
     tnum = 1            ! The arrays need to be allocated for reduction in omp
   end if
+  
   allocate (pops(tnum,npes), stat=istat)               ! Output arrays are allocated
   if (istat==0) allocate (absehr(tnum), stat=istat)    ! for the number of steps to
   if (istat==0) allocate (absnorm(tnum), stat=istat)   ! be taken
@@ -215,6 +226,9 @@ Program MainMCE
   absnorm2 = 0.0d0      ! Absolute value of the sum of the single config. norms
   acf_t = (0.0d0,0.0d0) ! Auto-correlation function
   extra = (0.0d0,0.0d0)
+  v1clonenum = 0.d0
+  
+  
 
   if (conjflg==1) then    ! This statement ensures that if conjugate repetition
     intvl = 2             ! is selected the outer repetition loop will increase
@@ -226,362 +240,441 @@ Program MainMCE
   nsame=0
   rprj=10
   genflg=0
+  clonememflg=0
+  nbfv1 = in_nbf
+  resnum=0
+  h=1
+  ovrlpout=100
+ 
+  if (cloneflg=='V1') then
+    if (mod(tnum-2,clonefreq).eq.0) then
+      num_events = int((tnum-2)/clonefreq - 1) 
+      write(6,*) num_events
+    else 
+      num_events = int((tnum-2)/clonefreq) 
+      write(6,*) num_events
+    end if 
+    allocate(cloneblock(num_events+1))
+    allocate(timeblock(num_events+1))
+    do n =1, size(cloneblock)-1
+        cloneblock(n) = n*clonefreq
+        timeblock(n) = dtinit*cloneblock(n)
+    end do
 
-  ! Oliver's attempt maybe delete later
-  ! if(cloneflg=="V1") then
-  !   v1check=((timeend/dtinit)/clonefreq)
-  ! else
-  !   v1check=1
-  ! end if
+    cloneblock(num_events+1) = tnum-2
+    timeblock(num_events+1) =dtinit*cloneblock(num_events+1)
+    two_to_num_events=int(2**num_events)
+    call allocbs_alt(bsetarr,two_to_num_events,in_nbf) !allocate(bsetarr(2**num_events,clonefreq))
+  end if
+
 
   
+
+  ! The variables set as private in the below statement are duplicated when Open MP
+  ! is run such that there exists individual copies on each thread. The reduction
+  ! variables are summed over all threads. The reduction variables are only used in
+  ! the static stepsize system as the array size must be known beforehand to avoid
+  ! memory leaks.
+
+  !$omp parallel private (bset, dummybs, initgrid, ovrlp, normtemp,&
+  !$omp                    norm2temp, ehren, acft, extmp, muq, mup, popt,  &
+  !$omp                    nrmtmp, nrm2tmp, ehrtmp, gridsp, timestrt_loc, trspace,  &
+  !$omp                    timeend_loc, timeold, time, dt, dtnext, dtdone, initehr, &
+  !$omp                    initnorm, initnorm2, alcmprss, clone, clonenum, bsetarr, &
+  !$omp                    j, k, r, y, x, m, nbf, recalcs, conjrep, restart,        &
+  !$omp                    reps, ierr, timestpunit, stepback, dum_in1, dum_in2,     &
+  !$omp                    finbf, dum_in3, dum_re1, dum_re2, rep, genloc, h,        &
+  !$omp                    nclones, clone1, clone2, populations, ctarray, normpfs,  &
+  !$omp                    range, rescale, i, p, g, clonememflg, e, ovrlphold       )
+
+  !$omp do reduction (+:acf_t, extra, pops, absnorm, absnorm2, absehr)
+
+  ! This leaves the following variables currently shared actross all threads:
+  ! p, q, t, starttime, stoptime, up, down, runtime, num1, num2, ranseed, tnum,
+  ! cols, genflg, istat, intvl, rprj, n, nsame, nchange, LINE, CWD
+  do k=1,reptot,intvl              ! Loop over all repeats.
+    call flush(6)
+    call flush(0)
+
+    if (errorflag .ne. 0) cycle   ! errorflag is the running error catching system
+
+    ierr = 0
+    conjrep = 1
+    genloc = gen
+    restart=0
+    trspace = trainsp
+    hc=0.d0
+    clonememflg=0
+    nclones =1
     
+    e=1
     
-  do loop=0,v1check
-    ! The variables set as private in the below statement are duplicated when Open MP
-    ! is run such that there exists individual copies on each thread. The reduction
-    ! variables are summed over all threads. The reduction variables are only used in
-    ! the static stepsize system as the array size must be known beforehand to avoid
-    ! memory leaks.
 
-    !$omp parallel private (bset, dummybs, initgrid, ovrlp, normtemp,&
-    !$omp                    norm2temp, ehren, acft, extmp, muq, mup, popt,  &
-    !$omp                    nrmtmp, nrm2tmp, ehrtmp, gridsp, timestrt_loc, trspace,  &
-    !$omp                    timeend_loc, timeold, time, dt, dtnext, dtdone, initehr, &
-    !$omp                    initnorm, initnorm2, alcmprss, clone, clonenum,          &
-    !$omp                    j, k, r, y, x, m, nbf, recalcs, conjrep, restart,        &
-    !$omp                    reps, ierr, timestpunit, stepback, dum_in1, dum_in2,     &
-    !$omp                    finbf, dum_in3, dum_re1, dum_re2, rep, genloc            )
-
-    !$omp do reduction (+:acf_t, extra, pops, absnorm, absnorm2, absehr)
-
-    ! This leaves the following variables currently shared actross all threads:
-    ! p, q, t, starttime, stoptime, up, down, runtime, num1, num2, ranseed, tnum,
-    ! cols, genflg, istat, intvl, rprj, n, nsame, nchange, LINE, CWD
-
-    do k=1,reptot,intvl              ! Loop over all repeats.
-
-      call flush(6)
-      call flush(0)
-
-      if (errorflag .ne. 0) cycle   ! errorflag is the running error catching system
-
-      ierr = 0
-      conjrep = 1
-      genloc = gen
-      restart=0
-      trspace = trainsp
-
-      if (restrtflg==1) then
-        call restartnum(k,genloc,restart)
-        if (restart==1) then
-          cycle
-        end if
+    if (restrtflg==1) then
+      call restartnum(k,genloc,restart)
+      if (restart==1) then
+        cycle
       end if
-      
+    end if
+    
 
-      allocate (popt(npes), stat=ierr)
+    allocate (popt(npes), stat=ierr)
+    if (ierr/=0) then
+      write(0,"(a)") "Error in allocating the temporary population array in Main"
+      errorflag=1
+    end if
+    popt = 0.0d0
+
+    if (genloc.eq."Y") then
+      allocate (mup(ndim), stat=ierr)
+      if (ierr == 0) allocate (muq(ndim), stat=ierr)
       if (ierr/=0) then
-        write(0,"(a)") "Error in allocating the temporary population array in Main"
+        write(0,"(a)") "Error in allocation of mup and muq"
         errorflag=1
       end if
-      popt = 0.0d0
+      mup = 0.0d0
+      muq = 0.0d0
+    end if
 
-      if (genloc.eq."Y") then
-        allocate (mup(ndim), stat=ierr)
-        if (ierr == 0) allocate (muq(ndim), stat=ierr)
-        if (ierr/=0) then
-          write(0,"(a)") "Error in allocation of mup and muq"
-          errorflag=1
-        end if
-        mup = 0.0d0
-        muq = 0.0d0
+    do while (conjrep .lt. 3) ! conjugate repetitions. If equal to 3 then both
+                              ! have been completed.
+      alcmprss = 1.0d0/initalcmprss    ! initialcmprss is the value read from the
+      gridsp=initsp                    ! input file. For automatic adaptation of
+      nbf=in_nbf                       ! the compression parameter this is used
+      recalcs=0                        ! as a starting point, otherwise it is used
+      x=0                              ! as the compression parameter value
+
+      if (conjrep == 2) then         ! this conditional and the subsequent keeps
+        reps=k+1                     ! track of the repeats with regard to the
+      else if (conjrep == 1) then    ! conjugate repeat system
+        reps=k
+      else
+        errorflag=1
       end if
+      
+      if (conjflg==1) then
+        conjrep = conjrep + 1
+      else
+        conjrep = 3
+      end if
+      
+      time = timestrt         ! It is possible to start at t=/=0, but
+      timestrt_loc = timestrt ! precalculated basis should be used
+  
 
-      do while (conjrep .lt. 3) ! conjugate repetitions. If equal to 3 then both
-                                ! have been completed.
-        alcmprss = 1.0d0/initalcmprss    ! initialcmprss is the value read from the
-        gridsp=initsp                    ! input file. For automatic adaptation of
-        nbf=in_nbf                       ! the compression parameter this is used
-        recalcs=0                        ! as a starting point, otherwise it is used
-        x=0                              ! as the compression parameter value
+      !**********Basis Set Generation Section Begins**************************!
 
-        if (conjrep == 2) then         ! this conditional and the subsequent keeps
-          reps=k+1                     ! track of the repeats with regard to the
-        else if (conjrep == 1) then    ! conjugate repeat system
-          reps=k
-        else
-          errorflag=1
-        end if
+      if (genloc.eq."Y") then     ! begin the basis set generation section.
+
+        restart = 1            ! a flag for if the basis set needs recalculating
+
+        
+
 
         if (conjflg==1) then
-          conjrep = conjrep + 1
+          if (conjrep == 2) then         ! first/only calculation
+            !$omp critical               ! Critical block stops subroutine running on
+            call genzinit(mup, muq,reps) ! multiple threads simultaneously, needed as
+            !$omp end critical           ! the UCL random library is not thread safe
+          else
+            do m=1,ndim
+              mup(m) = -1.0d0*mup(m)  ! second calculation takes the conj. of z_init
+            end do
+          end if
         else
-          conjrep = 3
+          !$omp critical
+          call genzinit(mup, muq,reps)
+          !$omp end critical
         end if
 
-        time = timestrt         ! It is possible to start at t=/=0, but
-        timestrt_loc = timestrt ! precalculated basis should be used
-    
+        do while ((restart.eq.1).and.(recalcs.lt.Ntries).and.(alcmprss.gt.1.0d-5))
 
-        !**********Basis Set Generation Section Begins**************************!
+          restart = 0    ! if restart stays as 0, the basis set is not recalculated
 
-        if (genloc.eq."Y") then     ! begin the basis set generation section.
+          call allocbs(bset, nbf)
 
-          restart = 1            ! a flag for if the basis set needs recalculating
+          !$omp critical             ! Critical block needed for random number gen.
+          call genbasis(bset, mup, muq, alcmprss, time, reps, trspace)
 
-          if (conjflg==1) then
-            if (conjrep == 2) then         ! first/only calculation
-              !$omp critical               ! Critical block stops subroutine running on
-              call genzinit(mup, muq,reps) ! multiple threads simultaneously, needed as
-              !$omp end critical           ! the UCL random library is not thread safe
-            else
-              do m=1,ndim
-                mup(m) = -1.0d0*mup(m)  ! second calculation takes the conj. of z_init
-              end do
-            end if
-          else
-            !$omp critical
-            call genzinit(mup, muq,reps)
-            !$omp end critical
+          call genD_big(bset, mup, muq, restart) !Generates the multi config D
+                                      !prefactor and single config a & d prefactors
+                                      ! Moved to inside the genbasis sunbbroutines
+          !$omp end critical
+
+          initnorm = 0.0d0
+          initnorm2 = 0.0d0
+
+          ! Checks norms and population sum to ensure basis set is calculated
+          ! properly. If not, restart is set to 1 so basis is recalculated
+
+          call initnormchk(bset,recalcs,restart,alcmprss,initnorm,initnorm2,trspace)
+
+!!!!!!! Block to force renormalisation. Use with caution !!!!!!!!!!!!!!
+
+!          if (restart.eq.1) then
+!            if ((((conjflg==1).and.(conjrep.eq.2)).or.(conjflg/=1)).and.(recalcs.lt.Ntries)) then
+!              !$omp critical
+!              call genzinit(mup, muq,reps)
+!              !$omp end critical
+!            else
+!              do j=1,size(bset)
+!                bset(j)%D_big = bset(j)%D_big/sqrt(initnorm)
+!              end do
+!              write(6,"(a,e16.8e3)") "Renormalising! Old norm was ", initnorm
+!              call initnormchk(bset, recalcs, restart,alcmprss, gridsp, initnorm, initnorm2)
+!              write(6,"(a,e16.8e3)") "               New norm is  ", initnorm
+!              recalcs = recalcs - 1
+!              restart = 0
+!            end if
+!          end if
+
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+          if ((restart.eq.1).and.(recalcs.lt.Ntries)) then
+            call deallocbs(bset)                            !Before recalculation, the basis must be deallocated
+            write(6,"(a,i0,a,i0)") "Attempt ", recalcs, " of ", Ntries
           end if
 
-          do while ((restart.eq.1).and.(recalcs.lt.Ntries).and.(alcmprss.gt.1.0d-5))
-
-            restart = 0    ! if restart stays as 0, the basis set is not recalculated
-
-            call allocbs(bset, nbf)
-
-            !$omp critical             ! Critical block needed for random number gen.
-            call genbasis(bset, mup, muq, alcmprss, time, reps, trspace)
-
-            call genD_big(bset, mup, muq, restart) !Generates the multi config D
-                                        !prefactor and single config a & d prefactors
-                                        ! Moved to inside the genbasis sunbbroutines
-            !$omp end critical
-
-            initnorm = 0.0d0
-            initnorm2 = 0.0d0
-
-            ! Checks norms and population sum to ensure basis set is calculated
-            ! properly. If not, restart is set to 1 so basis is recalculated
-
-            call initnormchk(bset,recalcs,restart,alcmprss,initnorm,initnorm2,trspace)
-
-  !!!!!!! Block to force renormalisation. Use with caution !!!!!!!!!!!!!!
-
-  !          if (restart.eq.1) then
-  !            if ((((conjflg==1).and.(conjrep.eq.2)).or.(conjflg/=1)).and.(recalcs.lt.Ntries)) then
-  !              !$omp critical
-  !              call genzinit(mup, muq,reps)
-  !              !$omp end critical
-  !            else
-  !              do j=1,size(bset)
-  !                bset(j)%D_big = bset(j)%D_big/sqrt(initnorm)
-  !              end do
-  !              write(6,"(a,e16.8e3)") "Renormalising! Old norm was ", initnorm
-  !              call initnormchk(bset, recalcs, restart,alcmprss, gridsp, initnorm, initnorm2)
-  !              write(6,"(a,e16.8e3)") "               New norm is  ", initnorm
-  !              recalcs = recalcs - 1
-  !              restart = 0
-  !            end if
-  !          end if
-
-  !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-
-            if ((restart.eq.1).and.(recalcs.lt.Ntries)) then
-              call deallocbs(bset)                            !Before recalculation, the basis must be deallocated
-              write(6,"(a,i0,a,i0)") "Attempt ", recalcs, " of ", Ntries
-            end if
-
-            call flush(6)
-            call flush(0)
-
-          end do   !End of basis set recalculation loop.
-
-          if ((restart.eq.1).and.(recalcs.ge.Ntries)) then   ! Fatal error
-            write(0,"(a,i0,a)") "Initial Basis Set Error. Not resolved after ", recalcs, " repeat calculations."
-            write(6,"(a)")"TERMINATING PROGRAM"
-            stop
-          end if
-
-          if ((restart.eq.1).and.(alcmprss.le.1.0d-5).and.(cmprss.eq."Y")) then   ! Fatal error
-            write(0,"(a)") "Initial Basis Set Error. Not resolved after reducing compression parameter to 1.0d-5."
-            write(0,"(a)") "Probable Error in Code"
-            write(0,"(a)") " "
-            write(6,"(a)") "TERMINATING PROGRAM"
-            stop
-          end if
-
-          if (((method=="MCEv2").or.(method=="MCEv1")).and.((cloneflg=="BLIND").or.(cloneflg=="BLIND+"))) then
-            write(rep,"(i3.3)") reps
-            open(unit=47756,file="Clonetrack-"//trim(rep)//".out",status="new",iostat=ierr)
-            close(47756)
-            allocate (clone(nbf), stat=ierr)
-            if (ierr==0) allocate(clonenum(nbf), stat=ierr)
-            if (ierr/=0) then
-              write(0,"(a)") "Error in allocating clone arrays"
-              errorflag = 1
-            end if
-            if (genloc=="N") then
-              call readclone(clonenum, reps, clone)
-            else
-              do j=1,nbf
-                clone(j) = 0
-                clonenum(j) = 0
-              end do
-            end if
-            write (6,'(a)') "Blind cloning arrays generated and cloning starting"
-            call flush(6)
-            call cloning (bset, nbf, x, time, clone, clonenum, reps)
-            call flush(6)
-          end if
-
-          if (errorflag.eq.0) then  ! Only executes if generation is successful
-            write(6,"(a)") "Basis Set Generated Successfully"
-            write(6,"(a,e15.8)") "Abs(Norm) = ", initnorm
-            if (npes.ne.1) write(6,"(a,e15.8)") "Popsum    = ", initnorm2
-            if ((cmprss.eq."Y").and.((basis.eq."SWARM").or.(basis.eq."SWTRN"))) write(6,"(a,e15.8)") "Alcmprss  = ", 1.0d0/alcmprss
-            if ((cmprss.eq."Y").and.(basis.eq."SWTRN")) write(6,"(a,i0)") "Train Spacing  = ", trspace
-          else
-            write(6,"(a)") "Errors found in basis set generation"
-            call outbs(bset, reps, mup, muq, time,0)
-            call flush(6)
-            stop
-          end if
-          
-          if (prop.eq."N") then
-            call outbs(bset, reps, mup, muq, time,0)
-          end if
-
-        end if !End of Basis set generation conditional statement
-
-        !*************Basis Set Propagation Section Begins*************************!
-
-        if (prop.eq."Y") then     ! Propagation of basis set
-
-          x=0
-          timeend_loc = timeend
-
-          if (genloc.eq."N") then
-            !$omp critical                       !Critical block to stop inputs getting confused
-            if (conjrep == 2) then               ! Stops it looking for a basis set file if conjugate repetition selected
-              write(0,"(a)") "Propagation only selected with conjugate repeats enabled."
-              write(0,"(a)") "This error message should not ever be seen, and means something's corrupted"
-              errorflag=1                       ! as these two conditions are incompatible and should be disallowed at
-            else                                ! the run conditions input stage.
-              call allocbs(bset,nbf)
-              call readbasis(bset, mup, muq, reps, time, nbf) ! reads and assigns the basis set parameters and values, ready for propagation.
-              timestrt_loc=time
-              if((cloneflg.eq."V1").and.(loop>0))then 
-                time=time+dtinit
-              end if
-              write(6,"(a,i0,a)") "Starting from previous file. ", &
-                          int(real(abs((timeend_loc-timestrt_loc)/dtinit))), " steps remaining."
-            end if
-            !$omp end critical
-          end if
-
-          dt = dtinit                ! The value read from the input stage. In adaptive step theis changes
-
-          !The initial values of the output parameters are calculated here.
-
-          allocate (ovrlp(size(bset),size(bset)))
-          ovrlp=ovrlpmat(bset)
-          normtemp = norm(bset,ovrlp)
-          initnorm = sqrt(dble(normtemp*dconjg(normtemp)))
-          nrmtmp = initnorm
-          ehren = (0.0d0, 0.0d0)
-          if (method=="MCEv2") then    ! the single configurational wavefunction is only normalised for MCEv2
-            norm2temp = norm2(bset)
-            initnorm2 = sqrt(dble(norm2temp*dconjg(norm2temp)))
-          end if
-          do j = 1,nbf
-            ehren = ehren + HEhr(bset(j), time, reps)
-          end do
-          initehr = abs(ehren)
-          acft = acf(bset,mup,muq)
-          call extras(extmp, bset)
-          do r=1,npes
-            popt(r) = pop(bset, r,ovrlp)
-          end do
-          if (step == "S") then        ! Output parameters only written to arrays if static stepsize
-            do r=1,npes
-              pops(1,r) = pops(1,r) + popt(r)
-            end do
-            absehr(1) = absehr(1) + initehr
-            absnorm(1) = absnorm(1) + initnorm
-            if (method=="MCEv2") absnorm2(1) = absnorm2(1) + initnorm2
-            acf_t(1) = acf_t(1) + acft
-            extra(1) = extra(1) + extmp
-            call outnormpopadapheads(reps)
-            call outnormpopadap(initnorm,acft,extmp,initehr,popt,x,reps,time)
-          else                         ! For adaptive stepsize the data is output straight away
-            timestpunit=1710+reps
-            write(rep,"(i3.3)") reps
-            open (unit=timestpunit,file="timesteps-"//trim(rep)//".out",status="unknown",iostat=istat)
-            close (timestpunit)
-            call outnormpopadapheads(reps)
-            call outnormpopadap(initnorm,acft,extmp,initehr,popt,x,reps,time)
-          end if
-          deallocate(ovrlp)
-
-          !***********Timesteps***********!
-
-          if (((method=="MCEv2").or.(method=="MCEv1")).and.((cloneflg=="YES").or.(cloneflg=="QSC"))) then
-            write(rep,"(i3.3)") reps
-            open(unit=47756,file="Clonetrack-"//trim(rep)//".out",status="new",iostat=ierr)
-            close(47756)
-            allocate (clone(nbf), stat=ierr)
-            if (ierr==0) allocate(clonenum(nbf), stat=ierr)
-            if (ierr/=0) then
-              write(0,"(a)") "Error in allocating clone arrays"
-              errorflag = 1
-            end if
-            if (genloc=="N") then
-              call readclone(clonenum, reps, clone)
-            else
-              do j=1,nbf
-                clone(j) = 0
-                clonenum(j) = 0
-              end do
-            end if
-            write (6,"(a)") "Conditional cloning arrays generated"
-          end if
-
-          write(6,"(a)") "Beginning Propagation"
           call flush(6)
+          call flush(0)
 
-          do while ((time.lt.timeend_loc).and.(x.le.80000))
+        end do   !End of basis set recalculation loop.
 
-            if (errorflag .ne. 0) exit
+        if ((restart.eq.1).and.(recalcs.ge.Ntries)) then   ! Fatal error
+          write(0,"(a,i0,a)") "Initial Basis Set Error. Not resolved after ", recalcs, " repeat calculations."
+          write(6,"(a)")"TERMINATING PROGRAM"
+          stop
+        end if
 
-            x = x + 1  ! timestep index
-            y = x + 1  ! array index
+        if ((restart.eq.1).and.(alcmprss.le.1.0d-5).and.(cmprss.eq."Y")) then   ! Fatal error
+          write(0,"(a)") "Initial Basis Set Error. Not resolved after reducing compression parameter to 1.0d-5."
+          write(0,"(a)") "Probable Error in Code"
+          write(0,"(a)") " "
+          write(6,"(a)") "TERMINATING PROGRAM"
+          stop
+        end if
 
-            call trajchk(bset) !ensures that the position component of the coherent states are not too widely spaced
+        if (((method=="MCEv2").or.(method=="MCE1")).and.((cloneflg=="BLIND").or.(cloneflg=="BLIND+"))) then
+          write(rep,"(i3.3)") reps
+          open(unit=47756,file="Clonetrack-"//trim(rep)//".out",status="new",iostat=ierr)
+          close(47756)
+          allocate (clone(nbf), stat=ierr)
+          if (ierr==0) allocate(clonenum(nbf), stat=ierr)
+          if (ierr/=0) then
+            write(0,"(a)") "Error in allocating clone arrays"
+            errorflag = 1
+          end if
+          if (genloc=="N") then
+            call readclone(clonenum, reps, clone)
+          else
+            do j=1,nbf
+              clone(j) = 0
+              clonenum(j) = 0
+            end do
+          end if
+          write (6,'(a)') "Blind cloning arrays generated and cloning starting"
+          call flush(6)
+          call cloning (bset, nbf, x, time, clone, clonenum, reps)
+          call flush(6)
+        end if
+
+        if (errorflag.eq.0) then  ! Only executes if generation is successful
+          write(6,"(a)") "Basis Set Generated Successfully"
+          write(6,"(a,e15.8)") "Abs(Norm) = ", initnorm
+          if (npes.ne.1) write(6,"(a,e15.8)") "Popsum    = ", initnorm2
+          if ((cmprss.eq."Y").and.((basis.eq."SWARM").or.(basis.eq."SWTRN"))) write(6,"(a,e15.8)") "Alcmprss  = ", 1.0d0/alcmprss
+          if ((cmprss.eq."Y").and.(basis.eq."SWTRN")) write(6,"(a,i0)") "Train Spacing  = ", trspace
+        else
+          write(6,"(a)") "Errors found in basis set generation"
+          call outbs(bset, reps, mup, muq, time,0)
+          call flush(6)
+          stop
+        end if
+        
+        if (prop.eq."N") then
+          call outbs(bset, reps, mup, muq, time,0)
+        end if
+
+      end if !End of Basis set generation conditional statement
+
+      !*************Basis Set Propagation Section Begins*************************!
+
+      if (prop.eq."Y") then     ! Propagation of basis set
+
+        x=0
+        timeend_loc = timeend
+
+        if (genloc.eq."N") then
+          !$omp critical                       !Critical block to stop inputs getting confused
+          if (conjrep == 2) then               ! Stops it looking for a basis set file if conjugate repetition selected
+            write(0,"(a)") "Propagation only selected with conjugate repeats enabled."
+            write(0,"(a)") "This error message should not ever be seen, and means something's corrupted"
+            errorflag=1                       ! as these two conditions are incompatible and should be disallowed at
+          else                                ! the run conditions input stage.
+            call allocbs(bset,nbf)
+            call readbasis(bset, mup, muq, reps, time, nbf) ! reads and assigns the basis set parameters and values, ready for propagation.
+            timestrt_loc=time
+            if((cloneflg.eq."V1").and.(loop>0))then 
+              time=time+dtinit
+            end if
+            write(6,"(a,i0,a)") "Starting from previous file. ", &
+                        int(real(abs((timeend_loc-timestrt_loc)/dtinit))), " steps remaining."
+          end if
+          !$omp end critical
+        end if
+
+        dt = dtinit                ! The value read from the input stage. In adaptive step theis changes
+
+        !The initial values of the output parameters are calculated here.
+
+        allocate(ovrlp(size(bset),size(bset)))
+        ovrlp=ovrlpmat(bset)
+        normtemp = norm(bset,ovrlp)
+        initnorm = sqrt(dble(normtemp*dconjg(normtemp)))
+        nrmtmp = initnorm
+        ehren = (0.0d0, 0.0d0)
+        if (method=="MCEv2") then    ! the single configurational wavefunction is only normalised for MCEv2
+          norm2temp = norm2(bset)
+          initnorm2 = sqrt(dble(norm2temp*dconjg(norm2temp)))
+        end if
+        do j = 1,nbf
+          ehren = ehren + HEhr(bset(j), time, reps)
+        end do
+        initehr = abs(ehren)
+        acft = acf(bset,mup,muq)
+        call extras(extmp, bset)
+        do r=1,npes
+          popt(r) = pop(bset, r,ovrlp)
+        end do
+        if (step == "S") then        ! Output parameters only written to arrays if static stepsize
+          do r=1,npes
+            pops(1,r) = pops(1,r) + popt(r)
+          end do
+          absehr(1) = absehr(1) + initehr
+          absnorm(1) = absnorm(1) + initnorm
+          if (method=="MCEv2") absnorm2(1) = absnorm2(1) + initnorm2
+          acf_t(1) = acf_t(1) + acft
+          extra(1) = extra(1) + extmp
+          call outnormpopadapheads(reps)
+          call outnormpopadap(initnorm,acft,extmp,initehr,popt,x,reps,time)
+        else                         ! For adaptive stepsize the data is output straight away
+          timestpunit=1710+reps
+          write(rep,"(i3.3)") reps
+          open (unit=timestpunit,file="timesteps-"//trim(rep)//".out",status="unknown",iostat=istat)
+          close (timestpunit)
+          call outnormpopadapheads(reps)
+          call outnormpopadap(initnorm,acft,extmp,initehr,popt,x,reps,time)
+        end if
+        deallocate(ovrlp)
+
+        !***********Timesteps***********!
+
+        if (((method=="MCEv2").or.(method=="MCEv1")).and.((cloneflg=="YES").or.(cloneflg=="QSC"))) then
+          write(rep,"(i3.3)") reps
+          open(unit=47756,file="Clonetrack-"//trim(rep)//".out",status="new",iostat=ierr)
+          close(47756)
+          allocate (clone(nbf), stat=ierr)
+          if (ierr==0) allocate(clonenum(nbf), stat=ierr)
+          if (ierr/=0) then
+            write(0,"(a)") "Error in allocating clone arrays"
+            errorflag = 1
+          end if
+          if (genloc=="N") then
+            call readclone(clonenum, reps, clone)
+          else
+            do j=1,nbf
+              clone(j) = 0
+              clonenum(j) = 0
+            end do
+          end if
+          write (6,"(a)") "Conditional cloning arrays generated"
+        end if
+
+        write(6,"(a)") "Beginning Propagation"
+        call flush(6)
+
+        do while ((time.lt.timeend_loc).and.(x.le.tnum+2)) !timestep loop 
+
+          if (errorflag .ne. 0) exit
+          x = x + 1  ! timestep index
+          y = x + 1  ! array index
+          call trajchk(bset) !ensures that the position component of the coherent states are not too widely spaced
+          call outbs(bset, reps, mup, muq, time,x) 
+          
+
+          if (cloneflg=="V1") then 
+            if (clonememflg==0) then ! main loop for if cloning has happened
+              call propstep (bset, dt, dtnext, dtdone, time, genflg, timestrt_loc,x,reps)     ! Takes a single timestep
+
+              if (dtdone.eq.dt) then   ! nsame and nchange are used to keep track of changes to the stepsize.
+                !$omp atomic           !atomic parameter used to ensure two threads do not write to the same
+                nsame = nsame + 1      !memory address simultaneously as these counts are taken over all repeats.
+              else
+                !$omp atomic
+                nchange = nchange + 1
+              end if
+              if (abs(time+dtdone-timeend_loc).le.1.0d-10) then   ! if time is close enough to end time, set as end time
+                time=timeend_loc
+              else
+                time = time + dtdone                         ! increment time
+              end if
+              dt = dtnext      ! dtnext is set by the adaptive step size system. If static, dtnext = dt already
+              call postprop(bset,nbf,x,y,reps,muq,mup,time,popt,pops,timestrt_loc,timeend_loc,dt,absehr, &
+                 absnorm,absnorm2,acf_t,extra,clonememflg)
             
-            if ((allocated(clone)).and.(cloneflg.ne."BLIND").and.(time.le.timeend)) then
-              call cloning (bset, nbf, x, time, clone, clonenum, reps)
+            else if (clonememflg==1) then
+              do j=1,nclones
+                call propstep (bsetarr(j)%bs, dt, dtnext, dtdone, time, genflg, timestrt_loc,x,reps)
+              end do
+              if (abs(time+dtdone-timeend_loc).le.1.0d-10) then   ! if time is close enough to end time, set as end time
+                time=timeend_loc
+              else
+                time = time + dtdone                         ! increment time
+              end if
+              allocate(ovrlphold(size(bset),size(bset)))
+              open(21063,file='clonetraker.out',access='append')
+              write(21063,*) '****************************************'
+              write(21063,*) 'time = ', time, x
+              do j =1, nclones
+                ovrlphold=ovrlpmat(bsetarr(j)%bs)
+                normtemp = norm(bsetarr(j)%bs,ovrlphold)
+                pophold1 = pop(bsetarr(j)%bs,1,ovrlphold)
+                pophold2 = pop(bsetarr(j)%bs,2,ovrlphold)
+                write(21063,*) ' For CLONE ', j 
+                write(21063,*) 
+                write(21063,*) ' populations are, ', pophold1, pophold2
+                write(21063,*) 'norm is, ', normtemp
+                write(21063,*) 
+              end do 
+              write(21063,*) '****************************************'
+              close(21063)
+              deallocate(ovrlphold)
+              call alt_clone_condense(bsetarr,dt,x,reps,nclones,nbf,absnorm,acf_t,extra,absehr,pops,mup,muq,time)
             end if
 
-            ! Oliver's bad attempt
-            ! if ((allocated(clone)).and.(cloneflg.ne."BLIND").and.(time.le.timeend)) then
-            !   call cloning (bset, nbf, x, time, clone, clonenum, reps)
-            ! else if(cloneflg=="V1") then
-            !   nctmnd=(real(abs((timeend_loc-timestrt_loc)/dt)))
-            !   if((mod(x,clonefreq)==0).and.(x<=(nctmnd-clonefreq)))then 
-            !     call newcloning(bset,nbf,x,time,reps,mup,muq)
-            !   end if
-            ! end if
-
-            call outbs(bset, reps, mup, muq, time,x)
-
-            if (timeend_loc.gt.timestrt_loc) then
-              if ((time+dt-timeend_loc).gt.0.0d0) dt = timeend_loc - time
-            else
-              if ((time+dt-timeend_loc).lt.0.0d0) dt = timeend_loc - time
+  
+            if (x==cloneblock(e)) then
+              write(6,*) 'cloneblock hit for repeat', reps
+              if (clonememflg==0) then
+                call bstransfer(bsetarr(1)%bs,bset,nbf)
+              end if
+        
+              if (cloneblock(e).ne.(tnum-2)) then 
+                p = nclones+1
+                do j=1,nclones
+                  write(6,*) 'here j =, ', j, 'and p =, ', p
+                  !$omp critical
+                  call v1cloning(bsetarr(j)%bs,nbf,bsetarr(j)%bs,bsetarr(p)%bs)
+                  !$omp end critical 
+                  p = p+1
+                end do 
+                clonememflg=1
+                nclones = nclones*2
+                e=e+1
+              end if
             end if
+          end if
+          if (cloneflg.ne."V1") then
 
             call propstep (bset, dt, dtnext, dtdone, time, genflg, timestrt_loc,x,reps)     ! This subroutine takes a single timestep
 
@@ -592,144 +685,100 @@ Program MainMCE
               !$omp atomic
               nchange = nchange + 1
             end if
-
+            
             if (abs(time+dtdone-timeend_loc).le.1.0d-10) then   ! if time is close enough to end time, set as end time
               time=timeend_loc
             else
               time = time + dtdone                         ! increment time
             end if
-
+          
+            ! if cloning and at a point of cloning, copy the information over to another 
+            ! **************************************************************************
+            
             dt = dtnext      ! dtnext is set by the adaptive step size system. If static, dtnext = dt already
 
             ! output variables written to arrays. Note - if a non-fatal error flag is implemented (currently only fatal errors implemented),
             ! the outputs will have to be saved over the course of propagation and then added to the main arrays at time==timeend
 
-            allocate (ovrlp(size(bset),size(bset)))
-            ovrlp=ovrlpmat(bset)
-            normtemp = norm(bset,ovrlp)
-            nrmtmp = sqrt(dble(normtemp*dconjg(normtemp)))
-            ehren = (0.0d0, 0.0d0)
-            if (method=="MCEv2") then
-              norm2temp = norm2(bset)
-              nrm2tmp=sqrt(dble(norm2temp*dconjg(norm2temp)))
-            end if
-            do j = 1,nbf
-              ehren = ehren + HEhr(bset(j), time, reps)
-            end do
-            ehrtmp = abs(ehren)
-            acft = acf(bset,mup,muq)
-            call extras(extmp, bset)
-            do r=1,npes
-              popt(r) = pop(bset, r, ovrlp)
-            end do
 
-            if ((step == "S").and.(time.le.timeend)) then
-              do r=1,npes
-                pops(y,r) = pops(y,r) + popt(r)
-              end do
-              absehr(y) = absehr(y) + ehrtmp
-              absnorm(y) = absnorm(y) + nrmtmp
-              if (method=="MCEv2") absnorm2(y) = absnorm2(y) + nrm2tmp
-              acf_t(y) = acf_t(y) + acft
-              extra(y) = extra(y) + extmp
-              call outnormpopadap(nrmtmp,acft,extmp,ehrtmp,popt,x,reps,time)
-            else if (step == "A") then
-              timestpunit=1710+reps
-              write(rep,"(i3.3)") reps
-              open (unit=timestpunit,file="timesteps-"//trim(rep)//".out",status="old",access="append",iostat=istat)
-              write(timestpunit,"(e12.5)") dtdone
-              close (timestpunit)
-              call outnormpopadap(nrmtmp,acft,extmp,ehrtmp,popt,x,reps,time)
-            end if
-            deallocate(ovrlp)
+            te = int(real(abs((timeend_loc-timestrt_loc)/dt)))
 
-            call outbs(bset, reps, mup, muq, time,x)
-            if ((cloneflg == "YES").or.(cloneflg == "BLIND+").or.(cloneflg == "QSC")) then
-              call outclones(clonenum, reps, clone)
+            
+          
+            if ((allocated(clone)).and.(cloneflg.ne."BLIND").and.(time.le.timeend).and.(cloneflg.ne."V1")) then
+              call cloning (bset, nbf, x, time, clone, clonenum, reps)
             end if
 
-            !call conservchk(initehr, initnorm, ehrtmp, nrmtmp, reps)  !Checks that all conserved quantites are conserved.
-                                                !Disabled to ensure that small fluctuations aren't disruptive
-            if (mod(x,50)==0) then     !Status reports
-              if (step == "S") then
-                write(6,"(a,i8,a,i8,a,i0,a,i0)") "Completed step ", x, " of ", int(real(abs((timeend_loc-timestrt_loc)/dt))),&
-                    " on rep ", reps, " of ", reptot
-              else
-                write(6,"(a,i8,a,i8,a,i0,a,i0)") "Completed step ", x, " of approximately ", &
-                    int(real(abs(x*(timeend_loc-timestrt_loc)/(time-timestrt_loc)))), " on rep ", reps, " of ", reptot
-              end if
-            end if
-
-            call flush(6)
-            call flush(0)
-
-          end do   !End of time propagation.
-
-          if ((time.lt.timeend).and.(errorflag.ne.1)) then
-            write(0,"(a,e12.5)") "Too many steps taken. Propagation aborted at t = ", time
-            write(0,"(a)") "Consider revising timestep parameters"
+            call postprop(bset,nbf,x,y,reps,muq,mup,time,popt,pops,timestrt_loc,timeend_loc,dt,absehr, &
+              absnorm,absnorm2,acf_t,extra,clonememflg)
           end if
 
-          if (allocated(clone)) then
-            deallocate (clone, stat=ierr)
-            if (ierr==0) deallocate(clonenum, stat=ierr)
-            if (ierr/=0) then
-              write(0,"(a)") "Error in deallocating clone arrays"
-              errorflag = 1
-            end if
+        end do   !End of time propagation.
+        write(6,*) 'end of time propagation'
+
+        if ((time.lt.timeend).and.(errorflag.ne.1)) then
+          write(0,"(a,e12.5)") "Too many steps taken. Propagation aborted at t = ", time
+          write(0,"(a)") "Consider revising timestep parameters"
+        end if
+
+        if (allocated(clone)) then
+          deallocate (clone, stat=ierr)
+          if (ierr==0) deallocate(clonenum, stat=ierr)
+          if (ierr/=0) then
+            write(0,"(a)") "Error in deallocating clone arrays"
+            errorflag = 1
           end if
-
         end if
 
-        if (errorflag==1) then
-          write(6,"(a)") "Last basis set outputting...."
-          call outbs(bset, reps, mup, muq, time,x)
-        end if
-
-        call deallocbs(bset)     ! Deallocates basis set ready for next repeat
-
-        if ((conjrep==2).and.(errorflag==0)) then
-          write(6,"(a)") "Starting Conjugate propagation"
-        else
-          exit
-        end if
-
-        call flush(6)
-        call flush(0)
-
-      end do !conjugate repeat
-
-      if (allocated(mup)) deallocate (mup, stat=ierr)
-      if ((allocated(muq)).and.(ierr==0)) deallocate (muq, stat=ierr)
-      if ((allocated(popt)).and.(ierr==0)) deallocate (popt, stat=ierr)
-      if (ierr/=0) then
-        write(0,"(a,i0)") "Error deallocating mup, muq or popt in repeat ", reps
-        errorflag=1
       end if
 
+      if (errorflag==1) then
+        write(6,"(a)") "Last basis set outputting...."
+        call outbs(bset, reps, mup, muq, time, x)
+      end if
+
+      call deallocbs(bset)     ! Deallocates basis set ready for next repeat
+
+      if ((conjrep==2).and.(errorflag==0)) then
+        write(6,"(a)") "Starting Conjugate propagation"
+      else
+        exit
+      end if
+  
       call flush(6)
       call flush(0)
-
-    
       
-    end do ! The main repeat loop
-    !$omp end do
-    !$omp end parallel
-    if(cloneflg=="V1") then 
-      reptot = reptot+adptreptot
-      adptreptot=0
-      restrtflg = 1
+
+    end do !conjugate repeat
+
+    if (allocated(mup)) deallocate (mup, stat=ierr)
+    if ((allocated(muq)).and.(ierr==0)) deallocate (muq, stat=ierr)
+    if ((allocated(popt)).and.(ierr==0)) deallocate (popt, stat=ierr)
+    if (ierr/=0) then
+      write(0,"(a,i0)") "Error deallocating mup, muq or popt in repeat ", reps
+      errorflag=1
     end if
-  end do
+
+    call flush(6)
+    call flush(0)
+
+  
+    
+  end do ! The main repeat loop
+  !$omp end do
+  !$omp end parallel
+  
+
+
   
 
   write(6,"(a)") "Finished Propagation"
-
+  
   if (prop=="Y") then
     if ((step=="S").and.(errorflag==0)) then    !Outputs data to file
       pops = pops/dble(reptot)
       absehr = absehr/dble(reptot)
-      absnorm = absnorm/dble(reptot)
+      absnorm = 1
       if (method=="MCEv2") absnorm2 = absnorm2/dble(reptot)
       acf_t = acf_t/dble(reptot)
       extra = extra/dble(reptot)
@@ -809,7 +858,7 @@ Program MainMCE
   else
     write(6,"(a,es12.5,a)") 'Time taken : ', runtime, ' seconds'
   end if
-
+  
 
   call flush(6)
   call flush(0)

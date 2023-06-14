@@ -49,23 +49,29 @@ contains
         do r=1,npes
           sumamps = sumamps + dconjg(bsold(j)%a_pes(r))*bsold(j)%a_pes(r)
         end do
+        
         bsold(j)%D_big = cdsqrt(sumamps)
+        
         do r=1,npes
           bsold(j)%d_pes(r) = bsold(j)%d_pes(r)/bsold(j)%D_big
           bsold(j)%a_pes(r) = bsold(j)%d_pes(r) * cdexp (i*bsold(j)%s_pes(r))
         end do
       end do
+      
       do j=1,nbfnew
         sumamps = (0.0d0, 0.0d0)
         do r=1,npes
           sumamps = sumamps + dconjg(bsnew(j)%a_pes(r))*bsnew(j)%a_pes(r)
         end do
+        
         bsnew(j)%D_big = cdsqrt(sumamps)
+        
         do r=1,npes
           bsnew(j)%d_pes(r) = bsnew(j)%d_pes(r)/bsnew(j)%D_big
           bsnew(j)%a_pes(r) = bsnew(j)%d_pes(r) * cdexp (i*bsnew(j)%s_pes(r))
         end do
       end do
+      
     end if
 
     allocate (cnew(nbfnew), stat=ierr)
@@ -144,7 +150,7 @@ contains
 
     deallocate(dnew, stat=ierr)
     if (ierr/=0) then
-      write (0,"(a)"),"Error deallocating dnew arrays in reloc"
+      write (0,"(a)") "Error deallocating dnew arrays in reloc"
       errorflag = 1
       return
     end if
@@ -205,7 +211,6 @@ contains
       if (clone(k).lt.x-clonefreq) clone(k)=0
       clonehere(k) = 0
     end do
-
     ! Build the map of which trajectories to clone, done on the basis function by basis function level (clonetype=1),
     ! or the entire basis set at once (clonetype=2)
 
@@ -602,95 +607,149 @@ contains
   end subroutine cloning
 
 
-  subroutine newcloning(bs,nbf,x,time,reps,mup,muq)
+  subroutine v1cloning(bs,nbf,clone1,clone2)
+    implicit none 
 
+    type(basisfn), dimension(:), allocatable, intent(inout) :: bs
+    type(basisfn), dimension(:), intent(inout) ::clone1, clone2 
+    integer, intent(in) :: nbf
+    integer :: nbfold, k, m, r, nbfnew, ierr, l, j, cloneload, i_seed, n
+    INTEGER, DIMENSION(:), ALLOCATABLE :: a_seed, loc0
+    INTEGER, DIMENSION(1:8) :: dt_seed
+    real(kind=8) :: brforce, normar, sumamps, trackav
+    complex(kind=8), dimension(size(bs),size(bs))::cloneovrlp, clone2ovrlp, bsovrlp
+    complex(kind=8) :: clonenorm, clonenorm2, asum1, asum2, bsnorm
+    real(kind=8) :: normc1, normc2, normc0, choice, pophold1, pophold2
+
+    
+   
+
+  
+
+ 
+    write(6,*) "Starting new V1 cloning subroutine"
+    bsovrlp = ovrlpmat(bs)
+    bsnorm = norm(bs,bsovrlp)
+    pophold1 = pop(bs,1,bsovrlp)
+    pophold2 = pop(bs,2,bsovrlp)
+    write(6,*) "basenorm1 = ", bsnorm, pophold1,pophold2
+    !manipulating the child amplitudes 
+    do k=1, nbf
+      do m=1, ndim
+        clone1(k)%z(m) = bs(k)%z(m)
+        clone2(k)%z(m) = bs(k)%z(m)
+      end do
+  
+      clone2(k)%D_big = (1.0d0,0.00)
+      clone2(k)%d_pes(1) = (0.0d0,0.0d0) 
+      clone2(k)%d_pes(2) = bs(k)%d_pes(2) 
+      clone2(k)%s_pes(1) = bs(k)%s_pes(1)
+      clone2(k)%s_pes(2) = bs(k)%s_pes(2)
+      clone2(k)%a_pes(1) = clone2(k)%d_pes(1) * exp(i*clone2(k)%s_pes(1))
+      clone2(k)%a_pes(2) = clone2(k)%d_pes(2) * exp(i*clone2(k)%s_pes(2))
+
+      clone1(k)%D_big = (1.0d0,0.00)
+      clone1(k)%d_pes(1) = bs(k)%d_pes(1) ! it's easier to set all the first child to the preclone value and change later 
+      clone1(k)%d_pes(2) = (0.0d0,0.0d0)
+      clone1(k)%s_pes(1) = bs(k)%s_pes(1)
+      clone1(k)%s_pes(2) = bs(k)%s_pes(2)
+      clone1(k)%a_pes(1) = clone1(k)%d_pes(1) * exp(i*clone1(k)%s_pes(1)) 
+      clone1(k)%a_pes(2) = clone1(k)%d_pes(2) * exp(i*clone1(k)%s_pes(2)) 
+    end do 
+    
+
+    bsovrlp = ovrlpmat(bs)
+    bsnorm = norm(bs,bsovrlp)
+    pophold1 = pop(bs,1,bsovrlp)
+    pophold2 = pop(bs,2,bsovrlp)
+    cloneovrlp = ovrlpmat(clone1)
+    clone2ovrlp = ovrlpmat(clone2)
+    clonenorm = norm(clone1,cloneovrlp)
+    clonenorm2 = norm(clone2,clone2ovrlp)
+    normc1 = sqrt(clonenorm*dconjg(clonenorm))
+    normc2 = sqrt(clonenorm2*dconjg(clonenorm2))
+    write(6,*) "basenorm2 = ", bsnorm, pophold1,pophold2
+    write(6,*) "clonenorm = ", clonenorm
+    write(6,*) "clonenorm2 = ", clonenorm2
+
+
+
+    do k=1, nbf
+      clone1(k)%normweight = clone1(k)%normweight * normc1
+      clone2(k)%normweight = clone2(k)%normweight * normc2
+      do r=1, npes
+        clone2(k)%d_pes(r) = clone2(k)%d_pes(r)!/sqrt(clonenorm2)!exp(-i*clone(k)%s_pes(r)) ! clone 2 will be non zero only when not on the pes
+        clone1(k)%d_pes(r) = clone1(k)%d_pes(r)!/sqrt(clonenorm)!exp(-i*clone(k)%s_pes(r)) ! it's easier to set all the first child to the preclone value and change later 
+        clone1(k)%a_pes(r) = clone1(k)%d_pes(r) * exp(i*clone1(k)%s_pes(r))
+        clone2(k)%a_pes(r) = clone2(k)%d_pes(r) * exp(i*clone2(k)%s_pes(r))
+      end do 
+    end do  
+      
+  end subroutine v1cloning
+
+  subroutine bstransfer(bsnew,bsold,nbf)
     implicit none
 
+    type(basisfn), dimension(:), allocatable, intent(inout) :: bsnew,bsold
+    integer, intent(in) :: nbf
+    integer :: k, m, r
 
-    real(kind=8), dimension(:), intent(in)::mup,muq
-    type(basisfn), dimension(:), allocatable, intent(inout) :: bs
-    type(basisfn), dimension(:), allocatable :: bsnew, bsnew2
-    real(kind=8), intent(in) :: time
-    integer, intent(inout) :: nbf
-    integer, intent(in) :: x, reps
-    integer :: k, m, j, ierr, r, randomintV1
-    character(LEN=4)::crrntrep, ranomintV1char
-    
 
-    if(errorflag==1) return
 
-    !if((mod(x,clonefreq)==0).and.(x<nctmnd-1))then
-      
+    do k=1, nbf
+      do m=1, ndim
+        write(6,*) m
+        bsnew(k)%z(m) = bsold(k)%z(m)
+      end do
+      bsnew(k)%D_big = (1.0d0,0.00) ! the prefactor doesn't change through cloning 
+      bsnew(k)%normweight = bsold(k)%normweight  
+      bsnew(k)%normweight = bsold(k)%normweight
+      do r=1, npes
+        bsnew(k)%d_pes(r) = bsold(k)%d_pes(r) 
+        bsnew(k)%s_pes(r) = bsold(k)%s_pes(r) 
+        bsnew(k)%a_pes(r) = bsold(k)%a_pes(r)
+      end do 
 
-      
-    if (npes.ne.2) then
-      write(6,*) "Error. Cloning currently only valid for npes=2"
-      errorflag = 1
-      return
+    end do 
+
+
+
+
+  end subroutine bstransfer
+
+  subroutine Renorm_clones(bs, PES, nbf)
+    ! inputted variables
+    type(basisfn), dimension(:),  allocatable, intent(inout):: bs
+    integer, intent(in) :: PES, nbf
+
+    ! internal variables
+    complex(kind=8), dimension(size(bs),size(bs)):: bsovrlp
+    complex(kind=8) :: bsnorm
+    integer :: not_PES
+
+    ! counters
+    integer :: k,r
+
+    if (PES==1) then
+      not_pes = 2
+    else if (PES==2) then
+      not_PES = 1
     end if
 
-    
-
-    call allocbs(bsnew,nbf)
-    call allocbs(bsnew2,nbf)
-
-    
-    do k=1,nbf
-
-      bsnew(k)%D_big = bs(k)%D_big
-      bsnew2(k)%D_big = bs(k)%D_big
-      do r=1,npes
-        if(r==in_pes) then
-          bsnew(k)%d_pes(r)=bs(k)%d_pes(r)
-          bsnew2(k)%d_pes(r)=(0.0d0,0.0d0)
-        else
-          bsnew2(k)%d_pes(2)=bs(k)%d_pes(r)
-          bsnew(k)%d_pes(2)=(0.0d0,0.0d0)
-        end if
-      end do
-
-      do r=1,npes
-        
-        bsnew(k)%s_pes(r)=bs(k)%s_pes(r)
-        bsnew2(k)%s_pes(r)=bs(k)%s_pes(r)
-        bsnew(k)%a_pes(r) = bsnew(k)%d_pes(r) * cdexp(i*bsnew(k)%s_pes(r))
-        bsnew2(k)%a_pes(r) = bsnew2(k)%d_pes(r) * cdexp(i*bsnew2(k)%s_pes(r))
-      end do
-
-      do m=1,ndim
-        bsnew(k)%z(m)=bs(k)%z(m)
-        bsnew2(k)%z(m)=bs(k)%z(m)
-      end do
-    end do
-    !$omp atomic
-    adptreptot=adptreptot+1
-    !$omp end atomic
-    randomintV1=reptot+adptreptot 
-    call outbs(bsnew2,randomintV1,mup,muq,time,x)
-    write(crrntrep,"(i4.4)") reps
-    write(ranomintV1char,"(i4.4)") randomintV1
-    call execute_command_line('cp normpop-'//trim(crrntrep)//'.out normpop-'//trim(ranomintV1char)//'.out')
-    
-    call deallocbs(bsnew2)
 
     do k=1,nbf
-      bs(k)%D_big = bsnew(k)%D_big
-      do r=1,npes
-        bs(k)%a_pes(r) = bsnew(k)%a_pes(r)
-        bs(k)%d_pes(r) = bsnew(k)%d_pes(r)
-        bs(k)%s_pes(r) = bsnew(k)%s_pes(r)
-      end do
-      do m=1,ndim
-        bs(k)%z(m) = bsnew(k)%z(m)
-      end do
-    end do
-    call deallocbs(bsnew)
-    return
-    
-    !end if
-    
-    return 
-  end subroutine newcloning
+      bs(k)%d_pes(not_PES) = 0.0d0
+      bs(k)%a_pes(not_PES) = 0.0d0
+    end do 
+    bsovrlp = ovrlpmat(bs)
+    bsnorm = norm(bs,bsovrlp)
+    do k = 1, nbf 
+      bs(k)%d_pes(PES) = bs(k)%d_pes(PES)/sqrt(bsnorm)
+      bs(k)%a_pes(PES) = bs(k)%d_pes(PES)*exp(i*bs(k)%s_pes(PES))
+    end do 
+  
+  end subroutine Renorm_clones
+
 
 !***********************************************************************************!
 end module bsetalter

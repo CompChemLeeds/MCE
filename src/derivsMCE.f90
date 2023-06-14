@@ -564,9 +564,9 @@ contains
           if ((ovrlpdif.ne.0.0d0).and.(basis.ne."TRAIN").and.(basis.ne."SWTRN").and.&
             & (cloneflg.ne."BLIND").and.(cloneflg.ne."BLIND+").and.(qss==0)) then
             write(0,"(a)") "Error! Initial phi-overlap has disimilarilies to z-overlap"
-            write(0,'(a,a,i0,a,i0,a)'), "These matrices should be identical ",&
+            write(0,'(a,a,i0,a,i0,a)') "These matrices should be identical ",&
                                   "but differences found at coordinate ", j,",",k,"."
-            write(0,'(a,4(e15.8,a))'), "Expected (",dimag(i*ovrlp(j,k)),","&
+            write(0,'(a,4(e15.8,a))') "Expected (",dimag(i*ovrlp(j,k)),","&
                                  ,dimag(ovrlp(j,k)),") but got (",&
                                   dimag(i*ovrlpphi(j,k)),",",dimag(ovrlpphi(j,k)),")"
             errorflag = 1
@@ -719,7 +719,6 @@ contains
     if (errorflag .ne. 0) return
 
     ierr = 0
-
     do k=1,size(zczdot,2)
       do j=1,size(zczdot,1)
         zczdot(j,k) = (0.0d0, 0.0d0)

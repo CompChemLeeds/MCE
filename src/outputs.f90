@@ -107,12 +107,12 @@ contains
     integer::m, j, r, k, ierr, bsunit, fileun
     character(LEN=22)::filename, filenm, filenm2, myfmt
     integer, intent(in) :: reps, x
-    character(LEN=4):: rep
+    character(LEN=4):: rep, or
     character(LEN=5)::step
     character(LEN=1)::rkstp
 
-    ierr = 0
 
+    ierr = 0
     write(rep,"(i4.4)") reps
     if (x.lt.0) then
       write(step,"(i5.4)") x
@@ -141,13 +141,15 @@ contains
     write(bsunit,"(a,1x,i4)"       ) 'nbasisfns'  , size(bs)
     write(bsunit,"(a,1x,i4)"       ) 'initial_PES', in_pes
     write(bsunit,"(a,1x,es25.17e3)") 'time'       , t
-    write(bsunit,*),""
+    write(bsunit,"(a,1x,i4)"       ) 'carray ',  bs(1)%carray(1)
+    
+    write(bsunit,*) ""
     do m=1,ndim
       write(bsunit,"(a,1x,i3,2(1x,es25.17e3))") 'zinit', m, muq(m), mup(m)
     end do
 
     do j=1,size(bs)
-      write(bsunit,*),""
+      write(bsunit,*) ""
       write(bsunit,"(a,1x,i5)")'basis', j
       write(bsunit,"(a,2(1x,es25.17e3))") "D", dble(bs(j)%D_big), dimag(bs(j)%D_big)
       do r=1,npes
@@ -239,12 +241,12 @@ contains
       if (npes==2) then 
         write(fileun,"(a,a)") "Time Norm Re(ACF(t)) Im(ACF(t)) |ACF(t)| Re(Extra) Im(Extra) |Extra| ",&
                         "Sum(HEhr) Pop1 Pop2 Pop1+Pop2 Pop2-Pop1"
-        write(fileun,*), ""
-        write(fileun,*), ""
+        write(fileun,*) ""
+        write(fileun,*) ""
       else
         write(fileun,"(a)") "Time Norm Re(ACF(t)) Im(ACF(t) |ACF(t)| Re(Extra) Im(Extra) |Extra| Sum(HEhr) Pops(1...n)"
-        write(fileun,*), ""
-        write(fileun,*), ""
+        write(fileun,*) ""
+        write(fileun,*) ""
       end if
 
       close(fileun)
@@ -381,7 +383,7 @@ contains
                      dble(extra), dimag(extra), abs(extra), ehr, &
                      popt(1), popt(2), popt(1)+popt(2), popt(1)-popt(2)
     else
-       write(fileun,myfmt), time, norm, dble(acft), dimag(acft), abs(acft), &
+       write(fileun,myfmt) time, norm, dble(acft), dimag(acft), abs(acft), &
                      dble(extra), dimag(extra), abs(extra), ehr, popt(:)
     end if
     
@@ -420,12 +422,12 @@ contains
     if (npes==2) then 
       write(150,"(a,a)") "Time Norm Re(ACF(t)) Im(ACF(t) |ACF(t)| Re(Extra) Im(Extra) |Extra| ", &
                     "Sum(HEhr) Pop1 Pop2 Pop1+Pop2 Pop2-Pop1"
-      write(150,*), ""
-      write(150,*), ""
+      write(150,*) ""
+      write(150,*) ""
     else
       write(150,"(a)") "Time Norm Re(ACF(t)) Im(ACF(t) |ACF(t)| Re(Extra) Im(Extra) |Extra| Sum(HEhr) Pops(1...n)"
-      write(150,*), ""
-      write(150,*), ""
+      write(150,*) ""
+      write(150,*) ""
       write(myfmt,'(a,i0,a)') '(', 9+npes, '(1x,e16.8e3))'
     end if
     
@@ -441,7 +443,7 @@ contains
     else
       do t=1,arrend
         time = dtinit * (t-1)
-        write(150,myfmt), time, norm(t), dble(acft(t)), dimag(acft(t)), abs(acft(t)), &
+        write(150,myfmt) time, norm(t), dble(acft(t)), dimag(acft(t)), abs(acft(t)), &
               dble(extra(t)), dimag(extra(t)), abs(extra(t)), ehr(t), pops(t,:)
       end do
     end if
@@ -612,9 +614,9 @@ contains
    
     OPEN(UNIT=501, FILE="normpop.out",STATUS='new', iostat=ierr)
    
-    write (501,*), LINE2
-    write (501,*), ""
-    write (501,*), ""
+    write (501,*) LINE2
+    write (501,*) ""
+    write (501,*) ""
    
     allocate (output2(cols,timesteps))
    
@@ -896,6 +898,155 @@ contains
 
    end subroutine hunt
 
+   subroutine copynorm(reps, cnum_start)
+    implicit none 
+
+    integer, intent(in) :: reps , cnum_start
+    character(len=4) :: rep, cnum
+    character(LEN=18) :: arg1, arg2
+    character(len=41) :: command
+
+    
+    write(rep,"(i4.4)") reps
+    write(cnum,"(i4.4)") cnum_start
+    
+    
+    arg1 = "normpop-"//trim(rep)//".out"
+    arg2 = "normpop-"//trim(cnum)//".out"
+    command = "cp "//arg1//arg2
+    ! write(6,*) arg1, arg2, command
+    call system(command)
+    
+    
+    
+   
+
+  
+  end subroutine copynorm
+  
+  subroutine clonetag(reps,cnum_start,time, tf, te,bs, norm1, norm2)
+     integer :: ierr, timestep, fileun
+     integer(kind=4), intent(in) :: cnum_start
+     integer, intent(in) ::  reps, te, tf
+     character(LEN=12) :: filenm
+     real(kind=8), intent(in) :: time
+     type(basisfn), dimension(:), allocatable, intent(inout) :: bs
+     real(kind=8), intent(in) :: norm1, norm2
+
+
+     
+    
+    ! if (tf.gt.te) then
+    !   timestep = x + (tf-te)
+    ! else
+    !   timestep = x
+    ! end if 
+    filenm = "clonetag.out"  
+
+
+    open(unit=321,file=filenm,status='unknown',access= 'append',iostat=ierr)
+    !if (ierr.ne.0) then 
+    !  errorflag=1
+    !end if
+    write(321, *) reps, cnum_start, time, bs(1)%carray(1), norm1, norm2
+    
+    close(321)
+
+
+  end subroutine clonetag
+
+  subroutine outbscont(bs, reps, mup, muq, t, x)
+    implicit none
+    type(basisfn), dimension (:), intent(in) :: bs
+    real(kind=8), dimension(:), intent(in) :: mup, muq
+    real(kind=8), intent(in) :: t
+    integer::m, j, r, k, ierr, bsunit, fileun
+    character(LEN=28)::filenm, filenm2, myfmt
+    character(LEN=35):: filename
+    integer, intent(in) :: reps, x
+    character(LEN=4):: rep, or
+    character(LEN=5)::step
+    character(LEN=1)::rkstp
+    character(LEN=13):: path
+    logical :: dir_e
+    character(len=4):: tstep
+    
+    inquire(file='./bscontinuous/.', exist=dir_e)
+
+    if ( dir_e ) then
+      ! write(6,*) "dir exists!"
+    else
+      call system('mkdir bscontinuous')
+      open(unit=3181, file = ('bscontinoustrack.out'), status='unknown', iostat= ierr)
+      close(3181)
+    end if  
+
+    ierr = 0
+   
+    write(rep,"(i4.4)") reps
+    write(tstep, "(i4.4)") x
+    if (x.lt.0) then
+      write(step,"(i5.4)") x
+    else
+      write(step,"(i5.5)") x
+    end if
+    path = "bscontinuous/"
+    if (errorflag.eq.0) then
+     filename = path//"Outbscon-"//rep//"-"//trim(tstep)//".out"
+    else
+     filename = path//"Errbs-"//rep//"-"//tstep//".out" 
+    end if
+  
+    open(unit=3181, file = ('bscontinoustrack.out'), status='unknown', POSITION='APPEND', iostat= ierr)
+    write(3181,"(a,1x,i4)"       ) filename
+    close(3181)
+    bsunit=235+reps
+
+    open(unit=bsunit, file=trim(filename), status='unknown', iostat=ierr)
+    
+    if (size(bs).eq.0) then
+      write(bsunit,"(a)") "Basis set cannot be output as it is not allocated properly"
+      errorflag = 1
+      return
+    end if
+
+    write(bsunit,"(a,1x,i4)"       ) 'ndof'       , ndim
+    write(bsunit,"(a,1x,i4)"       ) 'nconf'      , npes
+    write(bsunit,"(a,1x,i4)"       ) 'nbasisfns'  , size(bs)
+    write(bsunit,"(a,1x,i4)"       ) 'initial_PES', in_pes
+    write(bsunit,"(a,1x,es25.17e3)") 'time'       , t
+    
+    write(bsunit,*) ""
+    do m=1,ndim
+      write(bsunit,"(a,1x,i3,2(1x,es25.17e3))") 'zinit', m, muq(m), mup(m)
+    end do
+
+    do j=1,size(bs)
+      write(bsunit,*) ""
+      write(bsunit,"(a,1x,i5)")'basis', j
+      write(bsunit,"(a,2(1x,es25.17e3))") "D", dble(bs(j)%D_big), dimag(bs(j)%D_big)
+      do r=1,npes
+        write(bsunit,"(a,i4,2(1x,es25.17e3))") "a",r, dble(bs(j)%a_pes(r)), dimag(bs(j)%a_pes(r)) 
+      end do  
+      do r=1,npes
+        write(bsunit,"(a,i4,2(1x,es25.17e3))") "d",r, dble(bs(j)%d_pes(r)), dimag(bs(j)%d_pes(r)) 
+      end do  
+      do r=1,npes
+        write(bsunit,"(a,i4,1x,es25.17e3)") "s",r, (bs(j)%s_pes(r))
+      end do  
+      do m=1,ndim
+        write(bsunit,"(a,i4,2(1x,es25.17e3))") "z",m, dble(bs(j)%z(m)), dimag(bs(j)%z(m))
+      end do
+    end do
+
+    close(bsunit)
+   
+    return
+
+  end subroutine
+   
+    
+    
 !*************************************************************************************************!
 
 END MODULE outputs

@@ -435,7 +435,7 @@ contains
       return
     end if  
     n=n+1
-    read(140,*,iostat=ierr)LINE1, LINE2, LINE3, LINE4,LINE5
+    read(140,*,iostat=ierr)LINE1, LINE2, LINE3, LINE4,LINE5,LINE6
     if (ierr .ne. 0) then
       write(0,"(a)") 'Error reading cloning data'
       errorflag = 1
@@ -488,6 +488,7 @@ contains
       return
     end if
     n = n+1
+   
 
     if ((in_pes.gt.npes).or.(in_pes.le.0)) then
       write(0,"(a)") "Initial PES does not exist"
@@ -558,9 +559,9 @@ contains
       thresh = 0.249d0
     end if
 
-    if (cloneflg=="V1") then
-      clonemax=20
-    end if
+    ! if (cloneflg=="V1") then
+    !   clonemax=20
+    ! end if
 
     if ((randfunc.ne.'ZBQL').and.(randfunc.ne.'zbql').and.(randfunc.ne.'gaus').and.(randfunc.ne.'GAUS')) then
       write(0,"(a,a)") "Invalid value for random number function. Must be ZBQL/zbql or GAUS/gaus. Value is ", randfunc
@@ -802,7 +803,7 @@ contains
 
     implicit none
     type(basisfn), dimension (:), allocatable, intent(inout) :: bs
-    integer::ierr, n, j, k, m, r, cflg, bsunit
+    integer::ierr, n, j, k, m, r, cflg, bsunit, orgrep
     real(kind=8), dimension(:), allocatable, intent(out) :: mup, muq
     real(kind=8), intent(inout) :: t
     integer, intent(inout) :: nbf
@@ -811,6 +812,8 @@ contains
     character(LEN=14)::filename
     real(kind=8)::rl, im
     complex(kind = 8) :: dsum1
+    integer(kind=8):: or
+
 
     if (errorflag .ne. 0) return
 
@@ -901,14 +904,27 @@ contains
         write(6,"(a,es16.8e3)") "time =", t
         call flush(6)
         n = n+1
+        else if (LINE=="carray") then
+        backspace(bsunit)
+        read(bsunit,*,iostat=ierr)LINE,or
+        if(ierr.ne.0) then
+          write(0,"(a)")  "Error reading time"
+          call flush(0)
+          errorflag = 1
+          return
+        end if
+        write(6,"(a,i4)") "original =", or
+        call flush(6)
+        n = n+1
       end if
+
       read(bsunit,*,iostat=ierr)LINE
     end do
 
     call flush(6)
     call flush(0)
 
-    if (n.ne.5) then
+    if (n.ne.6) then
       write(0,"(a,i0,a)") "Error in reading parameters. Only ", n, " of 6 parameters read."
       errorflag = 1
       return
@@ -958,6 +974,7 @@ contains
     end if
 
     do j=1,nbf
+      bs(j)%carray(1) = or
       read(bsunit,*,iostat=ierr)LINE,k
       if(k.ne.j) then
         write(0,"(a,i2,a,i2)") "Error. Expected basis function ", j, " but got ", k
@@ -1055,7 +1072,6 @@ contains
       do j=1,nbf
         if ((dble(bs(j)%D_big) /= 1.0d0).and.(method.eq."MCEv1")) then
           write(0,"(a)") "The D_big amplitudes are not compatible with MCEv1 propagation for t/=0"
-          errorflag=1
           return
         else if ((dble(bs(j)%d_pes(1)) /= 1.0d0).and.(method.eq."CCS")) then
           write(0,"(a)") "The d_pes amplitudes are not compatible with CCS propagation for t/=0"
@@ -1266,4 +1282,282 @@ contains
 
 !*************************************************************************************************!
 
+  subroutine readcontbasis(bs, i1, i2 ,nbf)   !   Level 1 Subroutine
+
+    implicit none
+    type(basisfn), dimension (:), allocatable, intent(inout) :: bs
+    integer, intent(in) :: i1,i2
+    integer::ierr, n, j, k, m, r, cflg, bsunit, orgrep
+    real(kind=8), dimension(:), allocatable :: mup, muq
+    real(kind=8) :: t
+    integer, intent(inout) :: nbf
+    character(LEN=100)::LINE
+    character(LEN=18)::filename
+    character(len=18) ::name
+    real(kind=8)::rl, im
+    complex(kind = 8) :: dsum1
+    character(LEN=13):: path
+    character(LEN=40):: fn
+    character(LEN=3) :: or
+    character(len=4) :: s1, s2
+
+    if (errorflag .ne. 0) return
+
+    ierr = 0
+    n = 0
+    cflg = 0
+    path = "bscontinuous/"
+
+    ! write(6,"(a)")"Starting read subroutine"
+    call flush(6)
+
+    write(filename,"(a,i4.4,a)") name
+    write(s1,"(i4.4)") i1
+    write(s2,"(i4.4)") i2
+
+    ! write(6,"(a,a)") "Opening file ", trim(filename)
+    call flush(6)
+
+    bsunit = 2001+(i1+10)*(i2*100)
+    fn = "bscontinuous/"//'outbscon-'//s1//'-'//s2//".out"
+    ! write(6,*) fn
+    open(unit=bsunit, file=fn, status="old", iostat=ierr)
+    rewind(bsunit)
+
+    if (ierr .ne. 0) then
+      write(0,"(3a)") 'Error in opening ', trim(fn),' file'
+      call flush(0)
+      errorflag = 1
+      return
+    end if
+
+    read(bsunit,*,iostat=ierr)LINE
+    call flush(6)
+
+    do while ((LINE.ne."zinit").and.(ierr==0))
+      if (LINE=="ndof") then
+        backspace(bsunit)
+        read(bsunit,*,iostat=ierr)LINE,ndim
+        if(ierr.ne.0) then
+          write(0,"(a)")  "Error reading ndim"
+          call flush(0)
+          errorflag = 1
+          return
+        end if
+        ! write(6,"(a,i0)") "ndim    = ", ndim
+        call flush(6)
+        n = n+1
+      else if (LINE=="nconf") then
+        backspace(bsunit)
+        read(bsunit,*,iostat=ierr)LINE,npes
+        if(ierr.ne.0) then
+          write(0,"(a)")  "Error reading npes"
+          call flush(0)
+          errorflag = 1
+          return
+        end if
+        ! write(6,"(a,i0)") "npes    = ", npes
+        call flush(6)
+        n = n+1
+      else if (LINE=="nbasisfns") then
+        backspace(bsunit)
+        read(bsunit,*,iostat=ierr)LINE,nbf
+        if(ierr.ne.0) then
+          write(0,"(a)")  "Error reading nbf"
+          call flush(0)
+          errorflag = 1
+          return
+        end if
+        ! write(6,"(a,i0)") "nbf     = ", nbf
+        call flush(6)
+        n = n+1
+      else if (LINE=="initial_PES") then
+        backspace(bsunit)
+        read(bsunit,*,iostat=ierr)LINE,in_pes
+        if(ierr.ne.0) then
+          write(0,"(a)")  "Error reading in_PES"
+          call flush(0)
+          errorflag = 1
+          return
+        end if
+        ! write(6,"(a,i0)") "in_pes  = ", in_pes
+        call flush(6)
+        n = n+1
+      else if (LINE=="time") then
+        backspace(bsunit)
+        read(bsunit,*,iostat=ierr)LINE,t
+        if(ierr.ne.0) then
+          write(0,"(a)")  "Error reading time"
+          call flush(0)
+          errorflag = 1
+          return
+        end if
+        ! write(6,"(a,es16.8e3)") "time =", t
+        call flush(6)
+        n = n+1
+      end if
+      read(bsunit,*,iostat=ierr)LINE
+    end do
+
+    call flush(6)
+    call flush(0)
+
+    if (n.ne.5) then
+      write(0,"(a,i0,a)") "Error in reading parameters. Only ", n, " of 6 parameters read."
+      errorflag = 1
+      return
+    end if
+
+    call flush(6)
+    call flush(0)
+
+    allocate (mup(ndim), stat=ierr)
+    if (ierr == 0) allocate (muq(ndim), stat=ierr)
+    if (ierr/=0) then
+      write(0,"(a)") "Error in allocation of mup and muq"
+      errorflag=1
+    end if
+
+    if (LINE.ne."zinit") then
+      write(0,"(a,a)") "Error! Expected zinit, but read ", trim(LINE)
+    end if
+    backspace(bsunit)
+
+    do m=1,ndim
+      read(bsunit,*,iostat=ierr)LINE, j, muq(j), mup(j)
+      if(ierr.ne.0) then
+        write(0,"(a,a)")  "Error reading zinit value ", m
+        errorflag = 1
+        return
+      end if
+      if(m.ne.j) then
+        write(0,"(a,a)")  "Error! Count mismatch in zinit. Expected ", m, "but read ", j
+        errorflag = 1
+        return
+      end if
+    end do
+
+    read(bsunit,*,iostat=ierr)LINE
+
+    if (LINE.ne."basis") then
+      write(0,"(a,a)") "Error! Expected basis, but read ", trim(LINE)
+    end if
+
+    backspace(bsunit)
+
+    if (size(bs).ne.nbf) then
+      write(6,"(a)") "Basis set size has changed. Reallocating basis set."
+      call deallocbs(bs)
+      call allocbs(bs, nbf)
+    end if
+
+    do j=1,nbf
+      read(bsunit,*,iostat=ierr)LINE,k
+      if(k.ne.j) then
+        write(0,"(a,i2,a,i2)") "Error. Expected basis function ", j, " but got ", k
+      end if
+      read (bsunit,*,iostat=ierr)LINE
+      if (LINE.ne."D") then
+        write(0,"(a,a)") "Error! Expected D but read ", trim(LINE)
+      end if
+      backspace(bsunit)
+      read(bsunit,*,iostat=ierr)LINE,rl, im
+      if (LINE.eq."D") then
+        bs(j)%D_big=cmplx(rl,im,kind=8)
+      else
+        write(0,"(a)") "Something has gone very wrong here"
+        errorflag = 1
+        return
+      end if
+      do r=1,npes
+        read(bsunit,*,iostat=ierr)LINE
+        if (LINE.ne."a") then
+          write(0,"(a,a)") "Error! Expected a but read ", trim(LINE)
+        end if
+        backspace(bsunit)
+        read(bsunit,*,iostat=ierr)LINE,k,rl, im
+        if (k.ne.r) then
+          write (0,"(a,i2,a,i2)") "Error. Expected a from pes ", r, "but got ", k
+        end if
+        bs(j)%a_pes(r)=cmplx(rl,im,kind=8)
+      end do
+      do r=1,npes
+        read(bsunit,*,iostat=ierr)LINE
+        if (LINE.ne."d") then
+          write(0,"(a,a)") "Error! Expected d but read ", trim(LINE)
+        end if
+        backspace(bsunit)
+        read(bsunit,*,iostat=ierr)LINE,k,rl, im
+        if (k.ne.r) then
+          write(0,"(a,i2,a,i2)") "Error. Expected d from pes ", r, "but got ", k
+        end if
+        bs(j)%d_pes(r)=cmplx(rl,im,kind=8)
+      end do
+      do r=1,npes
+        read(bsunit,*,iostat=ierr)LINE
+        if (LINE.ne."s") then
+          write(0,"(a,a)") "Error! Expected s but read ", trim(LINE)
+        end if
+        backspace(bsunit)
+        read(bsunit,*,iostat=ierr)LINE,k,rl
+        if (k.ne.r) then
+          write(0,"(a,i2,a,i2)") "Error. Expected s from pes ", r, "but got ", k
+        end if
+        bs(j)%s_pes(r)=rl
+      end do
+      do m=1,ndim
+        read(bsunit,*,iostat=ierr)LINE
+        if (LINE.ne."z") then
+          write(0,"(a,a)") "Error! Expected z, but read ", trim(LINE)
+        end if
+        backspace(bsunit)
+        read(bsunit,*,iostat=ierr)LINE,k,rl, im
+        if (k.ne.m) then
+          write(0,"(a,i2,a,i2)") "Error. Expected z dimension ", m, "but got ", k
+        end if
+        bs(j)%z(m)=cmplx(rl,im,kind=8)
+      end do
+    end do
+
+    close(bsunit)
+
+    if (t==0.0d0) then
+      if (method.eq."MCEv1") then
+        do j=1,nbf
+          do r=1,npes
+            bs(j)%d_pes(r) = bs(j)%d_pes(r) * bs(j)%D_big
+            bs(j)%a_pes(r) = bs(j)%d_pes(r) * cdexp(i*bs(j)%s_pes(r))
+          end do
+          bs(j)%D_big = (1.0d0,0.0d0)
+        end do
+      else
+        do j=1,nbf
+          dsum1 = (0.0d0,0.0d0)
+          do r=1,npes
+            dsum1 = dsum1 + bs(j)%d_pes(r)
+            if (r.eq.in_pes) then
+              bs(j)%d_pes(r) = (1.0d0,0.0d0)
+            else
+              bs(j)%d_pes(r) = (0.0d0,0.0d0)
+            end if
+            bs(j)%a_pes(r) = bs(j)%d_pes(r) * cdexp(i*bs(j)%s_pes(r))
+          end do
+          bs(j)%D_big = dsum1 * bs(j)%D_big
+        end do
+      end if
+    else
+      do j=1,nbf
+        if ((dble(bs(j)%D_big) /= 1.0d0).and.(method.eq."MCEv1")) then
+          write(0,"(a)") "The D_big amplitudes are not compatible with MCEv1 propagation for t/=0"
+          return
+        else if ((dble(bs(j)%d_pes(1)) /= 1.0d0).and.(method.eq."CCS")) then
+          write(0,"(a)") "The d_pes amplitudes are not compatible with CCS propagation for t/=0"
+          errorflag=1
+          return
+        end if
+      end do
+    end if
+
+  end subroutine readcontbasis
+! *************************************************************************************
 END MODULE readpars

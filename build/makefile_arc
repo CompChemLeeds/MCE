@@ -3,15 +3,15 @@
 
 F90=gfortran
 FFLAGS=-fopenmp -O3
-FLINKS=-Wl,--start-group -lmkl_gf_lp64 -lmkl_sequential -lmkl_core -Wl,--end-group -lpthread
+FLINKS=$(ARC_LINALG_FFLAGS)
 VPATH=../src
 
 # Link step
 
-all: Main avrgpops timehist subavrg interpolate integrator
+all: Main avrgpops timehist subavrg interpolate integrator 
 
-Main:randgen.o vars.o alarrays.o sb.o hp.o mp.o outputs.o redirect.o Ham.o Chks.o bsetalter.o readpars.o derivsMCE.o propMCE.o bsetgen.o MainMCE.o
-	 $(F90) $(FFLAGS) -o MCE.exe randgen.o vars.o alarrays.o sb.o hp.o mp.o outputs.o redirect.o Ham.o Chks.o bsetalter.o readpars.o derivsMCE.o propMCE.o bsetgen.o MainMCE.o $(FLINKS)
+Main:randgen.o vars.o alarrays.o sb.o hp.o mp.o outputs.o redirect.o Ham.o Chks.o bsetalter.o readpars.o derivsMCE.o propMCE.o bsetgen.o clonecondense.o MainMCE.o
+	 $(F90) $(FFLAGS) -o MCE.exe randgen.o vars.o alarrays.o sb.o hp.o mp.o outputs.o redirect.o Ham.o Chks.o bsetalter.o readpars.o derivsMCE.o propMCE.o bsetgen.o clonecondense.o MainMCE.o $(FLINKS)
 
 avrgpops:avrgpops.f90
 	 $(F90) -O3 -o avrgpops.exe $<
@@ -27,6 +27,8 @@ interpolate:neville.o interpolate.o
 
 integrator:integrator.f90
 	 $(F90) -O3 -o integrator.exe $<
+
+
 
 # Compile steps
 
@@ -84,6 +86,9 @@ neville.o:neville.f90
 interpolate.o:interpolate.f90 neville.o
 	 $(F90) -O2 -c $<
 
+clonecondense.o: clonecondense.f90 alarrays.o outputs.o readpars.o
+	 $(F90) $(FFLAGS) -c $<
+	  
 # This entry allows you to type " make clean " to get rid of
 # all object and module files
 

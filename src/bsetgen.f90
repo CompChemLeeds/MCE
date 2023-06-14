@@ -234,6 +234,7 @@ contains
        
     if ((basis.ne."SWTRN").or.(flag.eq.3)) then
       do j=1,size(bs)
+        bs(j)%normweight = 1.0d0
         if (qss==1) then
           if (npes==2) then
 !            if (randfunc.eq."GAUS") then

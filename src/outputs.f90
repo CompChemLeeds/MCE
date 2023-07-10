@@ -1044,6 +1044,51 @@ contains
     return
 
   end subroutine
+
+  subroutine outccpop(reps, x, pop1,pop2,ct1,ct2,rsc,np1,np2)
+    implicit none
+    real(kind=8), intent(in):: pop1,pop2,ct1,ct2,rsc,np1,np2
+    integer::m, j, r, k, ierr, bsunit, fileun
+    character(LEN=28)::filenm, filenm2, myfmt
+    character(LEN=35):: filename
+    integer, intent(in) :: reps, x
+    character(LEN=4):: rep, or
+    character(LEN=5)::step
+    character(LEN=1)::rkstp
+    character(LEN=6):: path
+    logical :: dir_e
+    character(len=4):: tstep
+    
+    inquire(file='./ccpop/.', exist=dir_e)
+
+    if ( dir_e ) then
+      ! write(6,*) "dir exists!"
+    else
+      call system('mkdir ccpop')
+    end if  
+
+    
+
+    ierr = 0
+   
+    write(rep,"(i4.4)") reps
+   
+
+    path = "ccpop/"
+    filename = path//"ccpop-"//rep//".out"
+    bsunit=235+reps
+
+    open(unit=bsunit, file=trim(filename), status='unknown', iostat=ierr,access='append')  
+    
+    write(bsunit,*) x, pop1, pop2, ct1,ct2,rsc,np1,np2
+    
+
+
+    close(bsunit)
+   
+    return
+
+  end subroutine
    
     
     

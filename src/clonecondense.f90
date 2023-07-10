@@ -96,7 +96,7 @@ contains
       rescale = normpfs(10,t) + normpfs(11,t)
       normpfs(10,t) = normpfs(10,t)/rescale
       normpfs(11,t) = normpfs(11,t)/rescale
-      open(21061,file='popfromcc.out',access='append')
+      open(21061,file='ccpop/pop.out',access='append')
       write(21061,*) '****************************************'
       write(21061,*) 'time = ', t+tsstart
       write(21061,*) 'populations 1&2 from clones, ', populations(t,1),populations(t,2)
@@ -225,11 +225,12 @@ contains
     
     ! Now to put that the population matrix into a collated output file.
     write(rep,"(i4.4)") reps
+
     open(11204, file = "normpop-"//trim(rep)//".out",access='append')
     write (11204,"(13(1x,es16.8e3))") normpfs(:)
-  
+    
     close(11204)
-
+    call outccpop(reps,t, populations(1),populations(2),ctarray(1), ctarray(2), rescale, normpfs(10), normpfs(11))
 
     
     

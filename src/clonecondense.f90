@@ -120,8 +120,8 @@ contains
      write (11204,"(13(1x,es16.8e3))") normpfs(:,n)
     end do 
     close(11204)
-
-
+    
+  
     write(6,*) 'CONDENSING FINISHED'
     
   end subroutine
@@ -232,7 +232,9 @@ contains
     close(11204)
     call outccpop(reps,t, populations(1),populations(2),ctarray(1), ctarray(2), rescale, normpfs(10), normpfs(11))
 
-    
+    if (mod(t+1,50)==0) then     !Status reports
+      write(6,*) "Completed step ", t+1, " on rep ", reps
+    end if
     
   end subroutine
 

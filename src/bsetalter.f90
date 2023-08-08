@@ -632,7 +632,7 @@ contains
     bsnorm = norm(bs,bsovrlp)
     pophold1 = pop(bs,1,bsovrlp)
     pophold2 = pop(bs,2,bsovrlp)
-    write(6,*) "basenorm1 = ", bsnorm, pophold1,pophold2
+    !write(6,*) "basenorm1 = ", bsnorm, pophold1,pophold2
     !manipulating the child amplitudes 
     do k=1, nbf
       do m=1, ndim
@@ -698,7 +698,6 @@ contains
 
     do k=1, nbf
       do m=1, ndim
-        write(6,*) m
         bsnew(k)%z(m) = bsold(k)%z(m)
       end do
       bsnew(k)%D_big = (1.0d0,0.00) ! the prefactor doesn't change through cloning 

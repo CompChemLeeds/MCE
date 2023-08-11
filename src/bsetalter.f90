@@ -627,12 +627,12 @@ contains
   
 
  
-    write(6,*) "Starting new V1 cloning subroutine"
+    ! write(6,*) "Starting new V1 cloning subroutine"
     bsovrlp = ovrlpmat(bs)
     bsnorm = norm(bs,bsovrlp)
     pophold1 = pop(bs,1,bsovrlp)
     pophold2 = pop(bs,2,bsovrlp)
-    write(6,*) "basenorm1 = ", bsnorm, pophold1,pophold2
+    !write(6,*) "basenorm1 = ", bsnorm, pophold1,pophold2
     !manipulating the child amplitudes 
     do k=1, nbf
       do m=1, ndim
@@ -668,9 +668,9 @@ contains
     clonenorm2 = norm(clone2,clone2ovrlp)
     normc1 = sqrt(clonenorm*dconjg(clonenorm))
     normc2 = sqrt(clonenorm2*dconjg(clonenorm2))
-    write(6,*) "basenorm2 = ", bsnorm, pophold1,pophold2
-    write(6,*) "clonenorm = ", clonenorm
-    write(6,*) "clonenorm2 = ", clonenorm2
+    ! write(6,*) "basenorm2 = ", bsnorm, pophold1,pophold2
+    ! write(6,*) "clonenorm = ", clonenorm
+    ! write(6,*) "clonenorm2 = ", clonenorm2
 
 
 
@@ -698,7 +698,6 @@ contains
 
     do k=1, nbf
       do m=1, ndim
-        write(6,*) m
         bsnew(k)%z(m) = bsold(k)%z(m)
       end do
       bsnew(k)%D_big = (1.0d0,0.00) ! the prefactor doesn't change through cloning 

@@ -6,7 +6,7 @@ SB={
     #Delta
     'SBDelta':'1.0d0',
     #Epsilon
-    'SBEps':'1.0d0',
+    'SBEps':'0.0d0',
     #Beta
     'SBBeta':'5.0d0',
 

@@ -96,7 +96,7 @@ contains
       rescale = normpfs(10,t) + normpfs(11,t)
       normpfs(10,t) = normpfs(10,t)/rescale
       normpfs(11,t) = normpfs(11,t)/rescale
-      open(21061,file='popfromcc.out',access='append')
+      open(21061,file='ccpop/pop.out',access='append')
       write(21061,*) '****************************************'
       write(21061,*) 'time = ', t+tsstart
       write(21061,*) 'populations 1&2 from clones, ', populations(t,1),populations(t,2)
@@ -120,8 +120,8 @@ contains
      write (11204,"(13(1x,es16.8e3))") normpfs(:,n)
     end do 
     close(11204)
-
-
+    
+  
     write(6,*) 'CONDENSING FINISHED'
     
   end subroutine
@@ -225,13 +225,16 @@ contains
     
     ! Now to put that the population matrix into a collated output file.
     write(rep,"(i4.4)") reps
+
     open(11204, file = "normpop-"//trim(rep)//".out",access='append')
     write (11204,"(13(1x,es16.8e3))") normpfs(:)
-  
-    close(11204)
-
-
     
+    close(11204)
+    call outccpop(reps,t, populations(1),populations(2),ctarray(1), ctarray(2), rescale, normpfs(10), normpfs(11))
+
+    if (mod(t+1,50)==0) then     !Status reports
+      write(6,*) "Completed step ", t+1, " on rep ", reps
+    end if
     
   end subroutine
 

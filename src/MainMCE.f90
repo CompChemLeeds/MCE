@@ -139,15 +139,15 @@ Program MainMCE
   type(basisset):: testset
   complex(kind=8), dimension (:,:), allocatable :: initgrid, ovrlp,ovrlphold
   complex(kind=8)::normtemp, norm2temp, ehren, acft, extmp
-  real(kind=8), dimension(:), allocatable :: mup, muq, popt, timeblock
-  real(kind=8) :: nrmtmp, nrm2tmp, ehrtmp, gridsp, timestrt_loc
+  real(kind=8), dimension(:), allocatable :: mup, muq, popt
+  real(kind=8) :: nrmtmp, nrm2tmp, ehrtmp, gridsp, timestrt_loc, normar, brforce
   real(kind=8) :: timeend_loc, timeold, time, dt, dtnext, dtdone, initehr, nctmnd, ctime
   real(kind=8) :: initnorm, initnorm2, alcmprss, dum_re1, dum_re2, rescale, pophold1,pophold2
-  integer, dimension(:), allocatable :: clone, clonenum
+  integer, dimension(:), allocatable :: clone, clonenum, clonehere, ccooldown, ccooldownhold
   integer :: j, k, r, y, x, m,nbf, recalcs, conjrep, restart, reps, trspace, v1clonenum, ovrlpout, num_events,two_to_num_events
   integer :: ierr, timestpunit, stepback, dum_in1, dum_in2, dum_in3, finbf, v1check,loop, e, l, nclones, p
   character(LEN=3):: rep
-  integer :: clone_instance, range, g, a, b
+  integer :: clone_instance, range, g, a, b, sh_clone, brunit
   type(basisfn), dimension(:), allocatable ::clone1, clone2
   real, dimension(:,:), allocatable :: populations, ctarray, normpfs
   real(kind=8) ::  crossterm1, crossterm2
@@ -220,6 +220,9 @@ Program MainMCE
     write(0,"(a)") "Error in allocating the output matrices for static stepsizes"
     errorflag=1
   end if
+
+
+
   pops = 0.0d0          ! Populations in different quantum states
   absehr = 0.0d0        ! Absolute sum of Ehrenfest Hamiltonian over all bfs
   absnorm = 0.0d0       ! Absolute value of the norm calculated over all bfs
@@ -245,26 +248,28 @@ Program MainMCE
   resnum=0
   h=1
   ovrlpout=100
- 
-  if (cloneflg=='V1') then
-    if (mod(tnum-2,clonefreq).eq.0) then
-      num_events = int((tnum-2)/clonefreq - 1) 
-      write(6,*) num_events
-    else 
-      num_events = int((tnum-2)/clonefreq) 
-      write(6,*) num_events
-    end if 
-    allocate(cloneblock(num_events+1))
-    allocate(timeblock(num_events+1))
-    do n =1, size(cloneblock)-1
-        cloneblock(n) = n*clonefreq
-        timeblock(n) = dtinit*cloneblock(n)
-    end do
+  sh_clone=0
 
-    cloneblock(num_events+1) = tnum-2
-    timeblock(num_events+1) =dtinit*cloneblock(num_events+1)
-    two_to_num_events=int(2**num_events)
-    call allocbs_alt(bsetarr,two_to_num_events,in_nbf) !allocate(bsetarr(2**num_events,clonefreq))
+  if (cloneflg=='V1') then
+    if (auto_clone=='NO') then 
+      if (mod(tnum-2,clone_block).eq.0) then
+        num_events = int((tnum-2)/clone_block- 1) 
+        write(6,*) 'num of events ', num_events
+      else 
+        num_events = int((tnum-2)/clone_block) 
+        write(6,*) 'num of events ', num_events
+      end if
+      allocate(cloneblock(num_events+1))
+      do n =1, size(cloneblock)-1
+          cloneblock(n) = n*clone_block
+      end do
+      cloneblock(num_events+1) = tnum-2
+      two_to_num_events=int(2**num_events)
+      call allocbs_alt(bsetarr,two_to_num_events,in_nbf) !allocate(bsetarr(2**num_events,clonefreq))
+    else
+      write(6,*) clonemax
+      call allocbs_alt(bsetarr,2**clonemax,in_nbf) !allocate(bsetarr(2**num_events,clonefreq))
+    end if 
   end if
 
 
@@ -278,14 +283,14 @@ Program MainMCE
 
   !$omp parallel private (bset, dummybs, initgrid, ovrlp, normtemp,&
   !$omp                    norm2temp, ehren, acft, extmp, muq, mup, popt,  &
-  !$omp                    nrmtmp, nrm2tmp, ehrtmp, gridsp, timestrt_loc, trspace,  &
-  !$omp                    timeend_loc, timeold, time, dt, dtnext, dtdone, initehr, &
-  !$omp                    initnorm, initnorm2, alcmprss, clone, clonenum, bsetarr, &
-  !$omp                    j, k, r, y, x, m, nbf, recalcs, conjrep, restart,        &
-  !$omp                    reps, ierr, timestpunit, stepback, dum_in1, dum_in2,     &
-  !$omp                    finbf, dum_in3, dum_re1, dum_re2, rep, genloc, h,        &
-  !$omp                    nclones, clone1, clone2, populations, ctarray, normpfs,  &
-  !$omp                    range, rescale, i, p, g, clonememflg, e, ovrlphold       )
+  !$omp                    nrmtmp, nrm2tmp, ehrtmp, gridsp, timestrt_loc, trspace,                &
+  !$omp                    timeend_loc, timeold, time, dt, dtnext, dtdone, initehr,               &
+  !$omp                    initnorm, initnorm2, alcmprss, clone, clonenum, bsetarr,               &
+  !$omp                    j, k, r, y, x, m, nbf, recalcs, conjrep, restart, brforce,             &
+  !$omp                    reps, ierr, timestpunit, stepback, dum_in1, dum_in2, clonehere,        &
+  !$omp                    finbf, dum_in3, dum_re1, dum_re2, rep, genloc, h, clone_instance,      &
+  !$omp                    nclones, clone1, clone2, populations, ctarray, normpfs, ccooldownhold, &
+  !$omp                    range, rescale, i, p, g, clonememflg, e, ovrlphold, ccooldown          )
 
   !$omp do reduction (+:acf_t, extra, pops, absnorm, absnorm2, absehr)
 
@@ -305,7 +310,12 @@ Program MainMCE
     trspace = trainsp
     hc=0.d0
     clonememflg=0
-    nclones =1
+    nclones = 1
+    if (cloneflg == 'V1') then 
+      allocate(ccooldown(nclones))
+      ccooldown = 0
+    end if 
+  
     
     e=1
     
@@ -568,7 +578,7 @@ Program MainMCE
         deallocate(ovrlp)
 
         !***********Timesteps***********!
-
+       
         if (((method=="MCEv2").or.(method=="MCEv1")).and.((cloneflg=="YES").or.(cloneflg=="QSC"))) then
           write(rep,"(i3.3)") reps
           open(unit=47756,file="Clonetrack-"//trim(rep)//".out",status="new",iostat=ierr)
@@ -590,6 +600,9 @@ Program MainMCE
           write (6,"(a)") "Conditional cloning arrays generated"
         end if
 
+        if (cloneflg=="V1") then
+          call bstransfer(bsetarr(1)%bs,bset,nbf)
+        end if
         write(6,"(a)") "Beginning Propagation"
         call flush(6)
 
@@ -601,10 +614,9 @@ Program MainMCE
           call trajchk(bset) !ensures that the position component of the coherent states are not too widely spaced
           call outbs(bset, reps, mup, muq, time,x) 
           
-
           if (cloneflg=="V1") then 
             if (clonememflg==0) then ! main loop for if cloning has happened
-              call propstep (bset, dt, dtnext, dtdone, time, genflg, timestrt_loc,x,reps)     ! Takes a single timestep
+              call propstep (bsetarr(1)%bs, dt, dtnext, dtdone, time, genflg, timestrt_loc,x,reps)     ! Takes a single timestep
 
               if (dtdone.eq.dt) then   ! nsame and nchange are used to keep track of changes to the stepsize.
                 !$omp atomic           !atomic parameter used to ensure two threads do not write to the same
@@ -619,7 +631,7 @@ Program MainMCE
                 time = time + dtdone                         ! increment time
               end if
               dt = dtnext      ! dtnext is set by the adaptive step size system. If static, dtnext = dt already
-              call postprop(bset,nbf,x,y,reps,muq,mup,time,popt,pops,timestrt_loc,timeend_loc,dt,absehr, &
+              call postprop(bsetarr(1)%bs,nbf,x,y,reps,muq,mup,time,popt,pops,timestrt_loc,timeend_loc,dt,absehr, &
                  absnorm,absnorm2,acf_t,extra,clonememflg)
             
             else if (clonememflg==1) then
@@ -631,48 +643,86 @@ Program MainMCE
               else
                 time = time + dtdone                         ! increment time
               end if
-              allocate(ovrlphold(size(bset),size(bset)))
-              open(21063,file='clonetraker.out',access='append')
-              write(21063,*) '****************************************'
-              write(21063,*) 'time = ', time, x
-              do j =1, nclones
-                ovrlphold=ovrlpmat(bsetarr(j)%bs)
-                normtemp = norm(bsetarr(j)%bs,ovrlphold)
-                pophold1 = pop(bsetarr(j)%bs,1,ovrlphold)
-                pophold2 = pop(bsetarr(j)%bs,2,ovrlphold)
-                write(21063,*) ' For CLONE ', j 
-                write(21063,*) 
-                write(21063,*) ' populations are, ', pophold1, pophold2
-                write(21063,*) 'norm is, ', normtemp
-                write(21063,*) 
-              end do 
-              write(21063,*) '****************************************'
-              close(21063)
-              deallocate(ovrlphold)
               call alt_clone_condense(bsetarr,dt,x,reps,nclones,nbf,absnorm,acf_t,extra,absehr,pops,mup,muq,time)
             end if
 
+            if(auto_clone=='YES') then
+              allocate(clonehere(nclones))
+              clonehere = 0
+              brunit = 48759
   
-            if (x==cloneblock(e)) then
-              write(6,*) 'cloneblock hit for repeat', reps
-              if (clonememflg==0) then
-                call bstransfer(bsetarr(1)%bs,bset,nbf)
-              end if
-        
-              if (cloneblock(e).ne.(tnum-2)) then 
-                p = nclones+1
-                do j=1,nclones
-                  write(6,*) 'here j =, ', j, 'and p =, ', p
-                  !$omp critical
-                  call v1cloning(bsetarr(j)%bs,nbf,bsetarr(j)%bs,bsetarr(p)%bs)
-                  !$omp end critical 
-                  p = p+1
+              open(unit=brunit,file="Brforce-.out",status="unknown",access = 'append', iostat=ierr)
+  
+              do p=1,nclones
+                do j=1,nbf
+                  normar = 0.0d0
+                  do r=1,npes
+                    normar = normar + dconjg(bsetarr(p)%bs(j)%a_pes(r))*bsetarr(p)%bs(j)%a_pes(r)
+                  end do
+                  !!!! The line below needs changing to acount for multiple PESs
+                  brforce = ((abs(bsetarr(p)%bs(j)%a_pes(1)*bsetarr(p)%bs(j)%a_pes(2))**2.0)/(normar**2.0))
+                  if ((brforce.gt.thresh)) then
+                    ! write(brunit,*) 'cloneblock hit for repeat', reps, 'clone', p, 'timestep', x, brforce
+                    clonehere(p) = clonehere(p) + 1
+                  end if 
                 end do 
-                clonememflg=1
-                nclones = nclones*2
-                e=e+1
+              end do 
+              do p=1,nclones
+                if (clonehere(p).ge.nbf*nbf_frac) then
+              
+                  if (ccooldown(p).eq.0) then
+
+                    if (x.lt.(tnum-52)) then    
+                      if(nclones.lt.2**clonemax) then 
+                        ! write(6,*) 'the number of straddled functions is, ', clonehere(p), 'so clone'
+                        nclones = nclones+1 
+                        write(brunit,*) 'clone', p, 'from rep', reps, ' into clones ', p, nclones, 'at step', x, x*dtinit
+                        !$omp critical
+                        call v1cloning(bsetarr(p)%bs,nbf,bsetarr(p)%bs,bsetarr(nclones)%bs)
+                        !$omp end critical 
+                        clonememflg=1
+                        allocate(ccooldownhold(nclones))
+                        do j=1, size(ccooldown)
+                          ccooldownhold(j) = ccooldown(j)
+                        end do 
+                        deallocate(ccooldown)
+                        ccooldownhold(p) = clonefreq
+                        ccooldownhold(nclones) = clonefreq
+                        allocate(ccooldown(nclones)) 
+                        do j=1,nclones
+                          ccooldown(j) = ccooldownhold(j)
+                        end do 
+                        deallocate(ccooldownhold)
+                      end if 
+                    end if  
+                  end if 
+                end if 
+                if (ccooldown(p).gt.0) then
+                  ccooldown(p) = ccooldown(p) - 1
+                end if 
+              
+              end do 
+              ! close(brunit)
+              deallocate(clonehere) 
+            else if (auto_clone== 'NO') then
+              if (x==cloneblock(e)) then
+                write(6,*) 'cloneblock hit for repeat', reps
+                if (cloneblock(e).ne.(tnum-2)) then 
+                  p = nclones+1
+                  do j=1,nclones
+                    !write(6,*) 'here j =, ', j, 'and p =, ', p
+                    !$omp critical
+                    call v1cloning(bsetarr(j)%bs,nbf,bsetarr(j)%bs,bsetarr(p)%bs)
+                    !$omp end critical 
+                    sh_clone=0
+                    p = p+1
+                  end do 
+                  clonememflg=1
+                  nclones = nclones*2
+                  e=e+1
+                end if
               end if
-            end if
+            end if 
           end if
           if (cloneflg.ne."V1") then
 
@@ -714,7 +764,11 @@ Program MainMCE
           end if
 
         end do   !End of time propagation.
-        write(6,*) 'end of time propagation'
+        write(6,*)'end of time propagation'
+        if (cloneflg=="V1".and.allocated(ccooldown)) then 
+          deallocate(ccooldown)
+        end if
+
 
         if ((time.lt.timeend).and.(errorflag.ne.1)) then
           write(0,"(a,e12.5)") "Too many steps taken. Propagation aborted at t = ", time
@@ -729,14 +783,14 @@ Program MainMCE
             errorflag = 1
           end if
         end if
-
+     
       end if
 
       if (errorflag==1) then
         write(6,"(a)") "Last basis set outputting...."
         call outbs(bset, reps, mup, muq, time, x)
       end if
-
+  
       call deallocbs(bset)     ! Deallocates basis set ready for next repeat
 
       if ((conjrep==2).and.(errorflag==0)) then
@@ -744,7 +798,7 @@ Program MainMCE
       else
         exit
       end if
-  
+
       call flush(6)
       call flush(0)
       

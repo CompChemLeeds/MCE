@@ -627,7 +627,7 @@ contains
   
 
  
-    write(6,*) "Starting new V1 cloning subroutine"
+    ! write(6,*) "Starting new V1 cloning subroutine"
     bsovrlp = ovrlpmat(bs)
     bsnorm = norm(bs,bsovrlp)
     pophold1 = pop(bs,1,bsovrlp)
@@ -668,9 +668,9 @@ contains
     clonenorm2 = norm(clone2,clone2ovrlp)
     normc1 = sqrt(clonenorm*dconjg(clonenorm))
     normc2 = sqrt(clonenorm2*dconjg(clonenorm2))
-    write(6,*) "basenorm2 = ", bsnorm, pophold1,pophold2
-    write(6,*) "clonenorm = ", clonenorm
-    write(6,*) "clonenorm2 = ", clonenorm2
+    ! write(6,*) "basenorm2 = ", bsnorm, pophold1,pophold2
+    ! write(6,*) "clonenorm = ", clonenorm
+    ! write(6,*) "clonenorm2 = ", clonenorm2
 
 
 

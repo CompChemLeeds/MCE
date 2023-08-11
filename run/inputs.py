@@ -39,7 +39,7 @@ parameters={
     'ndim':50,
 
     # Number of basis functions 
-    'in_nbf':1,
+    'in_nbf':5,
 
     # Random Number generation function (ZBQL - using ZBQLNOR subroutine, GAUS - using function based on numerical recipes)
     'randfunc':'ZBQL',
@@ -71,19 +71,25 @@ clone={
     'Cloning':'V1',
 
     # Cloning threshold (value of |sum_r(a_{r,k})|) - must be >= 0.05 and < 0.25, default 0.249
-    'Threshold':'0.249d0',
+    'Threshold':'0.22d0',
 
     # Maximum number of Cloning events allowed
-    'max_cloning':19,
+    'max_cloning':9,
 
     # Minimum cloning frequency (ie how many timesteps since last cloning is new cloning event allowed)
-    'clon_freq':150,
+    'clon_freq':100,
 
     #Quantum Superposition Cloning exclusion paramter between the two child trajectories should >= ??? and < ???
-    'QSC_epsilon':'0.1d0'
+    'QSC_epsilon':'0.1d0',
+
+    # Automatic cloning (yes/no)
+    'Auto_clone':'YES',
 
     # Cloning block (the space between cloning events for MCEv1)
-    # 'Clon_block':1000
+    'Clon_block':500,
+
+    # Percentage of basis functions for autocloning in Version 1
+    'Bfsthresh': 0.8
 
 }
 
@@ -108,9 +114,9 @@ prop={
     #Maximum stepsize - used in adaptive stepsize
     'dtmax':'500.d0',
     #Starting stepsize of adaptive / Constant stepsize for Static stepsize
-    'dtinit':'7.5d-3',
+    'dtinit':'5.0d-3',
     #End Time of propagation
-    'time_end':'1.5d+1', #1.00d+1
+    'time_end':'1.0d+1', #1.00d+1
     #Start time of propagation
     'time_start':'0.0d+00',
     #Propagation size - either "static" or "adaptive"

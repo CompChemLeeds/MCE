@@ -44,6 +44,7 @@ MODULE globvars
   integer:: clonefreq  ! minimum number of timesteps between concurrent coloning events
   integer:: qss        ! quantum superposition sampling change to initial amplitudes
   integer:: adptreptot ! Adapted number of repetitions for MCEv1 cloning
+  integer:: clone_block      ! QSC exclusion paramter 
 
   real(kind=8),external :: ZBQLNOR ! The normally distributed random number external function
 
@@ -88,11 +89,13 @@ MODULE globvars
   real(kind=8) :: sqrtpi           ! square root of pi
   real(kind=8) :: thresh           ! cloning threshold
   real(kind=8) :: qsce             ! QSC exclusion paramter 
+  real(kind=8) :: nbf_frac      ! QSC exclusion paramter
   real(kind=8) :: pirl             ! pi
 
   character(LEN=5) :: ECheck       ! Flag to determine if the energy of basis functions should be checked
   character(LEN=5) :: basis        ! Initial basis set structure option
   character(LEN=6) :: cloneflg     ! Flag for cloning
+  character(LEN=3) :: auto_clone   ! Flag for auto V1 cloning
   character(LEN=5) :: method       ! MCEv1, MCEv2 or CCS used. Later versions to have other methods available
   character(LEN=4) :: randfunc     ! Random number generation function identifier (zbql/gaus)
   character(LEN=3) :: specden      ! the spectral density type (EXP,DL or UBO ---- LHC to come)

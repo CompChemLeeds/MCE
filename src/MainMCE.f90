@@ -139,8 +139,8 @@ Program MainMCE
   type(basisset):: testset
   complex(kind=8), dimension (:,:), allocatable :: initgrid, ovrlp,ovrlphold
   complex(kind=8)::normtemp, norm2temp, ehren, acft, extmp
-  real(kind=8), dimension(:), allocatable :: mup, muq, popt, timeblock, brforce
-  real(kind=8) :: nrmtmp, nrm2tmp, ehrtmp, gridsp, timestrt_loc, normar
+  real(kind=8), dimension(:), allocatable :: mup, muq, popt
+  real(kind=8) :: nrmtmp, nrm2tmp, ehrtmp, gridsp, timestrt_loc, normar, brforce
   real(kind=8) :: timeend_loc, timeold, time, dt, dtnext, dtdone, initehr, nctmnd, ctime
   real(kind=8) :: initnorm, initnorm2, alcmprss, dum_re1, dum_re2, rescale, pophold1,pophold2
   integer, dimension(:), allocatable :: clone, clonenum, clonehere, ccooldown, ccooldownhold
@@ -221,7 +221,7 @@ Program MainMCE
     errorflag=1
   end if
 
-  allocate(brforce(nbf))
+
 
   pops = 0.0d0          ! Populations in different quantum states
   absehr = 0.0d0        ! Absolute sum of Ehrenfest Hamiltonian over all bfs
@@ -250,28 +250,27 @@ Program MainMCE
   ovrlpout=100
   sh_clone=0
 
-  ! if (cloneflg=='V1') then
-  !   ! if (mod(tnum-2,clonefreq).eq.0) then
-  !   !   num_events = int((tnum-2)/clonefreq - 1) 
-  !   !   write(6,*) num_events
-  !   ! else 
-  !   !   num_events = int((tnum-2)/clonefreq) 
-  !   !   write(6,*) num_events
-  !   ! end if
-  !   num_events = 2
-  !   allocate(cloneblock(num_events+1))
-  !   allocate(timeblock(num_events+1))
-  !   cloneblock(1) = 157
-  !   cloneblock(2) = 1100
-  !   do n =1, size(cloneblock)-1
-  !       ! cloneblock(n) = 157
-  !       timeblock(n) = dtinit*cloneblock(n)
-  !   end do
-  !   cloneblock(num_events+1) = tnum-2
-  !   timeblock(num_events+1) = dtinit*cloneblock(num_events+1)
-  !   two_to_num_events=int(2**num_events)
-  call allocbs_alt(bsetarr,128,in_nbf) !allocate(bsetarr(2**num_events,clonefreq))
-  ! end if
+  if (cloneflg=='V1') then
+    if (auto_clone=='NO') then 
+      if (mod(tnum-2,clone_block).eq.0) then
+        num_events = int((tnum-2)/clone_block- 1) 
+        write(6,*) 'num of events ', num_events
+      else 
+        num_events = int((tnum-2)/clone_block) 
+        write(6,*) 'num of events ', num_events
+      end if
+      allocate(cloneblock(num_events+1))
+      do n =1, size(cloneblock)-1
+          cloneblock(n) = n*clone_block
+      end do
+      cloneblock(num_events+1) = tnum-2
+      two_to_num_events=int(2**num_events)
+      call allocbs_alt(bsetarr,two_to_num_events,in_nbf) !allocate(bsetarr(2**num_events,clonefreq))
+    else
+      write(6,*) clonemax
+      call allocbs_alt(bsetarr,2**clonemax,in_nbf) !allocate(bsetarr(2**num_events,clonefreq))
+    end if 
+  end if
 
 
   
@@ -647,80 +646,83 @@ Program MainMCE
               call alt_clone_condense(bsetarr,dt,x,reps,nclones,nbf,absnorm,acf_t,extra,absehr,pops,mup,muq,time)
             end if
 
-     
-            allocate(clonehere(nclones))
-            clonehere = 0
-            brunit = 48759
- 
-            open(unit=brunit,file="Brforce-.out",status="unknown",access = 'append', iostat=ierr)
- 
-            do p=1,nclones
-              do j=1,nbf
-                normar = 0.0d0
-                do r=1,npes
-                  normar = normar + dconjg(bsetarr(p)%bs(j)%a_pes(r))*bsetarr(p)%bs(j)%a_pes(r)
-                end do
-                !!!!! The line below needs changing to acount for multiple PESs
-                brforce(j) = ((abs(bsetarr(p)%bs(j)%a_pes(1)*bsetarr(p)%bs(j)%a_pes(2))**2.0)/(normar**2.0))
-                if ((brforce(j).gt.thresh)) then
-                  ! write(brunit,*) 'cloneblock hit for repeat', reps, 'clone', p, 'timestep', x, brforce(1)
-                  clonehere(p) = clonehere(p) + 1
-                end if 
+            if(auto_clone=='YES') then
+              allocate(clonehere(nclones))
+              clonehere = 0
+              brunit = 48759
+  
+              open(unit=brunit,file="Brforce-.out",status="unknown",access = 'append', iostat=ierr)
+  
+              do p=1,nclones
+                do j=1,nbf
+                  normar = 0.0d0
+                  do r=1,npes
+                    normar = normar + dconjg(bsetarr(p)%bs(j)%a_pes(r))*bsetarr(p)%bs(j)%a_pes(r)
+                  end do
+                  !!!! The line below needs changing to acount for multiple PESs
+                  brforce = ((abs(bsetarr(p)%bs(j)%a_pes(1)*bsetarr(p)%bs(j)%a_pes(2))**2.0)/(normar**2.0))
+                  if ((brforce.gt.thresh)) then
+                    ! write(brunit,*) 'cloneblock hit for repeat', reps, 'clone', p, 'timestep', x, brforce
+                    clonehere(p) = clonehere(p) + 1
+                  end if 
+                end do 
               end do 
-            end do 
-            do p=1,nclones
-              if (clonehere(p).gt.0) then
-                if (ccooldown(p).eq.0) then
-                  if (x.lt.(tnum-27)) then      
-                    nclones = nclones+1 
-                    write(brunit,*) 'clone', p, 'from rep', reps, ' into clones ', p, nclones, 'at step', x, x*dtinit
-                    !$omp critical
-                    call v1cloning(bsetarr(p)%bs,nbf,bsetarr(p)%bs,bsetarr(nclones)%bs)
-                    !$omp end critical 
-                    clonememflg=1
-                    allocate(ccooldownhold(nclones))
-                    do j=1, size(ccooldown)
-                      ccooldownhold(j) = ccooldown(j)
-                    end do 
-                    deallocate(ccooldown)
-                    ccooldownhold(p) = 200
-                    ccooldownhold(nclones) = 200
-                    allocate(ccooldown(nclones)) 
-                    do j=1,nclones
-                      ccooldown(j) = ccooldownhold(j)
-                    end do 
-                    deallocate(ccooldownhold)
-                  end if  
+              do p=1,nclones
+                if (clonehere(p).ge.nbf*nbf_frac) then
+              
+                  if (ccooldown(p).eq.0) then
+
+                    if (x.lt.(tnum-52)) then    
+                      if(nclones.lt.2**clonemax) then 
+                        ! write(6,*) 'the number of straddled functions is, ', clonehere(p), 'so clone'
+                        nclones = nclones+1 
+                        write(brunit,*) 'clone', p, 'from rep', reps, ' into clones ', p, nclones, 'at step', x, x*dtinit
+                        !$omp critical
+                        call v1cloning(bsetarr(p)%bs,nbf,bsetarr(p)%bs,bsetarr(nclones)%bs)
+                        !$omp end critical 
+                        clonememflg=1
+                        allocate(ccooldownhold(nclones))
+                        do j=1, size(ccooldown)
+                          ccooldownhold(j) = ccooldown(j)
+                        end do 
+                        deallocate(ccooldown)
+                        ccooldownhold(p) = clonefreq
+                        ccooldownhold(nclones) = clonefreq
+                        allocate(ccooldown(nclones)) 
+                        do j=1,nclones
+                          ccooldown(j) = ccooldownhold(j)
+                        end do 
+                        deallocate(ccooldownhold)
+                      end if 
+                    end if  
+                  end if 
                 end if 
-              end if 
-              if (ccooldown(p).gt.0) then
-                ccooldown(p) = ccooldown(p) - 1
-              end if 
-            
-            end do 
-            close(brunit)
-            deallocate(clonehere)
-          
-            ! if (x==cloneblock(e)) then
-            !   write(6,*) 'cloneblock hit for repeat', reps
-            !   if (clonememflg==0) then
-            !     call bstransfer(bsetarr(1)%bs,bset,nbf)
-            !   end if
-            !   if (cloneblock(e).ne.(tnum-2)) then 
-            !     p = nclones+1
-            !     do j=1,nclones
-            !       !write(6,*) 'here j =, ', j, 'and p =, ', p
-            !       !$omp critical
-            !       call v1cloning(bsetarr(j)%bs,nbf,bsetarr(j)%bs,bsetarr(p)%bs)
-            !       !$omp end critical 
-            !       sh_clone=0
-            !       p = p+1
-            !     end do 
-            !     clonememflg=1
-            !     nclones = nclones*2
-            !     e=e+1
-            !   end if
-            ! end if
+                if (ccooldown(p).gt.0) then
+                  ccooldown(p) = ccooldown(p) - 1
+                end if 
+              
+              end do 
+              ! close(brunit)
+              deallocate(clonehere) 
+            else if (auto_clone== 'NO') then
+              if (x==cloneblock(e)) then
+                write(6,*) 'cloneblock hit for repeat', reps
+                if (cloneblock(e).ne.(tnum-2)) then 
+                  p = nclones+1
+                  do j=1,nclones
+                    !write(6,*) 'here j =, ', j, 'and p =, ', p
+                    !$omp critical
+                    call v1cloning(bsetarr(j)%bs,nbf,bsetarr(j)%bs,bsetarr(p)%bs)
+                    !$omp end critical 
+                    sh_clone=0
+                    p = p+1
+                  end do 
+                  clonememflg=1
+                  nclones = nclones*2
+                  e=e+1
+                end if
+              end if
+            end if 
           end if
           if (cloneflg.ne."V1") then
 
@@ -763,9 +765,10 @@ Program MainMCE
 
         end do   !End of time propagation.
         write(6,*)'end of time propagation'
-        if (cloneflg=="V1") then 
+        if (cloneflg=="V1".and.allocated(ccooldown)) then 
           deallocate(ccooldown)
         end if
+
 
         if ((time.lt.timeend).and.(errorflag.ne.1)) then
           write(0,"(a,e12.5)") "Too many steps taken. Propagation aborted at t = ", time
@@ -780,14 +783,14 @@ Program MainMCE
             errorflag = 1
           end if
         end if
-
+     
       end if
 
       if (errorflag==1) then
         write(6,"(a)") "Last basis set outputting...."
         call outbs(bset, reps, mup, muq, time, x)
       end if
-
+  
       call deallocbs(bset)     ! Deallocates basis set ready for next repeat
 
       if ((conjrep==2).and.(errorflag==0)) then
@@ -795,7 +798,7 @@ Program MainMCE
       else
         exit
       end if
-  
+
       call flush(6)
       call flush(0)
       
